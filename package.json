@@ -1,0 +1,22 @@
+{
+  "name": "scelephant-js",
+  "version": "1.0.0",
+  "description": "a javascript package for extremely large-scale single-cell data analysis in browser/node",
+  "main": "lib/core.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahs2202/scelephant.js.git"
+  },
+  "keywords": [
+    "single-cell;genomics;transcriptomics;accessibility;zarr"
+  ],
+  "author": "hyunsu An",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ahs2202/scelephant.js/issues"
+  },
+  "homepage": "https://github.com/ahs2202/scelephant.js#readme"
+}

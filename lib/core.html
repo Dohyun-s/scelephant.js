@@ -1,0 +1,1303 @@
+<head>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+<!-- 
+<script type="module">
+  import * as zarr from "https://cdn.skypack.dev/zarrita/v2";
+  import { get } from "https://cdn.skypack.dev/zarrita/ops";
+  import FetchStore from "https://cdn.skypack.dev/zarrita/storage/fetch";
+  // must add codecs to global registry if compression is used
+  import Blosc from "https://cdn.skypack.dev/numcodecs/blosc";
+  zarr.registry.set( Blosc.codecId, () => Blosc );
+  
+  // add to top level
+  window.zarr = zarr;
+  window.get = get;
+  window.Blosc = Blosc
+  window.FetchStore = FetchStore
+</script> -->
+    
+<!-- ES import -->
+<script type="module">
+    // import utility modules
+    import * as lodash from 'https://cdn.skypack.dev/lodash';
+    window.lodash = lodash;
+    // import * as dataframeJs from 'https://cdn.skypack.dev/dataframe-js';
+    import * as numjs from 'https://cdn.skypack.dev/numjs';
+    window.numjs = numjs;
+    import * as papaparse from 'https://cdn.skypack.dev/papaparse';
+    window.papaparse = papaparse;
+    import * as pako from 'https://cdn.skypack.dev/pako';
+    window.pako = pako;
+    
+    // import modules for plotting
+//     import Plotly from 'https://cdn.skypack.dev/plotly.js'; // cannot be imported from skypack...
+    import * as chromaJs from 'https://cdn.skypack.dev/chroma-js';
+    import * as d3 from 'https://cdn.skypack.dev/d3';
+    
+    // import modules for interactions
+    import jquery from 'https://cdn.skypack.dev/jquery';
+    import bootstrap from 'https://cdn.skypack.dev/bootstrap';
+    import datatablesNet from 'https://cdn.skypack.dev/datatables.net';
+    import yaireoTagify from 'https://cdn.skypack.dev/@yaireo/tagify';
+    import hotkeysJs from 'https://cdn.skypack.dev/hotkeys-js';
+    import html2canvas from 'https://cdn.skypack.dev/html2canvas';
+    import fileSaver from 'https://cdn.skypack.dev/file-saver';
+    import fontAwesome from 'https://cdn.skypack.dev/font-awesome';
+    
+    // import Zarrita
+    import * as zarrita from "https://cdn.skypack.dev/zarrita/v2";
+    import { get } from "https://cdn.skypack.dev/zarrita/ndarray"; // "https://cdn.skypack.dev/zarrita/ops";
+    import FetchStore from "https://cdn.skypack.dev/zarrita/storage/fetch";
+    import Blosc from "https://cdn.skypack.dev/numcodecs/blosc";
+    zarrita.registry.set(Blosc.codecId, () => Blosc); // using compression
+    window.Blosc = Blosc
+    window.zarrita = zarrita;
+    window.zarrita_get = get;
+    window.zarrita_FetchStore = FetchStore;
+    
+    // import Zarr
+    import * as zarr from "https://cdn.skypack.dev/zarr";
+    window.zarr = zarr;
+    
+    // import bitset for BitArray
+    import bitset from 'https://cdn.skypack.dev/bitset';
+    window.BitSet = bitset;
+    
+    // import umap.js for embedding
+    import * as umapJs from 'https://cdn.skypack.dev/umap-js';
+    window.umapJs = umapJs;
+    
+    // import hdbscan for clustering
+    import * as hdbscan from 'https://cdn.skypack.dev/hdbscan';
+    window.hdbscan = hdbscan;
+    
+    // import pca for dimension reduction
+    import * as mlPca from 'https://cdn.skypack.dev/ml-pca';
+    window.mlPca = mlPca;
+</script>
+
+<style>
+html {
+  background: hsla(0, 100%, 100%, .4);
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  background:transparent;
+  display: flex;
+  flex-flow: column nowrap;
+  flex-direction: column;
+  font-family: monospace;
+  font-size: 2em;
+  position: relative;
+  min-height: 100vh;
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.custextareasdontdopseudoelements {
+  display: flex;
+  flex-flow: row nowrap;
+  border-top: 1px solid #ccc;
+  padding: .25em;
+/*  position: absolute;
+  bottom: 0;*/
+  width: 100%;
+  background-color: #eee;
+  &::before {
+    content: '>';
+    display: block;
+    color: #ccc;
+    padding: .25em 0;
+  } 
+}
+
+#repl {
+  height: 1.5em;
+  max-height: 80vh;
+  font-size: 1em;
+  border: none;
+  padding: .25em 0 .25em 1em;
+  font-family: monospace;
+  flex: 1 1 100%;
+  background: transparent;
+  tab-size: 4;
+  &:focus {
+    outline: none;
+  }
+}
+
+.rep {
+  margin: 1em 0;
+}
+
+.entry,
+.result {
+  padding-left: 1em;
+  position: relative;
+  margin: 0;
+  
+  &::before {
+    position: absolute;
+    left: .125em;
+  }
+}
+
+.entry {
+  color: hsla(200, 50%, 50%, 1);
+  
+  &::before {
+    content: '>';
+  }
+}
+
+.result {
+  color: #333;
+  
+  &::before {
+    color: hsla(200, 50%, 50%, 1);
+    content: '<';
+  }
+}
+
+.undefined,
+.null {
+  color: #999;
+}
+.string {
+  color: hsl(10, 50%, 50%);
+}
+    
+/* from https://1linelayouts.glitch.me/ */
+/*     body {
+      display: grid;
+      height: 100vh;
+      grid-template: auto 1fr auto / auto 1fr auto
+    } */
+    
+    body {
+      display: grid;
+      grid-template-columns: minmax(350px, 50%) 1fr;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar {
+      height: 100vh;
+      background: lightgreen;
+      font-size: 2rem;
+      text-align: left;
+    }
+
+    .content {
+      padding: 2rem;
+    }
+
+    body {
+      font-family: system-ui, serif;
+    }
+</style>
+
+</head>
+
+<div class="sidebar">
+    <output></output>
+    <div class="custextareasdontdopseudoelements"><textarea name="repl" id="repl"></textarea></div>
+</div>
+<div class="content"><div id="tester" style="width:600px;height:250px;"></div></div>
+<script>
+
+// zarr.js
+//     path_folder_ramdata = "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/"
+//     "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/X_umap_scanpy_embedding_100_epoch_ml/"
+//     "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/"
+
+//     const z = await zarr.openArray({
+//         store: "http://172.27.30.99/",
+//         path: "web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/X_umap_scanpy_embedding_100_epoch_ml/",
+//         mode: "r"
+//     });    
+
+// // zarrita
+//     store = new zarrita_FetchStore( "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/X_umap_scanpy_embedding_100_epoch_ml/" )
+//     za = await zarrita.get_array( store )
+    
+// store = new zarrita_FetchStore( "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/filter_pca_subsampled/" )
+// za = await zarrita.get_array( store )
+    
+function check_none( val ) {
+    // check whether the given value 'val' is either undefined or null
+    return ( val === undefined ) | ( val === null );
+}
+function sort_number( a, b ) {
+    return a - b;
+}
+function count_ba( ba, length ) {
+    // count the number of active entries in the given BitSet object 'ba' of the given length 'length'
+    let int_num_active_entries = 0;
+    for ( let i = 0; i < length; i ++ ) {
+        int_num_active_entries += ba.get( i );
+    }
+    return int_num_active_entries;
+}
+function ba_to_integer_indices( ba, length ) {
+    /*
+    convert BitSet array to an array of integer indices of the active entries
+    */
+    // initialize the list of integer indices
+    let l_int_index = [ ];
+    for ( let i = 0; i < length; i ++ ) {
+        if ( ba.get( i ) > 0 ) {
+            l_int_index.push( i );
+        }
+    }
+    return l_int_index;
+}
+    
+class ZarrDataFrame {
+    constructor( path_folder_zdf, filter = undefined, flag_retrieve_categorical_data_as_integers = false, verbose = true ) {
+        // set attributes
+        this.path_folder_zdf = path_folder_zdf;
+        this.filter = filter;
+        this.flag_retrieve_categorical_data_as_integers = flag_retrieve_categorical_data_as_integers;
+        this.verbose = verbose;
+        // initialize attributes
+        this._columns = { };
+    }
+    async initialize( ) {
+        // load metadata of zarrdataframe
+        // should be run before using zdf
+        let zattrs = await $.getJSON( `${this.path_folder_zdf}.zattrs` ); // read metadata
+        this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
+        this.metadata.columns = new Set( this.metadata.columns ) // convert an array of columns to a set of columns
+        
+        // set attributes using the metadata
+        this.columns = this.metadata.columns;
+        this._n_rows_unfiltered = this.metadata.int_num_rows;
+        this.set_filter( this.filter ); // set filter once metadata is loaded_
+        this._int_num_rows_in_a_chunk = this.metadata.int_num_rows_in_a_chunk;
+    }
+    async load_column( name_col ) {
+        // load metadata if it has not been loaded
+        if ( check_none( this.metadata ) ) {
+            await this.load_metadata( );
+        }
+        
+        // load zarr object and metadata of a given column name
+        if ( this.columns.has( name_col ) & ! ( name_col in this._columns ) ) {
+            let za = await zarr.openArray({
+                store : this.path_folder_zdf,
+                path : `${name_col}/`,
+                mode: "r"
+            });
+            // if binary data encoded in '|i1' format ('b1') format was detected, change dtype to '|i1', since '|b1' is currently not supported in the Zarr.js implementation
+            if ( za.meta.dtype == '|b1' ) {
+                za.meta.dtype = '|i1'; // change dtype to '|i1'
+            }
+            this._columns[ name_col ] = { 
+                'zarr_object' : za,
+                'metadata' : ( await $.getJSON( `${this.path_folder_zdf}${name_col}/.zattrs` ) )[ 'dict_col_metadata' ] // read column metadata
+            }
+        }
+    }
+    set_filter( ba_filter ) {   
+        // if filter is removed
+        if ( check_none( ba_filter ) ) {
+            this.filter = undefined;
+            this._n_rows_after_applying_filter = undefined;
+            return;
+        }
+        
+        function count_active_entries( zdf ) {
+            // count the number of active entries in the active filter of a given zdf object
+            let int_num_active_entries = 0,
+                filter = zdf.filter;
+            for ( let i = 0; i < zdf._n_rows_unfiltered; i ++ ) {
+                int_num_active_entries += filter.get( i );
+            }
+            zdf._n_rows_after_applying_filter = int_num_active_entries;
+        }
+        // if BitSet object is given, set the filter and exit
+        if ( ba_filter instanceof BitSet ) {
+            this.filter = ba_filter;
+            count_active_entries( this ); // count active number of entries in the given filter
+            return;
+        }
+            
+        // if 'NestedArray' is given, check shape and flatten the array
+        if ( ba_filter instanceof zarr.NestedArray ) {
+            // if a given 'ba_filter' is a NestedArray, check its shape (the length of the filter should be same as the number of rows of the current object)
+            if ( ! ( ba_filter.shape.length == 1 & ba_filter.shape[ 0 ] == this._n_rows_unfiltered ) ) {
+                if ( this.verbose ) {
+                    console.log( "the shape of the given filter is invalid, exiting" );
+                }
+                return;
+            }
+            ba_filter = ba_filter.flatten( ); // flatten the nested array
+
+        } else if ( ba_filter instanceof Int8Array ) {
+            // if flattened 'Int8Array' is given, check shape
+            // if the length of the given array is different from the number of rows of the object
+            if ( ba_filter.length != this._n_rows_unfiltered ) {
+                if ( this.verbose ) {
+                    console.log( "the shape of the given filter is invalid, exiting" );
+                }
+                return;
+            }
+        }
+        // initialize BitSet object
+        let ba = new BitSet,
+            i = 0,
+            val = 0;
+        // set BitSet object
+        for ( i = 0; i < ba_filter.length ; i ++ ) {
+            val = ba_filter[ i ];
+            if ( val != 0 ) {
+                ba.set( i, 1 )
+            }
+        }
+        
+        // set filter for the object
+        this.filter = ba;
+        count_active_entries( this ); // count active number of entries in the given filter
+    }
+    async get_item( name_col, coord_primary_axis = undefined, coord_other_axes = undefined ) {
+        /*
+        name_col : the name of the column
+        coord_primary_axis = undefined : if undefined is given, all entries (if filter is not applied) or filtered entries (if filter is active) will be returned.
+        coord_other_axes = undefined : slices or coordinates for a secondary axis and other axes other than the primary axis
+        */
+        // load metadata if it has not been loaded
+        if ( check_none( this.metadata ) ) {
+            await this.load_metadata( );
+        }
+        
+        // retrieve flags
+        let flag_coord_primary_axis_not_given = check_none( coord_primary_axis ),
+            flag_coord_other_axes_not_given = check_none( coord_other_axes ),
+            flag_filter_is_not_active = check_none( this.filter );
+        
+        // if the 'name_col' is not valid, exit
+        if ( ! this.columns.has( name_col ) ) {
+            if ( this.verbose ) {
+                console.log( `the given column name ${name_col} does not exist in the current ZarrDataFrame, exiting` );
+            }
+            return;
+        }
+        await this.load_column( name_col ); // load zarr object of the 'name_col'
+        
+        let arr_data = [ ];
+        if ( flag_coord_primary_axis_not_given ) {
+            if ( flag_filter_is_not_active ) {
+                if ( flag_coord_other_axes_not_given ) { // when no indexing occurs other than the primary axis
+                    arr_data = await this._columns[ name_col ].zarr_object.get( null ); // retrieve all entries (filter is not active, no indexing were given)
+                } else {
+                    if ( Array.isArray( coord_other_axes ) ) { // when coordinates for multiple axes were given
+                        let coords = [ null ];
+                        coords.push( ... coord_other_axes );
+                        arr_data = await this._columns[ name_col ].zarr_object.get( coords );
+                    } else { // when only secondary axis was given
+                        arr_data = await this._columns[ name_col ].zarr_object.get( [ null, coord_other_axes ] );
+                    }
+                }
+                return arr_data;
+            } else {
+                // filter is active. apply the active filter to the current zarr object
+                // exit when the number of active entries in the filter is 0.
+                if ( this._n_rows_after_applying_filter == 0 ) {
+                    if ( this.verbose ) {
+                        console.log( "the number of active entries in the filter is zero, exiting" );
+                    }
+                    return;
+                }
+                
+                // prepare
+                let int_num_entries_in_a_chunk = this._columns[ name_col ].zarr_object.chunks[ 0 ];
+                
+                // compose an array of coordinates for axes other than the primary axis
+                let coords_other_than_primary_axis = [ ];
+                if ( ! flag_coord_other_axes_not_given ) {
+                    if ( Array.isArray( coord_other_axes ) ) { // when coordinates of more than two axes were given
+                        coords_other_than_primary_axis.push( ... coord_other_axes );
+                    } else { // when only secondary axis was given
+                        coords_other_than_primary_axis.push( coord_other_axes );
+                    }
+                }
+                
+                async function _filter_a_portion_of_zarr_object( int_index_start, int_index_end, zdf, coords_other_than_primary_axis, int_num_active_entries_in_a_batch ) {
+                    // retrieve data for a portion of zarr object, filter using the given ba_filter, and return filtered records
+                    let coords = [ zarr.slice( int_index_start, int_index_end ) ];
+                    coords.push( ... coords_other_than_primary_axis ); // combine coordinates of all axes
+                    
+                    // fetch data
+                    let arr = await zdf._columns[ name_col ].zarr_object.get( coords );
+                    
+                    // initialize the output, filtered array
+                    let dtype = arr.dtype, // retrieve dtype of the array
+                        l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
+                        int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+                        l_dims_filtered = [ int_num_active_entries_in_a_batch ];
+                    l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
+                    
+                    arr = arr.flatten( ); // flatten the array
+                    let int_num_bytes_for_a_value = arr.byteLength / arr.length, // retrieve the number of bytes for each value
+                        filter = zdf.filter;
+
+                    let arr_filtered = new arr.constructor( new ArrayBuffer( int_num_bytes_for_a_value * int_num_values_for_an_entry * int_num_active_entries_in_a_batch ) ), // initialize the typedarray that will contain the output, filtered data
+                        int_index_entry_after_filtering = 0; 
+                    
+                    for ( let i = int_index_start; i < int_index_end; i ++ ) {
+                        if ( filter.get( i ) > 0 ) {
+                            arr_filtered.set( arr.slice( int_num_values_for_an_entry * ( i - int_index_start ), int_num_values_for_an_entry * ( i - int_index_start + 1 ) ), int_num_values_for_an_entry * int_index_entry_after_filtering )
+                            int_index_entry_after_filtering += 1; // update 'int_index_entry_after_filtering'
+                        }
+                    }
+                    // return the filtered array as a nested array
+                    return new zarr.NestedArray( arr_filtered, l_dims_filtered );
+                }
+                
+                let l_promise_filtered = [ ]; // initialize a list of promises that will contain filtered results
+                for ( let i = 0; i < Math.ceil( this._n_rows_unfiltered / int_num_entries_in_a_chunk ); i ++ ) { // iterate each chunk
+                    // count the number of active entries in a chunk
+                    let int_index_start = i * int_num_entries_in_a_chunk,
+                        int_index_end = Math.min( ( i + 1 ) * int_num_entries_in_a_chunk, this._n_rows_unfiltered ), 
+                        int_num_active_entries_in_a_batch = 0,
+                        filter = this.filter;
+                    for ( let i = int_index_start; i < int_index_end; i ++ ) {
+                        int_num_active_entries_in_a_batch += filter.get( i );
+                    }
+                    // if there is active entries in the current chunk, fetch and process the data
+                    if ( int_num_active_entries_in_a_batch > 0 ) { 
+                        l_promise_filtered.push( _filter_a_portion_of_zarr_object( int_index_start, int_index_end, this, coords_other_than_primary_axis, int_num_active_entries_in_a_batch ) );
+                    }
+                }
+                
+                // collect filtered results for each valid chunk
+                let l_arr_filtered = await Promise.all( l_promise_filtered ),
+                    arr = l_arr_filtered[ 0 ]; // retrieve the first filtered result to gather information about the returned results
+                
+                // initialize the output that will contain the combined filtered array
+                let dtype = arr.dtype, // retrieve dtype of the array
+                    l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
+                    int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+                    l_dims_filtered = [ this._n_rows_after_applying_filter ];
+                l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
+
+                arr = arr.flatten( ); // flatten the first filtered array
+                let int_num_bytes_for_a_value = arr.byteLength / arr.length, // retrieve the number of bytes for each value
+                    filter = this.filter;
+
+                let arr_filtered = new arr.constructor( new ArrayBuffer( int_num_bytes_for_a_value * int_num_values_for_an_entry * this._n_rows_after_applying_filter ) ), // initialize the typedarray that will contain the output, filtered data
+                    int_num_values_copied = 0; 
+
+                // iterate through each filtered result and combine data
+                for ( let i = 0; i < l_arr_filtered.length; i ++ ) {
+                    let arr = l_arr_filtered[ i ].flatten( ); // retrieve a filtered result and flatten the nested array
+                    arr_filtered.set( arr, int_num_values_copied ) // copy the filtered result of a chunk to the combined result
+                    int_num_values_copied += arr.length; // update 'int_num_values_copied'
+                }
+                // return the filtered array as a nested array
+                return new zarr.NestedArray( arr_filtered, l_dims_filtered );
+            }
+        } else {
+            // when indexing through primary axis is active
+            if ( flag_coord_other_axes_not_given ) { // when no indexing occurs other than the primary axis
+                arr_data = await this._columns[ name_col ].zarr_object.get( coord_primary_axis ); // retrieve all entries
+            } else {
+                if ( Array.isArray( coord_other_axes ) ) { // when coordinates of more than two axes were given
+                    let coords = [ coord_primary_axis ];
+                    coords.push( ... coord_other_axes );
+                    arr_data = await this._columns[ name_col ].zarr_object.get( coords );
+                } else { // when only secondary axis was given
+                    arr_data = await this._columns[ name_col ].zarr_object.get( [ coord_primary_axis, coord_other_axes ] );
+                }
+            }
+            return arr_data;
+        }
+    }
+}
+    
+async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = undefined ) {
+    /* 
+    'l_int_index' WILL BE SORTED
+    */
+    // prepare (retrieve the number of entries in the primary axis of a chunk
+    let int_num_entries_in_a_chunk = za.chunks[ 0 ],
+        flag_coord_other_axes_not_given = check_none( coord_other_axes );
+
+    // compose an array of coordinates for axes other than the primary axis
+    let coords_other_than_primary_axis = [ ];
+    if ( ! flag_coord_other_axes_not_given ) {
+        if ( Array.isArray( coord_other_axes ) ) { // when coordinates of more than two axes were given
+            coords_other_than_primary_axis.push( ... coord_other_axes );
+        } else { // when only secondary axis was given
+            coords_other_than_primary_axis.push( coord_other_axes );
+        }
+    }
+    // sort 'l_int_index
+    l_int_index = l_int_index.sort( sort_number );
+
+    async function _filter_a_portion_of_zarr_object( int_index_start, int_index_end, za, l_int_index, coords_other_than_primary_axis ) {
+        // retrieve data for a portion of zarr object, filter using the given ba_filter, and return filtered records
+        let coords = [ zarr.slice( int_index_start, int_index_end ) ];
+        coords.push( ... coords_other_than_primary_axis ); // combine coordinates of all axes
+        
+        // fetch data
+        let arr = await za.get( coords );
+
+        // initialize the output, filtered array
+        let dtype = arr.dtype, // retrieve dtype of the array
+            l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
+            int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+            int_num_active_entries_in_a_batch = l_int_index.length,
+            l_dims_filtered = [ int_num_active_entries_in_a_batch ];
+        l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
+
+        arr = arr.flatten( ); // flatten the array
+        let int_num_bytes_for_a_value = arr.byteLength / arr.length; // retrieve the number of bytes for each value
+
+        let arr_filtered = new arr.constructor( new ArrayBuffer( int_num_bytes_for_a_value * int_num_values_for_an_entry * int_num_active_entries_in_a_batch ) ), // initialize the typedarray that will contain the output, filtered data
+            int_index_entry_after_filtering = 0; 
+
+        for ( let int_index of l_int_index ) {
+            arr_filtered.set( arr.slice( int_num_values_for_an_entry * int_index, int_num_values_for_an_entry * ( int_index + 1 ) ), int_num_values_for_an_entry * int_index_entry_after_filtering )
+            int_index_entry_after_filtering += 1; // update 'int_index_entry_after_filtering'
+        }
+        // return the filtered array as a nested array
+        return new zarr.NestedArray( arr_filtered, l_dims_filtered );
+    }
+
+    let l_promise_filtered = [ ], // initialize a list of promises that will contain filtered results
+        l_int_index_of_a_chunk = [ ],
+        int_index_chunk_current = undefined;
+    for ( let int_index of l_int_index ) {
+        // retrieve 'int_index_chunk' of the current int_index
+        int_index_chunk = parseInt( int_index / int_num_entries_in_a_chunk );
+        // when chunk boundary has been crossed, flush batch and update the chunk boundary
+        if ( int_index_chunk != int_index_chunk_current ) {
+            // flush batch
+            if ( ( l_int_index_of_a_chunk.length > 0 ) & ( int_index_chunk_current !== undefined ) ) {
+                l_promise_filtered.push( _filter_a_portion_of_zarr_object( int_index_chunk_current * int_num_entries_in_a_chunk, ( int_index_chunk_current + 1 ) * int_num_entries_in_a_chunk, za, l_int_index_of_a_chunk, coords_other_than_primary_axis ) );
+                l_int_index_of_a_chunk = [ ]; // initialize the next batch
+            } 
+            // update 'int_index_chunk_current'
+            int_index_chunk_current = int_index_chunk; 
+        }
+        // collect 'int_index'
+        l_int_index_of_a_chunk.push( int_index ); // initialize the next batch
+    }
+    // flush batch
+    if ( ( l_int_index_of_a_chunk.length > 0 ) & ( int_index_chunk_current !== undefined ) ) {
+        l_promise_filtered.push( _filter_a_portion_of_zarr_object( int_index_chunk_current * int_num_entries_in_a_chunk, ( int_index_chunk_current + 1 ) * int_num_entries_in_a_chunk, za, l_int_index_of_a_chunk, coords_other_than_primary_axis ) );
+        l_int_index_of_a_chunk = [ ]; // initialize the next batch
+    } 
+    
+    // collect filtered results for each valid chunk
+    let l_arr_filtered = await Promise.all( l_promise_filtered ),
+        arr = l_arr_filtered[ 0 ]; // retrieve the first filtered result to gather information about the returned results
+
+    // initialize the output that will contain the combined filtered array
+    let dtype = arr.dtype, // retrieve dtype of the array
+        l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
+        int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+        l_dims_filtered = [ l_int_index.length ];
+    l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
+
+    arr = arr.flatten( ); // flatten the first filtered array
+    let int_num_bytes_for_a_value = arr.byteLength / arr.length; // retrieve the number of bytes for each value
+
+    let arr_filtered = new arr.constructor( new ArrayBuffer( int_num_bytes_for_a_value * int_num_values_for_an_entry * l_int_index.length ) ), // initialize the typedarray that will contain the output, filtered data
+        int_num_values_copied = 0; 
+
+    // iterate through each filtered result and combine data
+    for ( let i = 0; i < l_arr_filtered.length; i ++ ) {
+        let arr = l_arr_filtered[ i ].flatten( ); // retrieve a filtered result and flatten the nested array
+        arr_filtered.set( arr, int_num_values_copied ) // copy the filtered result of a chunk to the combined result
+        int_num_values_copied += arr.length; // update 'int_num_values_copied'
+    }
+    // return the filtered array as a nested array
+    return new zarr.NestedArray( arr_filtered, l_dims_filtered );
+}
+   
+class RAMtx {
+    constructor( path_folder_ramtx, ramdata = undefined, verbose = true, flag_debugging = false ) {
+        // these values will be fixed: dtype_of_feature_and_barcode_indices = np.uint32, dtype_of_values = np.float64
+        // set attributes
+        this.path_folder_ramtx = path_folder_ramtx;
+        this.ramdata = ramdata;
+        this.verbose = verbose;
+        this.flag_debugging = flag_debugging;
+        
+        // set filters using the given RamData
+        this.ba_filter_features = check_none( this.ramdata ) ? undefined : this.ramdata.ft.filter;
+        this.ba_filter_barcodes = check_none( this.ramdata ) ? undefined : this.ramdata.bc.filter;
+    }
+    async initialize( ) {
+        // initialize RAMtx
+        // load metadata of RAMtx and zarr objects containing sparse data
+        // should be run before using RAMtx
+        let zattrs = await $.getJSON( `${this.path_folder_ramtx}.zattrs` ); // read metadata
+        this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
+        
+        // set attributes
+        this.flag_ramtx_sorted_by_id_feature = this.metadata[ 'flag_ramtx_sorted_by_id_feature' ];
+        this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
+        this.int_num_features = this.metadata[ 'int_num_features' ];
+        this.int_num_records = this.metadata[ 'int_num_records' ];
+        this.mode = this.metadata[ 'mode' ];
+
+        this.is_for_querying_features = this.flag_ramtx_sorted_by_id_feature;
+        
+        // # open zarr objects
+        this.is_sparse = this.mode != 'dense' 
+        if ( this.is_sparse ) {
+            this._za_mtx_index = await zarr.openArray({
+                store : this.path_folder_ramtx,
+                path : `matrix.index.zarr/`,
+                mode: "r"
+            });
+            this._za_mtx = await zarr.openArray({
+                store : this.path_folder_ramtx,
+                path : `matrix.zarr/`,
+                mode: "r"
+            });
+        }
+    }
+    async get_item( l_int_entry ) {
+        /*
+        get sparse data for the given list of 'l_int_entry'
+        */
+        // get expression of a list of int_entry
+        // initialize the object if metadata has not been loaded
+        if ( check_none( this.metadata ) ) {
+            await this.initialize( );
+        }
+        
+        // initialize the output data structures
+        let l_int_entry_of_axis_for_querying = [ ], 
+            l_arr_int_entry_of_axis_not_for_querying = [ ], 
+            l_arr_value = [ ];
+        
+        // wrap in a list if a single entry was queried
+        if ( ! Array.isArray( l_int_entry ) ) { // check whether the given entry is not an array
+            l_int_entry = [ l_int_entry ];
+        }
+        
+        // retrieve flag indicating an empty input
+        let flag_empty_input = l_int_entry.length == 0;
+        
+        // retrieve zarr objects
+        let za_mtx = this._za_mtx,
+            za_mtx_index = this._za_mtx_index;
+        
+        // internal settings
+        let int_num_chunks_for_a_batch = 2 // number of chunks in a batch for retrieving data for the sparse matrix
+        
+        // retrieve filters 
+        let is_for_querying_features = this.is_for_querying_features,
+            ba_filter_axis_for_querying = ( is_for_querying_features ) ? self.ba_filter_features : self.ba_filter_barcodes, 
+            ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? self.ba_filter_barcodes : self.ba_filter_features;
+        
+        // create view 
+        // retrieve dictionaries for changing coordinates
+        // initialize the dictionaries
+        let dict_change_int_entry_of_axis_for_querying = undefined,
+            dict_change_int_entry_of_axis_not_for_querying = undefined;
+        if ( ! check_none( this.ramdata ) ) { // if RAMtx has been attached to RamData, retrieve dictionaries that can be used to change coordinate
+            let ram = this.ramdata; // retrieve ramdata from which view will be retrieved. if current RAMtx is component, use composite RamData. else, use RamData to which current RAMtx has been attached to.
+            if ( this.is_for_querying_features ) {
+                dict_change_int_entry_of_axis_for_querying = ram.ft.dict_change
+                dict_change_int_entry_of_axis_not_for_querying = ram.bc.dict_change
+            } else {
+                dict_change_int_entry_of_axis_for_querying = ram.bc.dict_change
+                dict_change_int_entry_of_axis_not_for_querying = ram.ft.dict_change
+            }
+        }
+        // compose a vectorized function for the conversion of int_entries of the non-indexed axis.
+        let vchange_int_entry_of_axis_not_for_querying = undefined;
+        if ( ! check_none( dict_change_int_entry_of_axis_not_for_querying ) ) {
+            function vchange_int_entry_of_axis_not_for_querying( arr ) {
+                /*
+                arr : typed array
+                */
+                let arr_changed = new arr.constructor( new ArrayBuffer( arr.buffer.byteLength ) ); // initialize an empty typed array with the same type length 
+                for ( let i = 0; i < arr.length; i ++ ) {
+                    arr_changed[ i ] = dict_change_int_entry_of_axis_not_for_querying[ arr[ i ] ];
+                }
+                return arr_changed
+            }
+        }
+        
+        // filter 'l_int_entry'
+        if ( ! check_none( ba_filter_axis_for_querying ) ) { // if 'ba_filter_axis_for_querying' is valid
+            // filter 'l_int_entry' according to 'ba_filter_axis_for_querying'
+            let l_int_entry_filtered = [ ];
+            for ( let int_entry of l_int_entry ) {
+                if ( ba_filter_axis_for_querying.get( int_entry ) > 0 ) {
+                    l_int_entry_filtered.push( int_entry );
+                }
+            }
+            l_int_entry = l_int_entry_filtered;
+        }
+                
+        // if no valid entries are available, return an empty result
+        if ( l_int_entry.length == 0 ) {
+            return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
+        }
+            
+        // sort 'int_entry' so that closely located entries can be retrieved together
+        // sort indices of entries so that the data access can occur in the same direction
+        let int_num_entries = l_int_entry.length;
+        l_int_entry = l_int_entry.sort( sort_number );
+        
+
+
+        async function __retrieve_data( l_int_entry = undefined ) {
+            /* # 2022-08-16 01:54:31 
+            retrieve data as a worker in a worker process or in the main processs (in single-process mode)
+            */
+            // initialize 
+            // for each int_entry, retrieve data and collect records
+            let l_int_entry_of_axis_for_querying = [ ], 
+                l_arr_int_entry_of_axis_not_for_querying = [ ], 
+                l_arr_value = [ ];
+            
+            function __process_entry( int_entry, arr_int_entry_of_axis_not_for_querying, arr_value ) {
+                /* # 2022-07-30 22:07:46 
+                process retrieve data. apply filter and change coordinates
+                */
+                // if a filter for not-indexed axis has been set, apply the filter to the retrieved records
+                if ( ! check_none( ba_filter_not_axis_for_querying ) ) {
+                    // create empty arrays
+                    let arr_int_entry_of_axis_not_for_querying_filtered = [ ],
+                        arr_value_filtered = [ ];
+
+                    // iterate through each record
+                    for ( let i = 0; i < arr_value.length; i ++ ) {
+                        // check whether the current int_entry is included in the filter
+                        if ( ba_filter_not_axis_for_querying.get( arr_int_entry_of_axis_not_for_querying[ i ] ) > 0 ) { 
+                            // include the record
+                            arr_int_entry_of_axis_not_for_querying_filtered.push( arr_int_entry_of_axis_not_for_querying[ i ] );
+                            arr_value_filtered.push( arr_value[ i ] );
+                        }
+                    }
+                    // if no valid data exists (all data were filtered out), continue to the next 'int_entry'
+                    if ( arr_value_filtered.length == 0 ) {
+                        return;
+                    }
+                    
+                    // convert arrays to typed arrays
+                    arr_int_entry_of_axis_not_for_querying = arr_int_entry_of_axis_not_for_querying.constructor( arr_int_entry_of_axis_not_for_querying_filtered );
+                    arr_value = arr_value.constructor( arr_value_filtered );
+                }
+                    
+                // apply view
+                if ( ! check_none( dict_change_int_entry_of_axis_for_querying ) ) {
+                    int_entry = dict_change_int_entry_of_axis_for_querying[ int_entry ]
+                }
+                // convert int_entry for the non-indexed axis if a mapping has been given (create view)
+                if ( ! check_none( vchange_int_entry_of_axis_not_for_querying ) ) {
+                    arr_int_entry_of_axis_not_for_querying = vchange_int_entry_of_axis_not_for_querying( arr_int_entry_of_axis_not_for_querying )
+                }
+
+                // append the retrieved data to the output results 
+                l_int_entry_of_axis_for_querying.push( int_entry ); 
+                l_arr_int_entry_of_axis_not_for_querying.push( arr_int_entry_of_axis_not_for_querying );
+                l_arr_value.push( arr_value );
+            }
+            async function __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch ) {
+                /* # 2022-07-30 22:32:14 
+                fetch data from sparse ramtx for a batch
+                */
+                let st_batch = l_index_in_a_batch[ 0 ][ 0 ], // retrieve start and end positions of the current batch
+                    en_batch = l_index_in_a_batch[ l_index_in_a_batch.length - 1 ][ 1 ],
+                    a = console.log( za_mtx, st_batch, en_batch ),
+                    arr = await za_mtx.get( zarr.slice( st_batch, en_batch ) ), // fetch data from the Zarr object
+                    arr_int_entry_of_axis_not_for_querying = arr.get( [ null, 0 ] ), // retrieve nested array of each component
+                    arr_value = arr.get( [ null, 1 ] );
+                
+                for ( let i = 0; i < l_index_in_a_batch.length; i ++ ) { // iterate over each entry
+                    let int_entry = l_int_entry_in_a_batch[ i ],
+                        index = l_index_in_a_batch[ i ],
+                        st = index[ 0 ] - st_batch, // substract the start position of the batch to retrieve the local index
+                        en = index[ 1 ] - st_batch,
+                        sl = zarr.slice( st, en ); // retrieve a slice object for the current entry
+                    __process_entry( int_entry, arr_int_entry_of_axis_not_for_querying.get( sl ), arr_value.get( sl ) );
+                }
+            }
+            // retrieve data
+            // handle sparse ramtx
+            // %% Sparse ramtx %% 
+            // prepare
+            let int_num_records_in_a_chunk = za_mtx.chunks[ 0 ] // retrieve the number of records in a chunk
+            let index_chunk_start_current_batch = undefined, // initialize the index of the chunk at the start of the batch
+                l_int_entry_in_a_batch = [ ],
+                l_index_in_a_batch = [ ], // several entries will be processed together as a batch if they reside in the same or nearby chunk ('int_num_chunks_for_a_batch' setting)
+                arr_index = await zarr_get_by_l_int_index( za_mtx_index, l_int_entry ); // retrieve arr_index of the given list of 'int_entry'
+            // iterate through each 'int_entry'
+            for ( let i = 0; i < l_int_entry.length; i ++ ) { // iterate through each entry
+                // retrieve mtx_index data and remove invalid entries
+                let int_entry = l_int_entry[ i ];
+                let index = arr_index.get( i ).flatten( ), // retrieve mtx_index data 
+                    st = index[ 0 ],
+                    en = index[ 1 ];
+                if ( st == en ) { // if there is no count data for the 'int_entry', continue on to the next 'int_entry' # drop 'int_entry' lacking count data (when start and end index is the same, the 'int_entry' does not contain any data)
+                    continue
+                }
+
+                // if batch is full, flush the batch 
+                let index_chunk_end = en - 1 // int_num_records_in_a_chunk # retrieve the index of the last chunk
+                if ( ( index_chunk_start_current_batch !== undefined ) & ( index_chunk_end >= index_chunk_start_current_batch + int_num_chunks_for_a_batch ) ) { // if start has been set 
+                    await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+                    // initialize the next batch
+                    l_int_entry_in_a_batch = [ ]; 
+                    l_index_in_a_batch = [ ];
+                    index_chunk_start_current_batch = undefined; // reset start
+                }
+                // start the batch 
+                // if start has not been set, set the start of the current batch
+                if ( index_chunk_start_current_batch === undefined ) { // start the batch
+                    index_chunk_start_current_batch = st // int_num_records_in_a_chunk 
+                }
+
+                // add int_entry to the batch 
+                l_int_entry_in_a_batch.push( int_entry ) 
+                l_index_in_a_batch.push( [ st, en ] )
+            }
+            if ( l_int_entry_in_a_batch.length > 0 ) { // if some entries remains unprocessed, flush the buffer
+                await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+            }
+
+            // return the retrieved data
+            return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
+        }
+        
+        // single thread mode
+        let res = await __retrieve_data( l_int_entry );
+        
+        // return results
+        return res;
+    }
+}
+    
+class RamDataAxis {
+    constructor( path_folder, name_axis, ba_filter = undefined, ramdata = undefined, dict_kw_zdf = { 'flag_retrieve_categorical_data_as_integers' : false }, dict_kw_view = { 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : 0.1 }, int_index_str_rep = 0, verbose = true, flag_debugging = false ) {
+        // set attributes
+        this.path_folder = path_folder;
+        this.name_axis = name_axis;
+        this.filter = ba_filter;
+        this.ramdata = ramdata;
+        this.dict_kw_zdf = dict_kw_zdf;
+        this.dict_kw_view = dict_kw_view;
+        this.int_index_str_rep = int_index_str_rep;
+        this.verbose = verbose;
+        this.flag_debugging = flag_debugging;
+        // initialize viewer (coordinate converter, a dictionary for converting coordinates) 
+        this.dict_change = undefined ;
+        this._dict_change_backup = undefined;
+    }
+    async initialize( ) {
+        // initialize RamDataAxis
+        // initialize the mapping dictionaries
+        this._dict_str_to_i = undefined; 
+        this._dict_i_to_str = undefined; 
+        
+        // open a ZarrDataFrame with a given filter
+        this.meta = new ZarrDataFrame( 
+            `${this.path_folder}${this.name_axis}.num_and_cat.zdf/`, 
+            this.filter, 
+            this.dict_kw_zdf[ 'flag_retrieve_categorical_data_as_integers' ],
+            this.verbose
+        );
+        await this.meta.initialize( ); // initialize ZarrDataFrame
+        // retrieve number of entries
+        this.int_num_entries = this.meta._n_rows_unfiltered;
+    }
+    set_filter( ba_filter ) {
+        /* 
+        set filter for the axis
+        */       
+        function change_filter( ax ) {
+            // set filter of the ZarrDataFrame
+            ax.meta.set_filter( ax.filter );
+            
+            // set filter of the ZarrDataFrame
+            ax.meta.set_filter( ax.filter );
+        }
+        
+        // if filter is removed
+        if ( check_none( ba_filter ) ) {
+            this.filter = undefined;
+            return;
+        }
+        
+        // if BitSet object is given, set the filter and exit
+        if ( ba_filter instanceof BitSet ) {
+            this.filter = ba_filter;
+            return;
+        }
+            
+        // if 'NestedArray' is given, check shape and flatten the array
+        if ( ba_filter instanceof zarr.NestedArray ) {
+            // if a given 'ba_filter' is a NestedArray, check its shape (the length of the filter should be same as the number of rows of the current object)
+            if ( ! ( ba_filter.shape.length == 1 & ba_filter.shape[ 0 ] == this.int_num_entries ) ) {
+                if ( this.verbose ) {
+                    console.log( "the shape of the given filter is invalid, exiting" );
+                }
+                return;
+            }
+            ba_filter = ba_filter.flatten( ); // flatten the nested array
+
+        } else if ( ba_filter instanceof Int8Array ) {
+            // if flattened 'Int8Array' is given, check shape
+            // if the length of the given array is different from the number of rows of the object
+            if ( ba_filter.length != this.int_num_entries ) {
+                if ( this.verbose ) {
+                    console.log( "the shape of the given filter is invalid, exiting" );
+                }
+                return;
+            }
+        } else {
+            if ( this.verbose ) {
+                console.log( "the data type of the given 'ba_filter' object is not supported, exiting" );
+            }
+            return;
+        }
+        // initialize BitSet object
+        let ba = new BitSet,
+            i = 0,
+            val = 0;
+        // set BitSet object
+        for ( i = 0; i < ba_filter.length ; i ++ ) {
+            val = ba_filter[ i ];
+            if ( val != 0 ) {
+                ba.set( i, 1 )
+            }
+        }
+        
+        // set filter for the object
+        this.filter = ba;
+    }
+    create_view( ) {
+        /*
+        create the view of the axis
+        
+        build 'dict_change' (dictionaries for conversion of coordinates) from the given filter, creating a view of the current 'Axis'
+        automatically set filter using the mask containing all active entries with valid data if filter is not active
+        
+        for example, when filter is 
+         0123456789  - index
+        '1000101110' - filter 
+        
+        then, dict_change will be { 0 : 0, 4 : 1, 6 : 2, 7 : 3, 8 : 4 }
+        when the number of active entries in an exis > 10% (or above any proportion that can set by 'float_min_proportion_of_active_entries_in_an_axis_for_using_array'), an array with the same length will be used for the conversion of coordinates
+        
+        'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : a threshold for the transition from dictionary to array for the conversion of coordinates. empirically, dictionary of the same length takes about ~10 times more memory than the array
+        'dtype' : dtype of array that will be used as 'dictionary'
+        index_component : Union[ None, int ] = None : the index of a component RamData to retrieve view.
+        
+        */
+        // retrieve settings to create a view
+        let float_min_proportion_of_active_entries_in_an_axis_for_using_array = ( 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' in this.dict_kw_view ) ? this.dict_kw_view[ 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' ] : 0.1;
+
+        // initialize 'dict_change'
+        let dict_change = undefined,
+            ba = this.filter;
+        if ( ( ! check_none( ba ) ) & ( this.meta._n_rows_after_applying_filter < this.int_num_entries ) ) { // only build 'dict_change' if a filter is active or at least one entry is not active
+            // count the number of active entries in the given filter
+            let n = this.meta._n_rows_after_applying_filter,
+                n_active_entries = count_ba( ba, n );
+            // initialize dictionary
+            // implement a dictionary using an array if the proportion of active entries in the axis is larger than the given threshold to reduce the memory footprint and increase the efficiency of conversion process
+            dict_change = ( ( n_active_entries / n ) > float_min_proportion_of_active_entries_in_an_axis_for_using_array ) ? new Int32Array( new ArrayBuffer( 4 * n ) ) : { }; // 4 bytes (Int32 arrays) for building 'dict_change'
+            
+            let i = 0; // initialize active entry counter
+            for ( let int_index of ba_to_integer_indices( ba, n ) ) { // iterate through 'int_entry' of the active entries
+                dict_change[ int_index ] = i; // retrieve active_entry > i mapping
+            }
+        }
+        this.dict_change = dict_change; // load 'dict_change'
+    }
+    destroy_view( ) {
+        /* # 2022-07-16 15:23:01 
+        unload 'self.dict_change' (dictionaries for conversion of coordinates), destroying the current view
+        */
+        this.dict_change = undefined;
+    }
+    backup_view( ) {
+        /* # 2022-08-20 17:25:12 
+        backup view
+        */
+        this._dict_change_backup = this.dict_change; // back up view
+        this.destroy_view( ); // destroy view
+    }
+    restore_view( ) {
+        /* # 2022-08-20 17:25:12 
+        restore view
+        */
+        this.dict_change = this._dict_change_backup;
+        this._dict_change_backup = undefined;
+    }
+    subsample( float_prop_subsampling = 1 ) {
+        /* # 2022-07-16 17:12:19 
+        subsample active entries in the current filter (or all the active entries with valid data) using the proportion of subsampling ratio 'float_prop_subsampling'
+        */
+        // retrieve bitarray of active entries
+        let ba_active_entries = this.ba_active_entries;
+        
+        // return the bitarray of all active entries if no subsampling is required
+        if ( check_none( float_prop_subsampling ) | ( float_prop_subsampling == 1 ) ) {
+            return ba_active_entries;
+        }
+        
+        // initialize the output bitarray filter that will contain subsampled entries
+        let ba_subsampled = new BitSet( ); 
+        
+        // perform subsampling
+        for ( let i = 0; i < this.int_num_entries; i ++ ) { // iterate over each entry
+            if ( Math.random( ) < float_prop_subsampling ) {
+                ba_subsampled.set( int_entry, 1 ); 
+            }
+        }
+
+        // return subsampled entries
+        return ba_subsampled;
+    }
+    change_filter( name_col_filter ) {
+        /* # 2022-07-16 17:17:29 
+        change filter using the filter saved in the metadata with 'name_col_filter' column name. if 'name_col_filter' is not available, current filter setting will not be changed.
+        
+        'name_col_filter' : name of the column of the metadata ZarrDataFrame containing the filter
+        */
+        if ( this.meta.columns.has( name_col_filter ) ) { // if a given column name exists in the current metadata ZarrDataFrame
+            this.set_filter( this.meta.get_item( name_col_filter, null ) ); // retrieve filter from the storage and apply the filter to the axis
+        }
+    }
+}
+class RamDataLayer {
+    constructor( path_folder_ramtx, ramdata = undefined, verbose = true, flag_debugging = false ) {
+        // these values will be fixed: dtype_of_feature_and_barcode_indices = np.uint32, dtype_of_values = np.float64
+        // set attributes
+        this.path_folder_ramtx = path_folder_ramtx;
+        this.ramdata = ramdata;
+        this.verbose = verbose;
+        this.flag_debugging = flag_debugging;
+    }
+    async initialize( ) {
+        // initialize RAMtx
+        // load metadata of RAMtx and zarr objects containing sparse data
+        // should be run before using RAMtx
+        let zattrs = await $.getJSON( `${this.path_folder_ramtx}.zattrs` ); // read metadata
+        this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
+        
+        // set attributes
+        this.flag_ramtx_sorted_by_id_feature = this.metadata[ 'flag_ramtx_sorted_by_id_feature' ];
+        this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
+        this.int_num_features = this.metadata[ 'int_num_features' ];
+        this.int_num_records = this.metadata[ 'int_num_records' ];
+        this.mode = this.metadata[ 'mode' ];
+
+        // # open zarr objects
+        this.is_sparse = this.mode != 'dense' 
+        if ( this.is_sparse ) {
+            this._za_mtx_index = await zarr.openArray({
+                store : this.path_folder_ramtx,
+                path : `matrix.index.zarr/`,
+                mode: "r"
+            });
+            this._za_mtx = await zarr.openArray({
+                store : this.path_folder_ramtx,
+                path : `matrix.zarr/`,
+                mode: "r"
+            });
+        }
+    }
+}
+    
+class RamData {
+    constructor(  
+        path_folder_ramdata, name_layer = 'raw', int_index_str_rep_for_barcodes = 0, int_index_str_rep_for_features = 1, int_num_entries_for_each_weight_calculation_batch = 2000, int_total_weight_for_each_batch = 10000000, dict_kw_zdf = { 'flag_retrieve_categorical_data_as_integers' : false }, dict_kw_view = { 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : 0.1 }, verbose = true, flag_debugging = false
+    ) {
+        // set attributes
+        this.path_folder_ramdata = path_folder_ramdata;
+        this.name_layer = name_layer;
+        this.int_index_str_rep_for_barcodes = int_index_str_rep_for_barcodes;
+        this.int_index_str_rep_for_features = int_index_str_rep_for_features;
+        this.int_num_entries_for_each_weight_calculation_batch = int_num_entries_for_each_weight_calculation_batch;
+        this.int_total_weight_for_each_batch = int_total_weight_for_each_batch;
+        this.dict_kw_zdf = dict_kw_zdf;
+        this.dict_kw_view = dict_kw_view;
+        this.verbose = verbose;
+        this.flag_debugging = flag_debugging;
+    }
+    async initialize( ) {
+        // initialize RamData
+        // load metadata of RamData
+        // should be run before using RamData
+        let zattrs = await $.getJSON( `${this.path_folder_ramdata}.zattrs` ); // read metadata
+        this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
+        
+        // set attributes
+        this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
+        this.int_num_features = this.metadata[ 'int_num_features' ];
+        this.metadata.layers = new Set( this.metadata.layers ); // get a set of name_layer
+        this.layers = this.metadata.layers
+
+        // load RamDataAxis
+        // initialize axis objects
+        this.bc = new RamDataAxis( this.path_folder_ramdata, 'barcodes', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
+        await this.bc.initialize( );
+        this.ft = new RamDataAxis( this.path_folder_ramdata, 'features', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
+        await this.ft.initialize( );
+
+        // load the current layer
+        await this.load_layer( );
+    }
+    async load_layer( name_layer ) {
+        /* 
+        load layer 
+        */
+    }
+}
+    
+
+(function() {
+    'use strict';
+
+    var parseQuery = function() {
+        var search = window.location.search,
+            q = {};
+
+        search.slice(1).split('&').forEach(function(term) {
+            var kv = term.split('=');
+            q[kv[0]] = (kv[1] !== undefined) ? decodeURIComponent(kv[1]) : true;
+        });
+
+        return q;
+    },
+
+    evalHeight = function(input) {
+        input.style.height = (input.value.split('\n').length * 1.5) + 'em';
+    },
+
+    log = (function() {
+        var console = document.querySelector('output');
+        return function() {
+            var rep = document.createElement('div');
+
+            rep.classList.add('rep');
+            [].slice.call(arguments).forEach(function(arg) {
+                var entry = document.createElement('pre'),
+                    result = document.createElement('pre'),
+                    evaled,
+                    resultType;
+
+                entry.classList.add('entry');
+                result.classList.add('result');
+
+                try {
+                    evaled = eval.call(this, arg);
+                } catch (e) {
+                    evaled = e.toString();
+                }
+
+                if (evaled === undefined) {
+                    evaled = 'undefined';
+                    resultType = 'undefined';
+                } else if (evaled === null) {
+                    evaled = 'null';
+                    resultType = 'null';
+                } else {
+                    resultType = ({}).toString.call(evaled).replace('[object ', '').replace(']', '').toLowerCase();
+                }
+
+                if (resultType === 'object' || resultType === 'array') {
+                    try {
+                        evaled = JSON.stringify(evaled, null, 2);
+                    } catch (e) {
+
+                    }
+                }
+
+                result.classList.add(resultType);
+
+                if (resultType === 'string') {
+                    evaled = '"' + evaled + '"';
+                }
+
+                stack.unshift(arg);
+
+                entry.textContent = arg;
+                result.textContent = evaled;
+                rep.appendChild(entry);
+                rep.appendChild(result);
+            });
+            console.appendChild(rep);
+        }
+
+    })(),
+        input = document.querySelector('textarea'),
+        stack = [],
+        q = parseQuery();
+
+    input.addEventListener('keypress', function(evt) {
+        var key = evt.which,
+            retVal;
+
+        if (key === 13 && !evt.shiftKey) {
+            log(input.value);
+            input.value = '';
+            input.removeAttribute('style');
+        }
+        // TODO: implement stack navigation.
+
+
+    });
+
+    input.addEventListener('keyup', function(evt) {
+        if (evt.which === 13) {
+
+            if (!evt.shiftKey) {
+                input.value = '';
+            } else {
+                evalHeight(input);
+            }
+        }
+
+        // Backspace
+        if (evt.which === 8) {
+            input.style.height = input.value.split('\n').length + 'em';
+        }
+    });
+
+    input.addEventListener('keydown', function(evt) {
+        var val,
+        beforeTab,
+        afterTab,
+        caratPos;
+
+        // Tabs
+        if (evt.which === 9) {
+            evt.preventDefault();
+            val = input.value;
+            caratPos = input.selectionStart;
+            beforeTab = val.substring(0, input.selectionStart);
+            afterTab = val.substring(input.selectionEnd);
+            input.value = beforeTab + '\t' + afterTab;
+            input.setSelectionRange(caratPos + 1, caratPos + 1);
+        }
+
+    });
+
+    if (q.prime) {
+        input.value = q.prime;
+        evalHeight(input);
+    }
+})();
+
+</script>
