@@ -18,5 +18,15 @@
   "bugs": {
     "url": "https://github.com/ahs2202/scelephant.js/issues"
   },
-  "homepage": "https://github.com/ahs2202/scelephant.js#readme"
+  "homepage": "https://github.com/ahs2202/scelephant.js#readme",
+  "dependencies": {
+    "bitset": "^5.1.1",
+    "lodash": "^4.17.21",
+    "numcodecs": "^0.2.2",
+    "numjs": "^0.16.1",
+    "pako": "^2.0.4",
+    "papaparse": "^5.3.2",
+    "plotly": "^1.0.6",
+    "zarr": "^0.6.0"
+  }
 }

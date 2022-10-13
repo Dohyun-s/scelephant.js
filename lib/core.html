@@ -1,6 +1,7 @@
 <head>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
 <!-- 
 <script type="module">
   import * as zarr from "https://cdn.skypack.dev/zarrita/v2";
@@ -26,7 +27,7 @@
     import * as numjs from 'https://cdn.skypack.dev/numjs';
     window.numjs = numjs;
     import * as papaparse from 'https://cdn.skypack.dev/papaparse';
-    window.papaparse = papaparse;
+    window.Papa = papaparse;
     import * as pako from 'https://cdn.skypack.dev/pako';
     window.pako = pako;
     
@@ -230,6 +231,53 @@ body {
 // store = new zarrita_FetchStore( "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/filter_pca_subsampled/" )
 // za = await zarrita.get_array( store )
     
+// functions from the external references
+// set operations
+function isSuperset(set, subset) {
+  for (const elem of subset) {
+    if (!set.has(elem)) {
+      return false;
+    }
+  }
+  return true;
+}
+function union(setA, setB) {
+  const _union = new Set(setA);
+  for (const elem of setB) {
+    _union.add(elem);
+  }
+  return _union;
+}
+function intersection(setA, setB) {
+  const _intersection = new Set();
+  for (const elem of setB) {
+    if (setA.has(elem)) {
+      _intersection.add(elem);
+    }
+  }
+  return _intersection;
+}
+function symmetricDifference(setA, setB) {
+  const _difference = new Set(setA);
+  for (const elem of setB) {
+    if (_difference.has(elem)) {
+      _difference.delete(elem);
+    } else {
+      _difference.add(elem);
+    }
+  }
+  return _difference;
+}
+function difference(setA, setB) {
+  const _difference = new Set(setA);
+  for (const elem of setB) {
+    _difference.delete(elem);
+  }
+  return _difference;
+}
+    
+// implemented functions
+    
 function check_none( val ) {
     // check whether the given value 'val' is either undefined or null
     return ( val === undefined ) | ( val === null );
@@ -257,6 +305,66 @@ function ba_to_integer_indices( ba, length ) {
         }
     }
     return l_int_index;
+}
+function to_ba( arr ) {
+    /*
+    convert arrays to a BitSet object
+    */
+    // if BitSet object is given, return the object and exit
+    if ( arr instanceof BitSet ) {
+        return arr;
+    }
+
+    // if 'NestedArray' is given, check shape and flatten the array
+    if ( arr instanceof zarr.NestedArray ) {
+        // if a given 'arr' is a NestedArray, check its shape (the length of the filter should be same as the number of rows of the current object)
+        if ( ! ( arr.shape.length == 1 ) ) {
+            if ( this.verbose ) {
+                console.log( "the shape of the given filter is invalid, exiting" );
+            }
+            return;
+        }
+        arr = arr.flatten( ); // flatten the nested array
+
+    } else if ( arr instanceof Int8Array ) {
+        // if flattened 'Int8Array' is given, check shape
+        // if the length of the given array is different from the number of rows of the object
+    } else {
+        if ( this.verbose ) {
+            console.log( "date type of given input is invalid" );
+        }
+        return;
+    }
+    // initialize BitSet object
+    let ba = new BitSet,
+        i = 0,
+        val = 0;
+    // set BitSet object
+    for ( i = 0; i < arr.length ; i ++ ) {
+        val = arr[ i ];
+        if ( val != 0 ) {
+            ba.set( i, 1 )
+        }
+    }
+    return ba;
+}
+    
+function ParseBase64GzippedText( str_base64_gzipped ) {
+    // Decode base64 (convert ascii to binary) // Convert binary string to character-number array // Turn number array into byte-array // Convert gunzipped byteArray back to ascii string:
+    let l_char = pako.inflate( new Uint8Array( atob( str_base64_gzipped ).split( '' ).map( function( x ) { return x.charCodeAt( 0 ); } ) ) ); 
+    let str_content = ""; // convert ASCII value to character and concatenate the characters into a string
+    for ( let i = 0; i < l_char.length; i ++ ) {
+        str_content += String.fromCharCode( l_char[ i ] );
+    }
+    return str_content;
+}
+function ParseTransposedArrayWithHeader( l_l ) { // return a dictionary of arrays ( similar to the DataFrame.toDict() output ) from an array of arrays
+    let dictarr = { };
+    for ( let i = 0; i < l_l.length; i ++ ) {
+        let key = l_l[ i ].shift( );
+        dictarr[ key ] = l_l[ i ];
+    }
+    return dictarr;
 }
     
 class ZarrDataFrame {
@@ -440,7 +548,7 @@ class ZarrDataFrame {
                     // initialize the output, filtered array
                     let dtype = arr.dtype, // retrieve dtype of the array
                         l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
-                        int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+                        int_num_values_for_an_entry = ( l_dims_excluding_primary_axis.length > 0 ) ? l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ) : 1, // retrieve the number of values for each entry // when 1D data is given, there will be one value for each entry
                         l_dims_filtered = [ int_num_active_entries_in_a_batch ];
                     l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
                     
@@ -484,7 +592,7 @@ class ZarrDataFrame {
                 // initialize the output that will contain the combined filtered array
                 let dtype = arr.dtype, // retrieve dtype of the array
                     l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
-                    int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+                    int_num_values_for_an_entry = ( l_dims_excluding_primary_axis.length > 0 ) ? l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ) : 1, // retrieve the number of values for each entry
                     l_dims_filtered = [ this._n_rows_after_applying_filter ];
                 l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
 
@@ -520,6 +628,26 @@ class ZarrDataFrame {
             return arr_data;
         }
     }
+    get_n_rows( ) {
+        /* # 2022-06-22 16:36:54 
+        retrieve the number of rows after applying filter. if the filter is not active, return the number of rows of the unfiltered ZarrDataFrame
+        */
+        if ( check_none( this.filter ) ) { // if the filter is not active, return the number of rows of the unfiltered ZarrDataFrame
+            return this._n_rows_unfiltered;
+        } else { // if a filter is active
+            return this._n_rows_after_applying_filter; // return the number of active rows in the filter
+        }
+    }
+    get n_rows( ) {
+        /* # 2022-06-22 16:36:54 
+        retrieve the number of rows after applying filter. if the filter is not active, return the number of rows of the unfiltered ZarrDataFrame
+        */
+        if ( check_none( this.filter ) ) { // if the filter is not active, return the number of rows of the unfiltered ZarrDataFrame
+            return this._n_rows_unfiltered;
+        } else { // if a filter is active
+            return this._n_rows_after_applying_filter; // return the number of active rows in the filter
+        }
+    }
 }
     
 async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = undefined ) {
@@ -549,11 +677,11 @@ async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = unde
         
         // fetch data
         let arr = await za.get( coords );
-
+        
         // initialize the output, filtered array
         let dtype = arr.dtype, // retrieve dtype of the array
             l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
-            int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+            int_num_values_for_an_entry = ( l_dims_excluding_primary_axis.length > 0 ) ? l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ) : 1, // retrieve the number of values for each entry
             int_num_active_entries_in_a_batch = l_int_index.length,
             l_dims_filtered = [ int_num_active_entries_in_a_batch ];
         l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
@@ -565,7 +693,7 @@ async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = unde
             int_index_entry_after_filtering = 0; 
 
         for ( let int_index of l_int_index ) {
-            arr_filtered.set( arr.slice( int_num_values_for_an_entry * int_index, int_num_values_for_an_entry * ( int_index + 1 ) ), int_num_values_for_an_entry * int_index_entry_after_filtering )
+            arr_filtered.set( arr.slice( int_num_values_for_an_entry * ( int_index - int_index_start ), int_num_values_for_an_entry * ( int_index - int_index_start + 1 ) ), int_num_values_for_an_entry * int_index_entry_after_filtering )
             int_index_entry_after_filtering += 1; // update 'int_index_entry_after_filtering'
         }
         // return the filtered array as a nested array
@@ -577,7 +705,7 @@ async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = unde
         int_index_chunk_current = undefined;
     for ( let int_index of l_int_index ) {
         // retrieve 'int_index_chunk' of the current int_index
-        int_index_chunk = parseInt( int_index / int_num_entries_in_a_chunk );
+        let int_index_chunk = parseInt( int_index / int_num_entries_in_a_chunk );
         // when chunk boundary has been crossed, flush batch and update the chunk boundary
         if ( int_index_chunk != int_index_chunk_current ) {
             // flush batch
@@ -604,7 +732,7 @@ async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = unde
     // initialize the output that will contain the combined filtered array
     let dtype = arr.dtype, // retrieve dtype of the array
         l_dims_excluding_primary_axis = arr.shape.slice( 1, arr.shape.length ), // retrieve dimensions of the axes excluding the primary axis
-        int_num_values_for_an_entry = l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ), // retrieve the number of values for each entry
+        int_num_values_for_an_entry = ( l_dims_excluding_primary_axis.length > 0 ) ? l_dims_excluding_primary_axis.reduce( ( a, b ) => a * b ) : 1, // retrieve the number of values for each entry
         l_dims_filtered = [ l_int_index.length ];
     l_dims_filtered.push( ... l_dims_excluding_primary_axis ); // retrieve dimensions of the axes other than the primary axis
 
@@ -623,19 +751,151 @@ async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = unde
     // return the filtered array as a nested array
     return new zarr.NestedArray( arr_filtered, l_dims_filtered );
 }
-   
+
+class StringZarr {
+    /*
+    a stringzarr object contains 2D-array of strings of variable length with chunk shape of ('int_num_of_entries_in_a_chunk', 1), meaning each chunk contains values of a single column
+    */
+    constructor( path_folder, verbose = true ) {
+        // set attributes
+        this.path_folder = path_folder;
+        this.verbose = verbose;
+        // initialize attributes
+    }
+    async initialize( ) {
+        // load metadata of the object
+        // should be run before using the object
+        let zattrs = await $.getJSON( `${this.path_folder}.zattrs` ); // read metadata
+        this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
+        
+        // set attributes
+        this.int_num_entries = this.metadata[ 'int_num_entries' ]
+        this.int_num_of_entries_in_a_chunk = this.metadata[ 'int_num_of_entries_in_a_chunk' ]
+        
+        this.length = this.int_num_entries;
+    }
+    async get_by_l_int_index( l_int_index, int_index_column = 0 ) {
+        /*
+        'l_int_index' list of integer indices for retrieving data. the indices WILL BE SORTED!, and the list of returned values will contains the list of sorted indices.
+        'int_index_column' : the index of the column for retrieving data
+        */
+        // prepare (retrieve the number of entries in the primary axis of a chunk
+        let int_num_entries_in_a_chunk = this.int_num_of_entries_in_a_chunk;
+
+        // sort 'l_int_index
+        l_int_index = l_int_index.sort( sort_number );
+
+        async function _filter_a_portion_of_stringzarr_object( int_index_chunk_row, stringzarr, l_int_index, int_index_chunk_column ) {
+            // fetch data
+            let arr = await stringzarr.load_a_chunk( int_index_chunk_row, int_index_chunk_column ),
+                int_num_active_entries_in_a_batch = l_int_index.length,
+                arr_filtered = [ ], // initialize an array that will contain the filtered data
+                int_index_start = int_index_chunk_row * stringzarr.int_num_of_entries_in_a_chunk;
+            
+            // filter data
+            for ( let int_index of l_int_index ) {
+                arr_filtered.push( arr[ int_index - int_index_start ] );
+            }
+            // return the filtered array as a nested array
+            return arr_filtered;
+        }
+
+        let l_promise_filtered = [ ], // initialize a list of promises that will contain filtered results
+            l_int_index_of_a_chunk = [ ],
+            int_index_chunk_current = undefined;
+        for ( let int_index of l_int_index ) {
+            // retrieve 'int_index_chunk' of the current int_index
+            let int_index_chunk = parseInt( int_index / int_num_entries_in_a_chunk );
+            // when chunk boundary has been crossed, flush batch and update the chunk boundary
+            if ( int_index_chunk != int_index_chunk_current ) {
+                // flush batch
+                if ( ( l_int_index_of_a_chunk.length > 0 ) & ( int_index_chunk_current !== undefined ) ) {
+                    l_promise_filtered.push( _filter_a_portion_of_stringzarr_object( int_index_chunk_current, this, l_int_index_of_a_chunk, int_index_column ) );
+                    l_int_index_of_a_chunk = [ ]; // initialize the next batch
+                } 
+                // update 'int_index_chunk_current'
+                int_index_chunk_current = int_index_chunk; 
+            }
+            // collect 'int_index'
+            l_int_index_of_a_chunk.push( int_index ); // initialize the next batch
+        }
+        // flush batch
+        if ( ( l_int_index_of_a_chunk.length > 0 ) & ( int_index_chunk_current !== undefined ) ) {
+            l_promise_filtered.push( _filter_a_portion_of_stringzarr_object( int_index_chunk_current, this, l_int_index_of_a_chunk, int_index_column ) );
+            l_int_index_of_a_chunk = [ ]; // initialize the next batch
+        } 
+
+        // collect filtered results for each valid chunk
+        let l_arr_filtered = await Promise.all( l_promise_filtered ),
+            arr_filtered = [ ]; // initialize the typedarray that will the output values
+
+        // iterate through each filtered result and combine data
+        for ( let i = 0; i < l_arr_filtered.length; i ++ ) {
+            arr_filtered.push( ... l_arr_filtered[ i ] ); // retrieve a filtered result
+        }
+        // return the filtered array
+        return arr_filtered;
+    }
+    parse_chunk( file ) { 
+        /*
+        retrieve data of a chunk
+        */
+        return new Promise ( function( resolve, reject ) {
+            fetch( file )
+                .then( ( response ) => {
+                  return response.text( );
+               }).then( ( text_base64 ) => {
+                  return ParseBase64GzippedText( text_base64 );
+               }).then( ( text ) => {
+                let arr = text.split( '\n' );
+                arr = arr.slice( 0, arr.length - 1 );
+                resolve( arr );
+                  // Papa.parse( text, { download: false, header: false, skipEmptyLines: false, delimiter: '\t', worker: true, dynamicTyping: true, complete: function( results ) { resolve( results.data.slice( 0, results.data.length - 1 ) ); }, error: reject } ); // remove last empty line
+               }).catch( err => { reject } );
+        });
+    }
+    async load_a_chunk( index_chunk_row, index_chunk_col = 0 ) {
+        /*
+        load data of a chunk of 'index_chunk_row' and 'index_chunk_col'
+        */
+        return await this.parse_chunk( `${this.path_folder}${index_chunk_row}.${index_chunk_col}` );
+    }
+    async load_all_data( ) {
+        let l_file = [ `${this.path_folder}8.0`, `${this.path_folder}7.0`, `${this.path_folder}6.0` ];
+        let l_promise = l_file.map( function( file ) { 
+            return new Promise ( function( resolve, reject ) {
+                fetch( file )
+                    .then( ( response ) => {
+                      return response.text( );
+                   }).then( ( text_base64 ) => {
+                      return ParseBase64GzippedText( text_base64 );
+                   }).then( ( text ) => {
+                    let arr = text.split( '\n' );
+                    arr = arr.slice( 0, arr.length - 1 );
+                    resolve( arr );
+                      // Papa.parse( text, { download: false, header: false, skipEmptyLines: false, delimiter: '\t', worker: true, dynamicTyping: true, complete: function( results ) { resolve( results.data.slice( 0, results.data.length - 1 ) ); }, error: reject } ); // remove last empty line
+                   }).catch( err => { reject } );
+            });
+        }); // 'skipEmptyLines' is set to false to allow reading empty lines in some input files // due to 'skipEmptyLines: false' option, the last line is empty, and should be discarded
+        let results = await Promise.all( l_promise ); // wait until all files have been parsed by Papa.parse
+        let l_parsed_data = [ ]; 
+        l_parsed_data.push( ... results );
+        return l_parsed_data;
+    }
+}
+    
 class RAMtx {
     constructor( path_folder_ramtx, ramdata = undefined, verbose = true, flag_debugging = false ) {
         // these values will be fixed: dtype_of_feature_and_barcode_indices = np.uint32, dtype_of_values = np.float64
         // set attributes
         this.path_folder_ramtx = path_folder_ramtx;
-        this.ramdata = ramdata;
+        this._ramdata = ramdata;
         this.verbose = verbose;
         this.flag_debugging = flag_debugging;
         
         // set filters using the given RamData
-        this.ba_filter_features = check_none( this.ramdata ) ? undefined : this.ramdata.ft.filter;
-        this.ba_filter_barcodes = check_none( this.ramdata ) ? undefined : this.ramdata.bc.filter;
+        this.ba_filter_features = check_none( this._ramdata ) ? undefined : this._ramdata.ft.filter;
+        this.ba_filter_barcodes = check_none( this._ramdata ) ? undefined : this._ramdata.bc.filter;
     }
     async initialize( ) {
         // initialize RAMtx
@@ -667,6 +927,19 @@ class RAMtx {
                 mode: "r"
             });
         }
+        
+        // load 'ba_active_entries'
+        let name_axis_for_querying = this.flag_ramtx_sorted_by_id_feature ? 'features' : 'barcodes',
+            za_ba_active_entries = await zarr.openArray({
+            store : this.path_folder_ramtx,
+            path : `matrix.${name_axis_for_querying}.active_entries.zarr/`,
+            mode: "r"
+        });
+        // if binary data encoded in '|i1' format ('b1') format was detected, change dtype to '|i1', since '|b1' is currently not supported in the Zarr.js implementation
+        if ( za_ba_active_entries.meta.dtype == '|b1' ) {
+            za_ba_active_entries.meta.dtype = '|i1'; // change dtype to '|i1'
+        }
+        this.ba_active_entries = to_ba( await za_ba_active_entries.get( null ) ); // retrieve a filter of active entries
     }
     async get_item( l_int_entry ) {
         /*
@@ -700,16 +973,16 @@ class RAMtx {
         
         // retrieve filters 
         let is_for_querying_features = this.is_for_querying_features,
-            ba_filter_axis_for_querying = ( is_for_querying_features ) ? self.ba_filter_features : self.ba_filter_barcodes, 
-            ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? self.ba_filter_barcodes : self.ba_filter_features;
+            ba_filter_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_features : this.ba_filter_barcodes, 
+            ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_barcodes : this.ba_filter_features;
         
         // create view 
         // retrieve dictionaries for changing coordinates
         // initialize the dictionaries
         let dict_change_int_entry_of_axis_for_querying = undefined,
             dict_change_int_entry_of_axis_not_for_querying = undefined;
-        if ( ! check_none( this.ramdata ) ) { // if RAMtx has been attached to RamData, retrieve dictionaries that can be used to change coordinate
-            let ram = this.ramdata; // retrieve ramdata from which view will be retrieved. if current RAMtx is component, use composite RamData. else, use RamData to which current RAMtx has been attached to.
+        if ( ! check_none( this._ramdata ) ) { // if RAMtx has been attached to RamData, retrieve dictionaries that can be used to change coordinate
+            let ram = this._ramdata; // retrieve ramdata from which view will be retrieved. if current RAMtx is component, use composite RamData. else, use RamData to which current RAMtx has been attached to.
             if ( this.is_for_querying_features ) {
                 dict_change_int_entry_of_axis_for_querying = ram.ft.dict_change
                 dict_change_int_entry_of_axis_not_for_querying = ram.bc.dict_change
@@ -718,10 +991,11 @@ class RAMtx {
                 dict_change_int_entry_of_axis_not_for_querying = ram.ft.dict_change
             }
         }
+        
         // compose a vectorized function for the conversion of int_entries of the non-indexed axis.
         let vchange_int_entry_of_axis_not_for_querying = undefined;
         if ( ! check_none( dict_change_int_entry_of_axis_not_for_querying ) ) {
-            function vchange_int_entry_of_axis_not_for_querying( arr ) {
+            vchange_int_entry_of_axis_not_for_querying = ( arr ) => {
                 /*
                 arr : typed array
                 */
@@ -729,7 +1003,7 @@ class RAMtx {
                 for ( let i = 0; i < arr.length; i ++ ) {
                     arr_changed[ i ] = dict_change_int_entry_of_axis_not_for_querying[ arr[ i ] ];
                 }
-                return arr_changed
+                return arr_changed;
             }
         }
         
@@ -755,143 +1029,184 @@ class RAMtx {
         let int_num_entries = l_int_entry.length;
         l_int_entry = l_int_entry.sort( sort_number );
         
-
-
-        async function __retrieve_data( l_int_entry = undefined ) {
-            /* # 2022-08-16 01:54:31 
-            retrieve data as a worker in a worker process or in the main processs (in single-process mode)
-            */
-            // initialize 
-            // for each int_entry, retrieve data and collect records
-            let l_int_entry_of_axis_for_querying = [ ], 
-                l_arr_int_entry_of_axis_not_for_querying = [ ], 
-                l_arr_value = [ ];
-            
-            function __process_entry( int_entry, arr_int_entry_of_axis_not_for_querying, arr_value ) {
-                /* # 2022-07-30 22:07:46 
-                process retrieve data. apply filter and change coordinates
-                */
-                // if a filter for not-indexed axis has been set, apply the filter to the retrieved records
-                if ( ! check_none( ba_filter_not_axis_for_querying ) ) {
-                    // create empty arrays
-                    let arr_int_entry_of_axis_not_for_querying_filtered = [ ],
-                        arr_value_filtered = [ ];
-
-                    // iterate through each record
-                    for ( let i = 0; i < arr_value.length; i ++ ) {
-                        // check whether the current int_entry is included in the filter
-                        if ( ba_filter_not_axis_for_querying.get( arr_int_entry_of_axis_not_for_querying[ i ] ) > 0 ) { 
-                            // include the record
-                            arr_int_entry_of_axis_not_for_querying_filtered.push( arr_int_entry_of_axis_not_for_querying[ i ] );
-                            arr_value_filtered.push( arr_value[ i ] );
-                        }
-                    }
-                    // if no valid data exists (all data were filtered out), continue to the next 'int_entry'
-                    if ( arr_value_filtered.length == 0 ) {
-                        return;
-                    }
-                    
-                    // convert arrays to typed arrays
-                    arr_int_entry_of_axis_not_for_querying = arr_int_entry_of_axis_not_for_querying.constructor( arr_int_entry_of_axis_not_for_querying_filtered );
-                    arr_value = arr_value.constructor( arr_value_filtered );
-                }
-                    
-                // apply view
-                if ( ! check_none( dict_change_int_entry_of_axis_for_querying ) ) {
-                    int_entry = dict_change_int_entry_of_axis_for_querying[ int_entry ]
-                }
-                // convert int_entry for the non-indexed axis if a mapping has been given (create view)
-                if ( ! check_none( vchange_int_entry_of_axis_not_for_querying ) ) {
-                    arr_int_entry_of_axis_not_for_querying = vchange_int_entry_of_axis_not_for_querying( arr_int_entry_of_axis_not_for_querying )
-                }
-
-                // append the retrieved data to the output results 
-                l_int_entry_of_axis_for_querying.push( int_entry ); 
-                l_arr_int_entry_of_axis_not_for_querying.push( arr_int_entry_of_axis_not_for_querying );
-                l_arr_value.push( arr_value );
-            }
-            async function __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch ) {
-                /* # 2022-07-30 22:32:14 
-                fetch data from sparse ramtx for a batch
-                */
-                let st_batch = l_index_in_a_batch[ 0 ][ 0 ], // retrieve start and end positions of the current batch
-                    en_batch = l_index_in_a_batch[ l_index_in_a_batch.length - 1 ][ 1 ],
-                    a = console.log( za_mtx, st_batch, en_batch ),
-                    arr = await za_mtx.get( zarr.slice( st_batch, en_batch ) ), // fetch data from the Zarr object
-                    arr_int_entry_of_axis_not_for_querying = arr.get( [ null, 0 ] ), // retrieve nested array of each component
-                    arr_value = arr.get( [ null, 1 ] );
-                
-                for ( let i = 0; i < l_index_in_a_batch.length; i ++ ) { // iterate over each entry
-                    let int_entry = l_int_entry_in_a_batch[ i ],
-                        index = l_index_in_a_batch[ i ],
-                        st = index[ 0 ] - st_batch, // substract the start position of the batch to retrieve the local index
-                        en = index[ 1 ] - st_batch,
-                        sl = zarr.slice( st, en ); // retrieve a slice object for the current entry
-                    __process_entry( int_entry, arr_int_entry_of_axis_not_for_querying.get( sl ), arr_value.get( sl ) );
-                }
-            }
-            // retrieve data
-            // handle sparse ramtx
-            // %% Sparse ramtx %% 
-            // prepare
-            let int_num_records_in_a_chunk = za_mtx.chunks[ 0 ] // retrieve the number of records in a chunk
-            let index_chunk_start_current_batch = undefined, // initialize the index of the chunk at the start of the batch
-                l_int_entry_in_a_batch = [ ],
-                l_index_in_a_batch = [ ], // several entries will be processed together as a batch if they reside in the same or nearby chunk ('int_num_chunks_for_a_batch' setting)
-                arr_index = await zarr_get_by_l_int_index( za_mtx_index, l_int_entry ); // retrieve arr_index of the given list of 'int_entry'
-            // iterate through each 'int_entry'
-            for ( let i = 0; i < l_int_entry.length; i ++ ) { // iterate through each entry
-                // retrieve mtx_index data and remove invalid entries
-                let int_entry = l_int_entry[ i ];
-                let index = arr_index.get( i ).flatten( ), // retrieve mtx_index data 
-                    st = index[ 0 ],
-                    en = index[ 1 ];
-                if ( st == en ) { // if there is no count data for the 'int_entry', continue on to the next 'int_entry' # drop 'int_entry' lacking count data (when start and end index is the same, the 'int_entry' does not contain any data)
-                    continue
-                }
-
-                // if batch is full, flush the batch 
-                let index_chunk_end = en - 1 // int_num_records_in_a_chunk # retrieve the index of the last chunk
-                if ( ( index_chunk_start_current_batch !== undefined ) & ( index_chunk_end >= index_chunk_start_current_batch + int_num_chunks_for_a_batch ) ) { // if start has been set 
-                    await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
-                    // initialize the next batch
-                    l_int_entry_in_a_batch = [ ]; 
-                    l_index_in_a_batch = [ ];
-                    index_chunk_start_current_batch = undefined; // reset start
-                }
-                // start the batch 
-                // if start has not been set, set the start of the current batch
-                if ( index_chunk_start_current_batch === undefined ) { // start the batch
-                    index_chunk_start_current_batch = st // int_num_records_in_a_chunk 
-                }
-
-                // add int_entry to the batch 
-                l_int_entry_in_a_batch.push( int_entry ) 
-                l_index_in_a_batch.push( [ st, en ] )
-            }
-            if ( l_int_entry_in_a_batch.length > 0 ) { // if some entries remains unprocessed, flush the buffer
-                await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
-            }
-
-            // return the retrieved data
-            return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
-        }
-        
         // single thread mode
-        let res = await __retrieve_data( l_int_entry );
+        /* # 2022-08-16 01:54:31 
+        retrieve data as a worker in a worker process or in the main processs (in single-process mode)
+        */
+        // initialize 
+
+        function _process_entry( int_entry, arr_int_entry_of_axis_not_for_querying, arr_value ) {
+            /* # 2022-07-30 22:07:46 
+            process retrieve data. apply filter and change coordinates
+            */
+            // if a filter for not-indexed axis has been set, apply the filter to the retrieved records
+            if ( ! check_none( ba_filter_not_axis_for_querying ) ) {                
+                // create empty arrays
+                let arr_int_entry_of_axis_not_for_querying_filtered = [ ],
+                    arr_value_filtered = [ ];
+
+                // iterate through each record
+                for ( let i = 0; i < arr_value.length; i ++ ) {
+                    // check whether the current int_entry is included in the filter
+                    if ( ba_filter_not_axis_for_querying.get( arr_int_entry_of_axis_not_for_querying[ i ] ) > 0 ) { 
+                        // include the record
+                        arr_int_entry_of_axis_not_for_querying_filtered.push( arr_int_entry_of_axis_not_for_querying[ i ] );
+                        arr_value_filtered.push( arr_value[ i ] );
+                    }
+                }
+                
+                // if no valid data exists (all data were filtered out), continue to the next 'int_entry'
+                if ( arr_value_filtered.length == 0 ) {
+                    return;
+                }
+
+                // convert arrays to typed arrays
+                arr_int_entry_of_axis_not_for_querying = new arr_int_entry_of_axis_not_for_querying.constructor( arr_int_entry_of_axis_not_for_querying_filtered );
+                arr_value = new arr_value.constructor( arr_value_filtered );
+            }
+
+            // apply view
+            if ( ! check_none( dict_change_int_entry_of_axis_for_querying ) ) {
+                int_entry = dict_change_int_entry_of_axis_for_querying[ int_entry ]
+            }
+            // convert int_entry for the non-indexed axis if a mapping has been given (create view)
+            if ( ! check_none( vchange_int_entry_of_axis_not_for_querying ) ) {
+                arr_int_entry_of_axis_not_for_querying = vchange_int_entry_of_axis_not_for_querying( arr_int_entry_of_axis_not_for_querying )
+            }
+            
+            // append the retrieved data to the output results 
+            l_int_entry_of_axis_for_querying.push( int_entry ); 
+            l_arr_int_entry_of_axis_not_for_querying.push( arr_int_entry_of_axis_not_for_querying );
+            l_arr_value.push( arr_value );
+        }
+        async function __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch ) {
+            /* # 2022-07-30 22:32:14 
+            fetch data from sparse ramtx for a batch
+            */
+            ba_filter_not_axis_for_querying instanceof BitSet; // use 'ba_filter_not_axis_for_querying' in the subsequent scopes
+            
+            let st_batch = l_index_in_a_batch[ 0 ][ 0 ], // retrieve start and end positions of the current batch
+                en_batch = l_index_in_a_batch[ l_index_in_a_batch.length - 1 ][ 1 ],
+                arr = await za_mtx.get( zarr.slice( st_batch, en_batch ) ), // fetch data from the Zarr object
+                arr_int_entry_of_axis_not_for_querying = arr.get( [ null, 0 ] ), // retrieve nested array of each component
+                arr_value = arr.get( [ null, 1 ] );
+
+            for ( let i = 0; i < l_index_in_a_batch.length; i ++ ) { // iterate over each entry
+                let int_entry = l_int_entry_in_a_batch[ i ],
+                    index = l_index_in_a_batch[ i ],
+                    st = index[ 0 ] - st_batch, // substract the start position of the batch to retrieve the local index
+                    en = index[ 1 ] - st_batch,
+                    sl = zarr.slice( st, en ); // retrieve a slice object for the current entry
+                _process_entry( int_entry, arr_int_entry_of_axis_not_for_querying.get( sl ).flatten( ), arr_value.get( sl ).flatten( ) );
+            }
+        }
+        // retrieve data
+        // handle sparse ramtx
+        // %% Sparse ramtx %% 
+        // prepare
+        let int_num_records_in_a_chunk = za_mtx.chunks[ 0 ] // retrieve the number of records in a chunk
+        let index_chunk_start_current_batch = undefined, // initialize the index of the chunk at the start of the batch
+            l_int_entry_in_a_batch = [ ],
+            l_index_in_a_batch = [ ], // several entries will be processed together as a batch if they reside in the same or nearby chunk ('int_num_chunks_for_a_batch' setting)
+            arr_index = await zarr_get_by_l_int_index( za_mtx_index, l_int_entry ); // retrieve arr_index of the given list of 'int_entry'
         
-        // return results
-        return res;
+        // iterate through each 'int_entry'
+        for ( let i = 0; i < l_int_entry.length; i ++ ) { // iterate through each entry
+            // retrieve mtx_index data and remove invalid entries
+            let int_entry = l_int_entry[ i ];
+            let index = arr_index.get( i ).flatten( ), // retrieve mtx_index data 
+                st = index[ 0 ],
+                en = index[ 1 ];
+            if ( st == en ) { // if there is no count data for the 'int_entry', continue on to the next 'int_entry' # drop 'int_entry' lacking count data (when start and end index is the same, the 'int_entry' does not contain any data)
+                continue
+            }
+
+            // if batch is full, flush the batch 
+            let index_chunk_end = en - 1; // int_num_records_in_a_chunk # retrieve the index of the last chunk
+            if ( ( index_chunk_start_current_batch !== undefined ) & ( index_chunk_end >= index_chunk_start_current_batch + int_num_chunks_for_a_batch ) ) { // if start has been set 
+                await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+                // initialize the next batch
+                l_int_entry_in_a_batch = [ ]; 
+                l_index_in_a_batch = [ ];
+                index_chunk_start_current_batch = undefined; // reset start
+            }
+            // start the batch 
+            // if start has not been set, set the start of the current batch
+            if ( index_chunk_start_current_batch === undefined ) { // start the batch
+                index_chunk_start_current_batch = st // int_num_records_in_a_chunk 
+            }
+
+            // add int_entry to the batch 
+            l_int_entry_in_a_batch.push( int_entry ) 
+            l_index_in_a_batch.push( [ st, en ] )
+        }
+        if ( l_int_entry_in_a_batch.length > 0 ) { // if some entries remains unprocessed, flush the buffer
+            await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+        }
+
+        // return the retrieved data
+        return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
     }
+//     def get_sparse_matrix( self, l_int_entry, flag_return_as_arrays = False ) :
+//         """ # 2022-08-30 11:03:14 
+        
+//         get sparse matrix for the given list of integer representations of the entries.
+        
+//         'l_int_entry' : list of int_entries for query
+//         'flag_return_as_arrays' : if True, return three arrays and a single list, 'l_int_barcodes', 'l_int_features', 'l_values', 'l_int_num_records'. 
+//                 'l_int_barcodes', 'l_int_features', 'l_values' : for building a sparse matrix
+//                 'l_int_num_records' : for building an index
+//                 if False, return a scipy.csr sparse matrix
+//         """
+//         l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value = self[ l_int_entry ] # parse retrieved result
+        
+//         if len( l_arr_int_entry_of_axis_not_for_querying ) > 0 : 
+//             # if valid input is available
+//             # combine the arrays
+//             arr_int_entry_of_axis_not_for_querying = np.concatenate( l_arr_int_entry_of_axis_not_for_querying )
+//             arr_value = np.concatenate( l_arr_value )
+//             del l_arr_value # delete intermediate objects
+
+//             # compose 'arr_int_entry_of_axis_for_querying'
+//             arr_int_entry_of_axis_for_querying = np.zeros( len( arr_int_entry_of_axis_not_for_querying ), dtype = self._dtype_of_feature_and_barcode_indices ) # create an empty array
+//             int_pos = 0
+//             for int_entry_of_axis_for_querying, a in zip( l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying ) :
+//                 n = len( a )
+//                 arr_int_entry_of_axis_for_querying[ int_pos : int_pos + n ] = int_entry_of_axis_for_querying # compose 'arr_int_entry_of_axis_for_querying'
+//                 int_pos += n # update the current position
+//             if flag_return_as_arrays :
+//                 l_int_num_records = list( len( a ) for a in l_arr_int_entry_of_axis_not_for_querying ) # when returning arrays instead of a scipy sparse matrix, additionally prepare records that can be utilized for build an index of the data
+//             del l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying # delete intermediate objects
+
+//             # get 'arr_int_barcode' and 'arr_int_feature' based on 'self.is_for_querying_features'
+//             if self.is_for_querying_features :
+//                 arr_int_barcode = arr_int_entry_of_axis_not_for_querying
+//                 arr_int_feature = arr_int_entry_of_axis_for_querying
+//             else :
+//                 arr_int_barcode = arr_int_entry_of_axis_for_querying
+//                 arr_int_feature = arr_int_entry_of_axis_not_for_querying
+//             del arr_int_entry_of_axis_for_querying, arr_int_entry_of_axis_not_for_querying # delete intermediate objects
+
+//             if flag_return_as_arrays : # if 'flag_return_as_arrays' is True, return data as arrays
+//                 return arr_int_barcode, arr_int_feature, arr_value, l_int_num_records
+//         else :
+//             # if input is empty, compose empty inputs 
+//             arr_value, arr_int_barcode, arr_int_feature = [ ], [ ], [ ]
+            
+//         # return data as a sparse matrix
+//         n_bc, n_ft = ( self._int_num_barcodes, self._int_num_features ) if self._ramdata is None else ( len( self._ramdata.bc ), len( self._ramdata.ft ) ) # detect whether the current RAMtx has been attached to a RamData and retrieve the number of barcodes and features accordingly
+//         X = scipy.sparse.csr_matrix( scipy.sparse.coo_matrix( ( arr_value, ( arr_int_barcode, arr_int_feature ) ), shape = ( n_bc, n_ft ) ) ) # convert count data to a sparse matrix
+//         return X # return the composed sparse matrix 
 }
     
 class RamDataAxis {
     constructor( path_folder, name_axis, ba_filter = undefined, ramdata = undefined, dict_kw_zdf = { 'flag_retrieve_categorical_data_as_integers' : false }, dict_kw_view = { 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : 0.1 }, int_index_str_rep = 0, verbose = true, flag_debugging = false ) {
         // set attributes
         this.path_folder = path_folder;
-        this.name_axis = name_axis;
+        this._path_folder = path_folder;
+        this._name_axis = name_axis;
         this.filter = ba_filter;
-        this.ramdata = ramdata;
+        this._ramdata = ramdata;
         this.dict_kw_zdf = dict_kw_zdf;
         this.dict_kw_view = dict_kw_view;
         this.int_index_str_rep = int_index_str_rep;
@@ -909,14 +1224,18 @@ class RamDataAxis {
         
         // open a ZarrDataFrame with a given filter
         this.meta = new ZarrDataFrame( 
-            `${this.path_folder}${this.name_axis}.num_and_cat.zdf/`, 
+            `${this.path_folder}${this._name_axis}.num_and_cat.zdf/`, 
             this.filter, 
             this.dict_kw_zdf[ 'flag_retrieve_categorical_data_as_integers' ],
             this.verbose
         );
-        await this.meta.initialize( ); // initialize ZarrDataFrame
+        await this.meta.initialize( ); // initialize the ZarrDataFrame object
         // retrieve number of entries
         this.int_num_entries = this.meta._n_rows_unfiltered;
+        
+        // load string representations of the entries of the axis
+        this._sza = new StringZarr( `${this._path_folder}${this._name_axis}.str.chunks/`, this.verbose );
+        await this._sza.initialize( ); // initialize the stringzarr object
     }
     set_filter( ba_filter ) {
         /* 
@@ -926,19 +1245,25 @@ class RamDataAxis {
             // set filter of the ZarrDataFrame
             ax.meta.set_filter( ax.filter );
             
-            // set filter of the ZarrDataFrame
-            ax.meta.set_filter( ax.filter );
+            // set filter of the layer if a layer has been loaded
+            if ( ! check_none( ax._ramdata ) ) {
+                if ( ! check_none( ax._ramdata.layer ) ) {
+                    ax._ramdata.layer.set_filter( ax.filter, ax._name_axis == 'features' ); // set filter of the axis
+                }
+            }
         }
         
         // if filter is removed
         if ( check_none( ba_filter ) ) {
             this.filter = undefined;
+            change_filter( this ); // change filters 
             return;
         }
         
         // if BitSet object is given, set the filter and exit
         if ( ba_filter instanceof BitSet ) {
             this.filter = ba_filter;
+            change_filter( this ); // change filters 
             return;
         }
             
@@ -982,6 +1307,7 @@ class RamDataAxis {
         
         // set filter for the object
         this.filter = ba;
+        change_filter( this ); // change filters 
     }
     create_view( ) {
         /*
@@ -1010,8 +1336,9 @@ class RamDataAxis {
             ba = this.filter;
         if ( ( ! check_none( ba ) ) & ( this.meta._n_rows_after_applying_filter < this.int_num_entries ) ) { // only build 'dict_change' if a filter is active or at least one entry is not active
             // count the number of active entries in the given filter
-            let n = this.meta._n_rows_after_applying_filter,
+            let n = this.meta._n_rows_unfiltered,
                 n_active_entries = count_ba( ba, n );
+            
             // initialize dictionary
             // implement a dictionary using an array if the proportion of active entries in the axis is larger than the given threshold to reduce the memory footprint and increase the efficiency of conversion process
             dict_change = ( ( n_active_entries / n ) > float_min_proportion_of_active_entries_in_an_axis_for_using_array ) ? new Int32Array( new ArrayBuffer( 4 * n ) ) : { }; // 4 bytes (Int32 arrays) for building 'dict_change'
@@ -1019,13 +1346,14 @@ class RamDataAxis {
             let i = 0; // initialize active entry counter
             for ( let int_index of ba_to_integer_indices( ba, n ) ) { // iterate through 'int_entry' of the active entries
                 dict_change[ int_index ] = i; // retrieve active_entry > i mapping
+                i ++; // increase index
             }
         }
         this.dict_change = dict_change; // load 'dict_change'
     }
     destroy_view( ) {
         /* # 2022-07-16 15:23:01 
-        unload 'self.dict_change' (dictionaries for conversion of coordinates), destroying the current view
+        unload 'this.dict_change' (dictionaries for conversion of coordinates), destroying the current view
         */
         this.dict_change = undefined;
     }
@@ -1043,12 +1371,54 @@ class RamDataAxis {
         this.dict_change = this._dict_change_backup;
         this._dict_change_backup = undefined;
     }
+    none( ) {
+        /* # 2022-09-08 11:30:33 
+        return an empty bitarray filter
+        */
+        ba = new BitSet( );
+        return ba
+    }
+    exclude( filter_to_exclude ) {
+        /* # 2022-09-14 00:12:48 
+        exclude entries in the given filter 'filter_to_exclude' from the current filter
+        */
+        // exclude the entries in 'filter_to_exclude'
+        this.set_filter( this.filter.andNot( filter_to_exclude ) );
+    }
+    all( flag_return_valid_entries_in_the_currently_active_layer = true ) {
+        /* # 2022-09-02 00:33:56 
+        return bitarray filter with all entries marked 'active'
+        
+        'flag_return_valid_entries_in_the_currently_active_layer' : return bitarray filter containing only the active entries in the current layer 
+        */
+        let ba;
+        if ( flag_return_valid_entries_in_the_currently_active_layer & ( ! check_none( this._ramdata ) ) & ( ! check_none( this._ramdata.layer ) ) ) { // if RamData has an active layer and 'flag_return_valid_entries_in_the_currently_active_layer' setting is True, return bitarray where entries with valid count data is marked as '1' # if valid ramtx data is available
+            let rtx = this._ramdata.layer.get_ramtx( this._name_axis == 'features' ); // retrieve associated ramtx object
+            if ( ! check_none( rtx ) ) {
+                ba = rtx.ba_active_entries;
+                return ba;
+            }
+        }
+        // if layer is empty or 'flag_return_valid_entries_in_the_currently_active_layer' is False, just return a bitarray filled with '1'
+        ba = new BitSet( );
+        ba.setRange( 0, this.int_num_entries, 1 ); // set all entries as 'active' 
+        return ba; // return the bitarray filter
+    }
+    get_ba_active_entries( ) {
+        /* # 2022-07-16 17:38:04 
+        
+        return a bitarray object containing currently active entries in the Axis. 
+        if a filter is active, return the current filter
+        if a filter is not active, return the return value of Axis.all( flag_return_valid_entries_in_the_currently_active_layer = True )
+        */
+        return check_none( this.filter ) ? this.all( true ) : this.filter;
+    }
     subsample( float_prop_subsampling = 1 ) {
         /* # 2022-07-16 17:12:19 
         subsample active entries in the current filter (or all the active entries with valid data) using the proportion of subsampling ratio 'float_prop_subsampling'
         */
         // retrieve bitarray of active entries
-        let ba_active_entries = this.ba_active_entries;
+        let ba_active_entries = this.get_ba_active_entries( );
         
         // return the bitarray of all active entries if no subsampling is required
         if ( check_none( float_prop_subsampling ) | ( float_prop_subsampling == 1 ) ) {
@@ -1060,61 +1430,319 @@ class RamDataAxis {
         
         // perform subsampling
         for ( let i = 0; i < this.int_num_entries; i ++ ) { // iterate over each entry
-            if ( Math.random( ) < float_prop_subsampling ) {
-                ba_subsampled.set( int_entry, 1 ); 
+            if ( ( ba_active_entries.get( i ) > 0 ) & ( Math.random( ) < float_prop_subsampling ) ) { // determine whether an active entry should be included in the subsampled set.
+                ba_subsampled.set( i, 1 ); 
             }
         }
 
         // return subsampled entries
         return ba_subsampled;
     }
-    change_filter( name_col_filter ) {
+    async change_filter( name_col_filter ) {
         /* # 2022-07-16 17:17:29 
         change filter using the filter saved in the metadata with 'name_col_filter' column name. if 'name_col_filter' is not available, current filter setting will not be changed.
         
         'name_col_filter' : name of the column of the metadata ZarrDataFrame containing the filter
         */
         if ( this.meta.columns.has( name_col_filter ) ) { // if a given column name exists in the current metadata ZarrDataFrame
-            this.set_filter( this.meta.get_item( name_col_filter, null ) ); // retrieve filter from the storage and apply the filter to the axis
+            this.set_filter( await this.meta.get_item( name_col_filter, [ null ] ) ); // retrieve filter from the storage and apply the filter to the axis
         }
+    }
+    async get_str( queries = undefined, int_index_col = undefined ) {
+        /* # 2022-09-22 12:07:01 
+        get string representations of the queries
+        
+        'queries' : queries (list of integer indices) of the entries for which string representations will be loaded. if None is given, all entries will be retrieved.
+        int_index_col : Union[ int, None ] = None : the index of the column containing string representation to retrieve. if a single integer index is given, retrieve values from a single column. If a list or a tuple of integer indices are given, values of the columns will be retrieved.
+        */
+        // retrieve all entries for the 'default' queries
+        if ( check_none( queries ) ) {
+            queries = nj.arange( this.int_num_entries ).tolist( );
+        }
+        // set default value for 'int_index_col'
+        if ( check_none( int_index_col ) ) {
+            int_index_col = this.int_index_str_rep;
+        }
+        // open a zarr object containing the string representation of the entries
+        if ( ! check_none( this._sza ) ) {
+            return await this._sza.get_by_l_int_index( queries, int_index_col );
+        }
+    }
+    iterate_str( int_num_entries_in_a_batch= 1000, int_index_col = undefined ) {
+        /* # iterate through string representations of the active entries of the current axis object
+        
+        int_num_entries_in_a_batch : int = 1000 # the number of entries that will be included in a batch
+        int_index_col : Union[ int, None ] = None : the index of the column containing string representation to retrieve. if a single integer index is given, retrieve values from a single column. If a list or a tuple of integer indices are given, values of the columns will be retrieved.
+        */
+        return async function* makeIterator( ) { // return an iterator
+            let l_int_entry_in_a_batch = [ ] // initialize a batch container 
+            for ( let int_entry of ( check_none( this.filter ) ? nj.arange( this.int_num_entries ).tolist( ) : ba_to_integer_indices( this.filter, this.int_num_entries ) ) ) { // iterate through integer indices of the active entries
+                l_int_entry_in_a_batch.push( int_entry );
+                // if a batch is full, flush the batch
+                if ( l_int_entry_in_a_batch.length >= int_num_entries_in_a_batch ) {
+                    let arr = await this.get_str( l_int_entry_in_a_batch, int_index_col );
+                    yield { 'l_int_entry' : l_int_entry_in_a_batch, 'l_str_entry' : arr };
+                    l_int_entry_in_a_batch = [ ]; // initialize the next batch
+                }
+            }
+            // if there are remaining entries, flush the batch
+            if ( l_int_entry_in_a_batch.length > 0 ) {
+                let arr = await this.get_str( l_int_entry_in_a_batch, int_index_col );
+                yield { 'l_int_entry' : l_int_entry_in_a_batch, 'l_str_entry' : arr };
+            }
+        }( );
+    }
+    async load_str( int_index_col = undefined ) {
+        /* # 2022-09-12 02:28:49 
+        load string representation of all the active entries of the current axis, and retrieve a mapping from string representation to integer representation
+        
+        'int_index_col' : default value is 'self.int_index_str_rep'
+        */
+        // set default value for 'int_index_col'
+        if ( check_none( int_index_col ) ) {
+            int_index_col = this.int_index_str_rep;
+        }
+        
+        // compose a pair of dictionaries for the conversion
+        let arr_int_entry = check_none( this.filter ) ? nj.arange( this.int_num_entries ).tolist( ) : ba_to_integer_indices( this.filter, this.int_num_entries ), // retrieve integer representations of the entries
+            arr_str = await this.get_str( arr_int_entry, int_index_col ); // retrieve string representations of the entries
+        
+        // build mapping
+        let dict_str_to_i = { },
+            dict_i_to_str = { };
+        for ( let i = 0; i < arr_int_entry.length; i ++ ) {
+            let int_entry = arr_int_entry[ i ],
+                str_entry = arr_str[ i ];
+            dict_str_to_i[ str_entry ] = int_entry;
+            dict_i_to_str[ int_entry ] = str_entry;
+        }
+        // set attributes
+        this._dict_str_to_i = dict_str_to_i;
+        this._dict_i_to_str = dict_i_to_str;
+
+        if ( this.verbose ) {
+            console.log( `[Axis ${this._name_axis}] completed loading of ${arr_str.length} number of strings` );
+        }
+        return arr_str // return loaded strings
+    }
+    unload_str( ) {
+        /* # 2022-06-25 09:36:59 
+        unload a mapping between string representations and integer representations.
+        */
+        this._dict_str_to_i = undefined;
+        this._dict_i_to_str = undefined;
+    }
+    async get_item( l ) {
+        /* # 2022-07-14 00:42:20 
+        a main functionality of 'Axis' class
+        translate a given list of entries / mask (bitset/boolean_array), and return a bitarray mask containing valid entries
+        
+        inputs:
+        [list of entries / mask (bitset/boolean_array)]
+        
+        returns:
+        [a bitset object containing valid entries]
+        */
+        // ''' initialize '''
+        let n = this.int_num_entries; // # retrieve the number of entries
+        // # initialize the output object
+        // # initialize the bitarray for the valid entries
+        let ba_filter_of_selected_entries = new BitSet( );
+        
+        // # retrieve bitarray filter (or a filter of all active entries in the current layer)
+        let ba_filter = ! check_none( self.filter ) ? self.filter : this.all( true );
+        
+        // ''' handle 'None' '''
+        if ( check_none( l ) ) {
+            return ba_filter; // # if None is given, return all active entries in the filter (or all active entries in the layer if a filter has not been set).
+        }
+        
+        // ''' handle a single value input '''
+        if ( ( typeof l == 'number' ) | ( typeof l == 'string' ) ) { // # if a given input is not iterable or a string, wrap the element in a list
+            l = [ l ];
+        }
+        
+        // ''' handle an empty list input '''
+        // # handle empty inputs
+        if ( l.length == 0 ) {
+            return ba_filter_of_selected_entries; // # return results
+        }
+        
+        // ''' handle string list input '''
+        if ( typeof l[ 0 ] == 'string' ) { // # when string representations were given
+            let flag_unload_str = false // # a flag to unload string representations before exiting
+            // # if str has not been loaded, load the data temporarily
+            if ( check_none( this._dict_str_to_i ) ) {
+                flag_unload_str = true;
+                await this.load_str( );
+            }
+            
+            let dict_mapping = this._dict_str_to_i; // # retrieve a dictionary for mapping str to int
+            for ( let e of l ) {
+                if ( e in dict_mapping ) {
+                    let i = dict_mapping[ e ];
+                    if ( ba_filter.get( i ) > 0 ) { // # if the entry is acitve in the filter (or filter objec containing all active entries)
+                        ba_filter_of_selected_entries.set( i, 1 );
+                    }
+                }
+            }
+            
+            // unload str data
+            if ( flag_unload_str ) {
+                this.unload_str( );
+            }
+            return ba_filter_of_selected_entries;
+        }
+        
+        // ''' handle mask (bitarray / boolean array) '''
+        if ( ( l.length == n ) & isSuperset( new Set( l.slice( 0, 10 ) ), new Set( [ 0, 1, true, false ] ) ) ) { // # detect boolean array
+            let ba = to_ba( l ) // # convert mask to bitarray 
+            return ba.and( ba_filter ); // # apply filter
+        }
+        
+        // ''' handle integer index list input '''
+        for ( let i of l ) {
+            if ( ( 0 <= i ) & ( i < n ) & ( ba_filter.get( i ) > 0 ) ) {
+                ba_filter_of_selected_entries.set( i, 1 );
+            }
+        }
+        return ba_filter_of_selected_entries;
+    }
+    get map_str( ) {
+        /* # 2022-06-25 09:31:32 
+        return a dictionary for mapping string representation to integer representation
+        */
+        return this._dict_str_to_i;
+    }
+    get map_int( ) {
+        /* # 2022-06-25 09:31:32 
+        return a dictionary for mapping integer representation to string representation
+        */
+        return this._dict_i_to_str;
     }
 }
 class RamDataLayer {
-    constructor( path_folder_ramtx, ramdata = undefined, verbose = true, flag_debugging = false ) {
+    constructor( path_folder_ramdata, name_layer, ramdata = undefined, verbose = false, flag_debugging = false ) {
+        /* 
+        # 2022-07-31 14:33:46 
+        */
         // these values will be fixed: dtype_of_feature_and_barcode_indices = np.uint32, dtype_of_values = np.float64
         // set attributes
-        this.path_folder_ramtx = path_folder_ramtx;
-        this.ramdata = ramdata;
+        this._path_folder_ramdata = path_folder_ramdata;
+        this._ramdata = ramdata;
+        this.name = name_layer;
         this.verbose = verbose;
         this.flag_debugging = flag_debugging;
+        this._path_folder_ramdata_layer = `${path_folder_ramdata}${name_layer}/`;
+        
+        // retrieve filters from the axes
+        let ba_filter_features = check_none( ramdata ) ? undefined : ramdata.ft.filter,
+            ba_filter_barcodes = check_none( ramdata ) ? undefined : ramdata.bc.filter;
+        
+        // set filters of the current layer
+        this.ba_filter_features = ba_filter_features
+        this.ba_filter_barcodes = ba_filter_barcodes
     }
     async initialize( ) {
-        // initialize RAMtx
-        // load metadata of RAMtx and zarr objects containing sparse data
-        // should be run before using RAMtx
-        let zattrs = await $.getJSON( `${this.path_folder_ramtx}.zattrs` ); // read metadata
+        /* 
+        # 2022-07-31 14:33:46 
+        */
+        // read metadata
+        let zattrs = await $.getJSON( `${this._path_folder_ramdata_layer}.zattrs` ); // read metadata
         this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
+        this.metadata[ 'set_modes' ] = new Set( this.metadata[ 'set_modes' ] ) // convert modes to set
+        this.modes = this.metadata[ 'set_modes' ]; // set attributes
         
-        // set attributes
-        this.flag_ramtx_sorted_by_id_feature = this.metadata[ 'flag_ramtx_sorted_by_id_feature' ];
-        this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
-        this.int_num_features = this.metadata[ 'int_num_features' ];
-        this.int_num_records = this.metadata[ 'int_num_records' ];
-        this.mode = this.metadata[ 'mode' ];
-
-        // # open zarr objects
-        this.is_sparse = this.mode != 'dense' 
-        if ( this.is_sparse ) {
-            this._za_mtx_index = await zarr.openArray({
-                store : this.path_folder_ramtx,
-                path : `matrix.index.zarr/`,
-                mode: "r"
-            });
-            this._za_mtx = await zarr.openArray({
-                store : this.path_folder_ramtx,
-                path : `matrix.zarr/`,
-                mode: "r"
-            });
+        // load ramtx
+        await this._load_ramtx_objects( )
+    }
+    async _load_ramtx_objects( ) {
+        /* # 2022-08-01 10:57:28 
+        load all ramtx present in the layer
+        */
+        // load RAMtx objects without filters
+        // load ramtx
+        for ( let mode of this.modes ) { // iterate through each mode
+            let name_mode = `ramtx_${mode}`;
+            if ( ! ( name_mode in this ) ) { // if the ramtx object of the current mode has not been load
+                let rtx;
+                if ( mode.includes( 'dense' ) ) {
+                    continue;
+                    // rtx = RAMtx( `${this._path_folder_ramdata_layer}dense/`, is_for_querying_features = mode.rsplit( 'dense_for_querying_', 1 )[ 1 ] == 'features' ) // open dense ramtx in querying_features/querying_barcodes modes
+                } else {
+                    rtx = new RAMtx( `${this._path_folder_ramdata_layer}${mode}/`, this._ramdata, this.verbose, this.flag_debugging );
+                    rtx.initialize( ); // initialize an rtx object
+                    // set filters of the RAMtx object
+                    rtx.ba_filter_features = this.ba_filter_features;
+                    rtx.ba_filter_barcodes = this.ba_filter_barcodes;
+                }
+                this[ name_mode ] = rtx; // set ramtx as an attribute
+            }
+        }
+    }
+    select_ramtx( ba_entry_bc, ba_entry_ft ) {
+        /* # 2022-07-31 11:46:33 
+        select appropriate ramtx based on the queryed barcode and features, given as a bitarray filters 'ba_entry_bc', 'ba_entry_ft'
+        */
+        // count the number of valid queried entries
+        let int_num_entries_queried_bc = count_ba( ba_entry_bc, this._ramdata.bc.int_num_entries ),
+            int_num_entries_queried_ft = count_ba( ba_entry_ft, this._ramdata.ft.int_num_entries );
+        
+        // detect and handle the cases when one of the axes is empty
+        if ( ( int_num_entries_queried_bc == 0 ) | ( int_num_entries_queried_ft == 0 ) ) {
+            if ( this.verbose ) {
+                console.log( `Warning: currently queried view is (barcode x features) ${int_num_entries_queried_bc} x ${int_num_entries_queried_ft}. please change the filter or queries in order to retrieve a valid data` );
+            }
+        }
+        // choose which ramtx object to use
+        let flag_use_ramtx_for_querying_feature = int_num_entries_queried_bc >= int_num_entries_queried_ft // select which axis to use. if there is more number of barcodes than features, use ramtx for querying 'features'
+        
+        let rtx = this.get_ramtx( flag_use_ramtx_for_querying_feature ); // retrieve ramtx
+        if ( check_none( rtx ) ) {
+            return undefined;
+        }
+        return rtx;
+    }
+    get_ramtx( flag_is_for_querying_features = true ) {
+        /* # 2022-09-20 12:00:56 
+        retrieve ramtx for querying feature/barcodes
+        
+        flag_is_for_querying_features = True # if True, return RAMtx that can be queried by features
+        flag_prefer_dense = False # prefer dense matrix over sparse matrix
+        set_int_index_component_to_exclude : Union[ None, set ] = None # set of integer indices of the components to exclude.
+            the intended usage of this argument is to exclude RAMtx of the component that will be used as a reference
+        */
+        
+        let name_axis_for_querying = flag_is_for_querying_features ? 'features' : 'barcodes',
+            mode_dense = `dense_for_querying_${name_axis_for_querying}`, // retrieve mode name for dense ramtx based on 'flag_is_for_querying_features'
+            mode_sparse = `sparse_for_querying_${name_axis_for_querying}`, // retrieve mode name for sparse ramtx based on 'flag_is_for_querying_features'
+            mode = mode_sparse, // use sparse mode only
+            name_mode = `ramtx_${mode}`; // name of the ramtx object for the selected mode
+        if ( name_mode in this ) {
+            return this[ name_mode ];
+        }
+        if ( self.verbose ) {
+            console.log( `ramtx for querying ${name_axis_for_querying} efficiently is not available for layer ${this.name}, containing the following modes: ${[ ... this.modes]}` );
+        }
+        return undefined;
+    }
+    set_filter( ba_filter, flag_is_filter_for_features = true ) {
+        /*
+        set_filter of the given axis
+        */
+        if ( ! ( ( ba_filter instanceof BitSet ) | check_none( ba_filter ) ) ) {
+            console.log( 'invalid filter was given for layer' );
+        }
+        let name_axis_of_filter = flag_is_filter_for_features ? 'features' : 'barcodes';
+        
+        // set filters of ramtx
+        for ( let mode of this.modes ) { // iterate through each mode
+            let name_mode = `ramtx_${mode}`;
+            if ( mode.includes( 'dense' ) ) {
+                continue;
+            } else {
+                this[ name_mode ][ `ba_filter_${name_axis_of_filter}` ] = ba_filter; // set filter
+            }
         }
     }
 }
@@ -1124,7 +1752,7 @@ class RamData {
         path_folder_ramdata, name_layer = 'raw', int_index_str_rep_for_barcodes = 0, int_index_str_rep_for_features = 1, int_num_entries_for_each_weight_calculation_batch = 2000, int_total_weight_for_each_batch = 10000000, dict_kw_zdf = { 'flag_retrieve_categorical_data_as_integers' : false }, dict_kw_view = { 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : 0.1 }, verbose = true, flag_debugging = false
     ) {
         // set attributes
-        this.path_folder_ramdata = path_folder_ramdata;
+        this._path_folder_ramdata = path_folder_ramdata;
         this.name_layer = name_layer;
         this.int_index_str_rep_for_barcodes = int_index_str_rep_for_barcodes;
         this.int_index_str_rep_for_features = int_index_str_rep_for_features;
@@ -1134,34 +1762,239 @@ class RamData {
         this.dict_kw_view = dict_kw_view;
         this.verbose = verbose;
         this.flag_debugging = flag_debugging;
+        this.layer = undefined;
     }
     async initialize( ) {
         // initialize RamData
         // load metadata of RamData
         // should be run before using RamData
-        let zattrs = await $.getJSON( `${this.path_folder_ramdata}.zattrs` ); // read metadata
+        let zattrs = await $.getJSON( `${this._path_folder_ramdata}.zattrs` ); // read metadata
         this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
         
         // set attributes
         this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
         this.int_num_features = this.metadata[ 'int_num_features' ];
+        this.identifier = this.metadata[ 'identifier' ];
         this.metadata.layers = new Set( this.metadata.layers ); // get a set of name_layer
         this.layers = this.metadata.layers
 
         // load RamDataAxis
         // initialize axis objects
-        this.bc = new RamDataAxis( this.path_folder_ramdata, 'barcodes', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
+        this.bc = new RamDataAxis( this._path_folder_ramdata, 'barcodes', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
         await this.bc.initialize( );
-        this.ft = new RamDataAxis( this.path_folder_ramdata, 'features', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
+        this.ft = new RamDataAxis( this._path_folder_ramdata, 'features', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
         await this.ft.initialize( );
 
         // load the current layer
         await this.load_layer( );
     }
-    async load_layer( name_layer ) {
+    async load_layer( name_layer = undefined ) {
         /* 
         load layer 
         */
+        // set default 'name_layer'
+        if ( check_none( name_layer ) ) {
+            name_layer = this.name_layer;
+        }
+        
+        this.layer = new RamDataLayer( this._path_folder_ramdata, name_layer, this, this.verbose, this.flag_debugging ); // load layer
+        await this.layer.initialize( ); // initialize the layer object
+    }
+    repr( ) {
+        /* 
+        represent RamDat in a javascript REPL
+        */
+        let str_filter_bc = check_none( this.bc.filter ) ? '' : this.bc.meta.get_n_rows( ).toString( ) + '/',
+            str_filter_ft = check_none( this.ft.filter ) ? '' : this.ft.meta.get_n_rows( ).toString( ) + '/',
+            str_layer = check_none( this.layer ) ? '' : `, ${this.layer.int_num_records} records in the currently active layer '${this.layer.name}'`,
+            str_name_layer = check_none( this.layer ) ? 'None' : this.layer.name;
+        return `<(read-only) RamData object (${str_filter_bc}${this.metadata[ 'int_num_barcodes' ]} barcodes X ${str_filter_ft}${this.metadata[ 'int_num_features' ]} features` + str_layer + `) stored at ${this._path_folder_ramdata} with the following layers : ${[ ... this.layers ]} (current layer is '${str_name_layer}')>` // show the number of records of the current layer if available.
+    }
+    async change_filter( name_col_filter = undefined, name_col_filter_bc = undefined, name_col_filter_ft = undefined ) {
+        /* # 2022-07-16 17:27:58 
+        retrieve and apply filters for 'barcode' and 'feature' Axes
+        
+        'name_col_filter_bc', 'name_col_filter_ft' will override 'name_col_filter' when applying filters.
+        if all name_cols are invalid, no filters will be retrieved and applied
+        */
+        // # check validity of name_cols for filter
+        // # bc
+        if ( ! this.bc.meta.columns.has( name_col_filter_bc ) ) {
+            name_col_filter_bc = ( this.bc.meta.columns.has( name_col_filter ) ) ? name_col_filter : undefined; // # use 'name_col_filter' instead if 'name_col_filter_bc' is invalid
+        }
+        // # ft
+        if ( ! this.ft.meta.columns.has( name_col_filter_ft ) ) {
+            name_col_filter_ft = ( this.ft.meta.columns.has( name_col_filter ) ) ? name_col_filter : undefined; // # use 'name_col_filter' instead if 'name_col_filter_ft' is invalid
+        }
+        
+        // # apply filters
+        await this.bc.change_filter( name_col_filter_bc ); // # bc
+        await this.ft.change_filter( name_col_filter_ft ); // # ft
+    }
+    create_view( ) {
+        /*  # 2022-07-06 21:17:56 
+        create view of the RamData using the current filter settings (load dictionaries for coordinate conversion for filtered barcodes/features)
+        */
+        this.ft.create_view( );
+        this.bc.create_view( );
+    }
+    destroy_view( ) {
+        /*  # 2022-07-05 22:55:22 
+        unload dictionaries for coordinate conversion for filtered barcodes/features, destroying the current view
+        */
+        this.ft.destroy_view( );
+        this.bc.destroy_view( );
+    }
+    async compose_filters( self, l_entry_bc = [ ], l_entry_ft = [ ], flag_use_str_repr_bc = false, flag_use_str_repr_ft = false ) {
+        /* # 2022-07-16 17:10:07 
+        for the given 'barcodes'/'features' entries, compose filters containing the entries, and apply the filters.
+        
+        === inputs ===
+        'flag_use_str_repr_bc' = False, 'flag_use_str_repr_ft' = False : flags indicating whether to use string representation of the retrieved entries later
+        
+        === outputs === 
+        bitarray mask of mapped entries and list of string representations (if available. if string representations were not used to retrieve entries, None will be returned for the list object).
+        */
+        // # retrieve flags indicating that the string representations are not loaded
+        let flag_str_not_loaded_bc = check_none( this.bc.map_int ),
+            flag_str_not_loaded_ft = check_none( this.ft.map_int );
+        
+        // ''' retrieve filters and string representations for the queried entries '''
+        // ''' barcode '''
+        // # load str representation data
+        if ( flag_use_str_repr_bc & flag_str_not_loaded_bc ) {
+            await this.bc.load_str( );
+        }
+        // # retrieve filter for the queried entries
+        let ba_entry_bc = await this.bc.get_item( l_entry_bc );
+        
+        // # retrieve str representations of the queried entries
+        let l_str_bc = undefined;
+        if ( flag_use_str_repr_bc ) {
+            let dict_map = this.bc.map_int;
+            l_str_bc = [ ];
+            for ( let i of ba_to_integer_indices( ba_entry_bc, this.bc.int_num_entries ) ) {
+                l_str_bc.push( dict_map[ i ] );
+            }
+            dict_map = undefined; // delete 'dict_map' for garbage collection
+        }
+        if ( flag_str_not_loaded_bc ) { // # if 'str' data was not loaded, unload the str data once all necessary data has been retrieved
+            this.bc.unload_str( );
+        }
+        
+        // ''' feature '''
+        // # load str representation data
+        if ( flag_use_str_repr_ft & flag_str_not_loaded_ft ) {
+            await this.ft.load_str( );
+        }
+        // # retrieve filter for the queried entries
+        let ba_entry_ft = await this.ft.get_item( l_entry_ft );
+        // retrieve str representations of the queried entries
+        let l_str_ft = undefined;
+        if ( flag_use_str_repr_ft ) {
+            let dict_map = this.ft.map_int;
+            l_str_ft = [ ];
+            for ( let i of ba_to_integer_indices( ba_entry_ft, this.ft.int_num_entries ) ) {
+                l_str_ft.push( dict_map[ i ] );
+            }
+            dict_map = undefined; // delete 'dict_map' for garbage collection
+        }
+        if ( flag_str_not_loaded_ft ) { // # if 'str' data was not loaded, unload the str data once all necessary data has been retrieved
+            this.ft.unload_str( );
+        }
+        
+        return [ ba_entry_bc, l_str_bc, ba_entry_ft, l_str_ft ]; // # return composed filters and mapped string representations (if available)
+    }
+    async get_item( args ) {
+        /* # 2022-08-05 17:18:47 
+        please include 'str' in 'barcode_column' and 'feature_column' in order to use string representations in the output AnnData object
+        
+        possible usages:
+        
+        [ name_layer, barcode_index, barcode_column, feature_index, feature_column ]
+        [ barcode_index, barcode_column, feature_index, feature_column ]
+        'barcode_column' and 'feature_column' can include multi-dimensional data 
+        for example, 
+            [ 'str', { 'X_pca' : slice( 0, 10 ), 'X_umap', : None } ] as 'barcode_column' will include X_umap and X_pca in obsm in the resulting anndata object
+            [ 'str', { 'X_pca' : slice( 0, 10 ), { 'X_umap' } ] as 'barcode_column' will also include X_umap and X_pca in obsm in the resulting anndata object
+        */
+        if ( ! ( args instanceof Array ) ) { // # more than one arguments should be given
+            if ( this.verbose ) {
+                console.log( 'invalid queries, exiting' );
+            }
+        }
+//         // if the first argument appears to be 'name_layer', load the layer and drop the argument
+//         if isinstance( args[ 0 ], str ) and args[ 0 ] in self.layers :
+//             self.layer = args[ 0 ]
+//             args = args[ 1 : ] 
+//         assert len( args ) <= 4 // # assumes layer has been loaded, and only arguments are for barcode/feature indexing
+        
+//         args = list( args ) + list( [ ] for i in range( 4 - len( args ) ) ) // # make the number of arguments to 4
+//         l_entry_bc, l_col_bc, l_entry_ft, l_col_ft = args # parse arguments
+        
+//         // backup the filters
+//         ba_filter_bc_backup = self.bc.filter
+//         ba_filter_ft_backup = self.ft.filter
+        
+//         // retrieve flags for using string representations in the output
+//         flag_use_str_repr_bc = 'str' in l_col_bc
+//         flag_use_str_repr_ft = 'str' in l_col_ft
+        
+//         // load a layer
+//         if self.layer is None :
+//             if len( self.layers ) == 0 : // # if no layer is available
+//                 if self.verbose :
+//                     logging.info( '[scanpy_embedding] no layer is available. current implementation requires at least one layer, exiting' )
+//                     return
+//             self.layer = list( self.layers )[ 0 ] // # load any layer
+        
+//         // compose filters from the queried entries
+//         ba_entry_bc, l_str_bc, ba_entry_ft, l_str_ft = self.compose_filters( l_entry_bc = l_entry_bc, l_entry_ft = l_entry_ft, flag_use_str_repr_bc = flag_use_str_repr_bc, flag_use_str_repr_ft = flag_use_str_repr_ft )
+        
+//         // retrieve ramtx for retrieving data
+//         rtx = self.layer.select_ramtx( ba_entry_bc, ba_entry_ft )
+        
+//         // set barcode/feature filters for the queried entries
+//         self.bc.filter = ba_entry_bc
+//         self.ft.filter = ba_entry_ft
+
+//         // initialize and destroy the view after retrieving the count matrix
+//         with self as view : // # load 'dict_change' for coordinate conversion according to the given filters, creating the view of the RamData
+//             // # retrieve count data
+//             X = rtx.get_sparse_matrix( [ ] ) // # retrieve count data for all entries currently active in the filter
+        
+//         // retrieve meta data as dataframes
+//         df_obs = self.bc.meta.get_df( * l_col_bc )
+//         if flag_use_str_repr_bc : // # add string representations
+//             df_obs.index = l_str_bc
+//             del l_str_bc
+//         df_var = self.ft.meta.get_df( * l_col_ft )
+//         if flag_use_str_repr_ft : // # add string representations
+//             df_var.index = l_str_ft
+//             del l_str_ft
+        
+//         // build output AnnData object
+//         adata = anndata.AnnData( obs = df_obs, var = df_var ) // # in anndata.X, row = barcode, column = feature // # set obs and var with integer index values
+//         adata.X = X // # add count data
+//         del X
+//         // # add obsm/varm
+//         for ax, name_attr, l in zip( [ self.ft, self.bc ], [ 'varm', 'obsm' ], [ l_col_ft, l_col_bc ] ) :
+//             for e in l :
+//                 if isinstance( e, set ) : // # retrieve all data in the secondary axis
+//                     for name_col in e :
+//                         if name_col in ax.meta : # if the column exists in the metadata
+//                             getattr( adata, name_attr )[ name_col ] = ax.meta[ name_col ]
+//                 elif isinstance( e, dict ) : // # indexing through secondary axis
+//                     for name_col in e :
+//                         if name_col in ax.meta : # if the column exists in the metadata
+//                             getattr( adata, name_attr )[ name_col ] = ax.meta[ name_col ] if e[ name_col ] is None else ax.meta[ name_col, None, e[ name_col ] ] // # if e[ name_col ] is None, load all data on the secondary axis
+        
+
+//         // restore the filters once the data retrieval has been completed
+//         self.bc.filter = ba_filter_bc_backup
+//         self.ft.filter = ba_filter_ft_backup
+        
+//         return adata // # return resulting AnnData
     }
 }
     
@@ -1187,11 +2020,11 @@ class RamData {
 
     log = (function() {
         var console = document.querySelector('output');
-        return function() {
+        return async function() {
             var rep = document.createElement('div');
 
-            rep.classList.add('rep');
-            [].slice.call(arguments).forEach(function(arg) {
+            rep.classList.add( 'rep' );
+            [].slice.call( arguments ).forEach(function( arg ) {
                 var entry = document.createElement('pre'),
                     result = document.createElement('pre'),
                     evaled,
@@ -1199,9 +2032,10 @@ class RamData {
 
                 entry.classList.add('entry');
                 result.classList.add('result');
-
+                
                 try {
-                    evaled = eval.call(this, arg);
+                    evaled = eval.call( this, arg );
+                    
                 } catch (e) {
                     evaled = e.toString();
                 }
