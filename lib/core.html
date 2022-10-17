@@ -1,6 +1,6 @@
 <head>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
 <!-- 
 <script type="module">
@@ -210,7 +210,9 @@ body {
     <output></output>
     <div class="custextareasdontdopseudoelements"><textarea name="repl" id="repl"></textarea></div>
 </div>
-<div class="content"><div id="tester" style="width:600px;height:250px;"></div></div>
+<div class="content">
+    <div id="tester" style="width:600px;height:250px;"></div>
+</div>
 <script>
 
 // zarr.js
@@ -504,7 +506,6 @@ class DataFrame {
         /*
         set index of a DataFrame object
         */
-        console.log( this ); 
         let flag_use_default_index = check_none( name_col_index ) | ( ! this.columns.has( name_col_index ) ), // retrieve a flag indicating whether a default index should be used.
             arr_index = flag_use_default_index ? nj.arange( this.length ).tolist( ) : this._dict_data[ name_col_index ], // use integer indices by default
             dict_mapping_index = { }; // initialize a dictionary for mapping
@@ -1252,7 +1253,8 @@ class RAMtx {
         // retrieve filters 
         let is_for_querying_features = this.is_for_querying_features,
             ba_filter_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_features : this.ba_filter_barcodes, 
-            ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_barcodes : this.ba_filter_features;
+            ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_barcodes : this.ba_filter_features,
+            int_num_entries_axis_for_querying = ( is_for_querying_features ) ? this._ramdata.ft.int_num_entries : this._ramdata.bc.int_num_entries; // retrieve the number of entries for the axis for querying
         
         // create view 
         // retrieve dictionaries for changing coordinates
@@ -1285,16 +1287,22 @@ class RAMtx {
             }
         }
         
-        // filter 'l_int_entry'
-        if ( ! check_none( ba_filter_axis_for_querying ) ) { // if 'ba_filter_axis_for_querying' is valid
-            // filter 'l_int_entry' according to 'ba_filter_axis_for_querying'
+        // retrieve filtered 'l_int_entry'
+        if ( ! check_none( ba_filter_axis_for_querying ) ) { // if 'ba_filter_axis_for_querying' is validz
             let l_int_entry_filtered = [ ];
-            for ( let int_entry of l_int_entry ) {
-                if ( ba_filter_axis_for_querying.get( int_entry ) > 0 ) {
-                    l_int_entry_filtered.push( int_entry );
+            if ( flag_empty_input ) {
+                // ''' handle when empty 'l_int_entry' has been given and filter has been set  '''
+                l_int_entry_filtered = ba_to_integer_indices( ba_filter_axis_for_querying, int_num_entries_axis_for_querying );
+                console.log( 'hi~ l_int_entry_filtered', l_int_entry_filtered );
+            } else {
+                // filter 'l_int_entry' according to 'ba_filter_axis_for_querying'
+                for ( let int_entry of l_int_entry ) {
+                    if ( ba_filter_axis_for_querying.get( int_entry ) > 0 ) {
+                        l_int_entry_filtered.push( int_entry );
+                    }
                 }
             }
-            l_int_entry = l_int_entry_filtered;
+            l_int_entry = l_int_entry_filtered; // use filtered 'l_int_entry' as 'l_int_entry'
         }
                 
         // if no valid entries are available, return an empty result
@@ -1382,7 +1390,7 @@ class RAMtx {
         // handle sparse ramtx
         // %% Sparse ramtx %% 
         // prepare
-        let int_num_records_in_a_chunk = za_mtx.chunks[ 0 ] // retrieve the number of records in a chunk
+        let int_num_records_in_a_chunk = za_mtx.meta.chunks[ 0 ] // retrieve the number of records in a chunk
         let index_chunk_start_current_batch = undefined, // initialize the index of the chunk at the start of the batch
             l_int_entry_in_a_batch = [ ],
             l_index_in_a_batch = [ ], // several entries will be processed together as a batch if they reside in the same or nearby chunk ('int_num_chunks_for_a_batch' setting)
@@ -1899,6 +1907,10 @@ class RamDataLayer {
         
         // load ramtx
         await this._load_ramtx_objects( )
+        
+        if ( this.verbose ) {
+            console.log( `[RamDataLayer] '${this.name}' layer has been loaded` );
+        }
     }
     async _load_ramtx_objects( ) {
         /* # 2022-08-01 10:57:28 
@@ -1915,7 +1927,7 @@ class RamDataLayer {
                     // rtx = RAMtx( `${this._path_folder_ramdata_layer}dense/`, is_for_querying_features = mode.rsplit( 'dense_for_querying_', 1 )[ 1 ] == 'features' ) // open dense ramtx in querying_features/querying_barcodes modes
                 } else {
                     rtx = new RAMtx( `${this._path_folder_ramdata_layer}${mode}/`, this._ramdata, this.verbose, this.flag_debugging );
-                    rtx.initialize( ); // initialize an rtx object
+                    await rtx.initialize( ); // initialize an rtx object
                     // set filters of the RAMtx object
                     rtx.ba_filter_features = this.ba_filter_features;
                     rtx.ba_filter_barcodes = this.ba_filter_barcodes;
@@ -2249,17 +2261,31 @@ class RamData {
         // build output AnnData object
         let adata = new AnnData( X, df_obs, df_var ) // # in anndata.X, row = barcode, column = feature // # set obs and var with integer index values // # add count data
         
-//         // # add obsm/varm
-//         for ax, name_attr, l in zip( [ self.ft, self.bc ], [ 'varm', 'obsm' ], [ l_col_ft, l_col_bc ] ) :
-//             for e in l :
-//                 if isinstance( e, set ) : // # retrieve all data in the secondary axis
-//                     for name_col in e :
-//                         if name_col in ax.meta : # if the column exists in the metadata
-//                             getattr( adata, name_attr )[ name_col ] = ax.meta[ name_col ]
-//                 elif isinstance( e, dict ) : // # indexing through secondary axis
-//                     for name_col in e :
-//                         if name_col in ax.meta : # if the column exists in the metadata
-//                             getattr( adata, name_attr )[ name_col ] = ax.meta[ name_col ] if e[ name_col ] is None else ax.meta[ name_col, None, e[ name_col ] ] // # if e[ name_col ] is None, load all data on the secondary axis
+        // # add obsm/varm
+        let l_ax = [ this.ft, this.bc ],
+            l_name_adata_attr = [ 'varm', 'obsm' ],
+            l_l_col = [ l_col_ft, l_col_bc ];
+        for ( let i = 0; i < 2; i ++ ) { // for each axis
+            // retrieve axis
+            let ax = l_ax[ i ],
+                name_adata_attr = l_name_adata_attr[ i ],
+                l_col = l_l_col[ i ];
+            for ( let e of l_col ) {
+                if ( e instanceof Array ) { // # retrieve all data in the secondary axis
+                    for ( name_col of e ) {
+                        if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
+                            adata[ name_adata_attr ][ name_col ] = await ax.meta.get_item( name_col );
+                        }
+                    }
+                } else if ( e instanceof Object ) { // # indexing through secondary axis
+                    for ( name_col in e ) {
+                        if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
+                            adata[ name_adata_attr ][ name_col ] = await ( check_none( e[ name_col ] ) ? ax.meta.get_item( name_col ) : ax.meta.get_item( name_col, undefined, e[ name_col ] ) ); // # if e[ name_col ] is None, load all data on the secondary axis
+                        }
+                    }
+                }
+            }
+        }
 
         // restore the filters once the data retrieval has been completed
         this.bc.set_filter( ba_filter_bc_backup );
@@ -2269,7 +2295,26 @@ class RamData {
     }
 }
     
-
+// when document is ready for interaction
+$(document).ready( function( ) {
+    $('[data-toggle="tooltip"]').tooltip( ); // enable tooltips
+    $('[data-tooltip="tooltip"]').tooltip( );
+    $('[data-tooltip-always-active="tooltip"]').tooltip( );
+//     $( '#modal_introduction' ).modal( 'show' ); // show introduction modal
+//     Toggle_Tooltips( ); // set tooltips status
+//     object_plot_MolecularMimicryMap.hovermode = "closest"; // set initial status
+    Initialize( );
+});
+    
+async function Initialize( ) { // initialize the web application
+    // initialize flags
+    TESTER = document.getElementById('tester');
+    Plotly.newPlot( TESTER, [{
+    x: [1, 2, 3, 4, 5],
+    y: [1, 2, 4, 8, 16] }], {
+    margin: { t: 0 } } );
+}
+    
 (function() {
     'use strict';
 
