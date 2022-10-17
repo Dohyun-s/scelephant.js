@@ -277,7 +277,6 @@ function difference(setA, setB) {
 }
     
 // implemented functions
-    
 function check_none( val ) {
     // check whether the given value 'val' is either undefined or null
     return ( val === undefined ) | ( val === null );
@@ -348,7 +347,6 @@ function to_ba( arr ) {
     }
     return ba;
 }
-    
 function ParseBase64GzippedText( str_base64_gzipped ) {
     // Decode base64 (convert ascii to binary) // Convert binary string to character-number array // Turn number array into byte-array // Convert gunzipped byteArray back to ascii string:
     let l_char = pako.inflate( new Uint8Array( atob( str_base64_gzipped ).split( '' ).map( function( x ) { return x.charCodeAt( 0 ); } ) ) ); 
@@ -365,6 +363,252 @@ function ParseTransposedArrayWithHeader( l_l ) { // return a dictionary of array
         dictarr[ key ] = l_l[ i ];
     }
     return dictarr;
+}
+
+// sparse matrix
+class SparseMatrix {
+    /*
+    a class for storing 2D sparse matrix 
+    l_arr_data : an array containing the following arrays:
+        l_int_index_for_querying : a list of int_index values for querying
+        l_l_int_index_not_for_querying : a list of lists containing int_index of the axis not for querying
+        l_l_value : a list of lists containing values
+    shape // shape of the sparse matrix. required for to_dense operation
+    is_for_querying_primary_axis // is the axis for querying is primary, set this flag to true. 
+    */
+    constructor( l_arr_data, shape, is_for_querying_primary_axis = true, verbose = true ) {
+        /*
+        */
+        // set attributes
+        this.is_for_querying_primary_axis = is_for_querying_primary_axis;
+        this.shape = shape;
+        // set attributes
+        this.length = this.shape[ ( this.is_for_querying_primary_axis ) ? 0 : 1 ]; // retrieve the number of queries 
+        if ( l_arr_data instanceof Array ) {
+            // construct a sparse matrix from the array input
+            // validate input
+            if ( l_arr_data.length != 3 ) {
+                if ( this.verbose ) {
+                    console.log( 'invalid input. the length of the array should be 3.' )
+                }
+                return;
+            }
+            let int_num_entries_axis_for_querying_with_data = l_arr_data[ 0 ].length;
+            if ( int_num_entries_axis_for_querying_with_data == 0 ) {
+                if ( this.verbose ) {
+                    console.log( 'the number of entries is zero.' )
+                }
+                return;
+            }
+            this._data = { }
+            for ( let i = 0; i < int_num_entries_axis_for_querying_with_data; i ++ ) {
+                let int_index_for_querying = l_arr_data[ 0 ][ i ],
+                    l_int_index_not_for_querying = l_arr_data[ 1 ][ i ],
+                    l_value = l_arr_data[ 2 ][ i ];
+                this._data[ int_index_for_querying ] = [ l_int_index_not_for_querying, l_value ];
+            }
+        } else if ( l_arr_data instanceof Object ) {
+            // build a sparse matrix from the Object input
+            this._data = l_arr_data; // use the given object directly as the data source
+        }
+    }
+    subset( args ) {
+        /*
+        args : an integer or list of integer indices for the axis for querying
+        
+        return a subset of the current sparse matrix that contains entries of a given list of integer indices for the current axis for querying 
+        */
+        // if a single integer was given, 
+        if ( typeof args == 'number' ) {
+            args = [ args ];
+        }
+        // retrieve a list of all the integer indices for the axis for querying for subsetting
+        let l_int_entry_subset = [ ... intersection( new Set( args ), new Set( Object.keys( this._data ).map( ( x ) => { return parseInt( x ); } ) ) ) ].sort( sort_number ), // sort by int_entry // convert integers converted to strings back to integers
+            data_subset =  { }, // initialize a new data that will contain a subset of the sparse matrix
+            int_entry_new = 0; // 'int_entry_new' after subsetting
+        // subset array
+        for ( let int_entry of l_int_entry_subset ) {
+            data_subset[ int_entry_new ] = this._data[ int_entry ]; // retrieve data
+            int_entry_new += 1; // update 'int_entry_new' 
+        }
+        // set new shape
+        let shape_new = [ ... this.shape ];
+        shape_new[ ( this.is_for_querying_primary_axis ) ? 0 : 1 ] = int_entry_new; // compose the new shape. now the length of the axis for querying should be the number of entries that were used in the subsetting
+        return new SparseMatrix( data_subset, shape_new, this.is_for_querying_primary_axis ); // return a new SparseMatrix object containing a subset of data
+    }
+    to_dense( dtype = 'float64' ) {
+        /*
+        return a dense matrix (using Array) of the current sparse matrix
+        */
+        let arr = nj.zeros( this.shape, dtype ); // initialize the dense array using numjs
+        for ( let int_entry in Object.keys( this._data ) ) { // iterate over the int_entry for querying
+            let res = this._data[ int_entry ],
+                l_int_index_not_for_querying = res[ 0 ],
+                l_value = res[ 1 ];
+            for ( let i = 0; i < l_value.length; i ++ ) {
+                let int_index_not_for_querying = l_int_index_not_for_querying[ i ],
+                    value = l_value[ i ];
+                // set value
+                if ( this.is_for_querying_primary_axis ) {
+                    arr.set( int_entry, int_index_not_for_querying, value ); // set value
+                } else {
+                    arr.set( int_index_not_for_querying, int_entry, value ); // set value
+                }
+            }
+        }
+        return arr; // return a dense numjs array
+    }
+}
+class DataFrame {
+    /*
+    name_col_index : name of the index.
+    length : the number of rows of the dataframe
+    */
+    constructor( dict_data, name_col_index = undefined, length = undefined, verbose = true ) {
+        /*
+        retrieve length of dataframe
+        */
+        if ( check_none( length ) ) {
+            if ( Object.keys( dict_data ).length == 0 ) {
+                if ( verbose ) {
+                    console.log( 'Error, dict_data is empty yet length is not given, exiting' );
+                }
+                return;
+            }
+            let col = dict_data[ Object.keys( dict_data )[ 0 ] ]; // retrieve any column
+            length = check_none( col.length ) ? col.shape[ 0 ] : col.length; // retrieve the length of a dataframe
+        }
+        this.length = length;
+        this._dict_data = dict_data; // add data
+        
+        // set columns attribute (a set of column names)
+        this.columns = new Set( Object.keys( this._dict_data ) );
+        
+        /*
+        Build Index of DataFrame
+        */
+        let flag_use_default_index = check_none( name_col_index ) | ( ! this.columns.has( name_col_index ) ), // retrieve a flag indicating whether a default index should be used.
+            arr_index = flag_use_default_index ? nj.arange( this.length ).tolist( ) : this._dict_data[ name_col_index ], // use integer indices by default
+            dict_mapping_index = { }; // initialize a dictionary for mapping
+        for ( let i = 0; i < arr_index.length; i ++ ) {
+            let e = arr_index[ i ]; // retrieve index value at 'i'
+            if ( ! ( e in dict_mapping_index ) ) {
+                dict_mapping_index[ e ] = [ ];
+            }
+            dict_mapping_index[ e ].push( i );
+        }
+        this._dict_mapping_index = dict_mapping_index;
+        this.name_col_index = flag_use_default_index ? undefined : name_col_index; // retrieve the name_col for building an index // update a name_col used for building an index
+    }
+    set_index( name_col_index ) {
+        /*
+        set index of a DataFrame object
+        */
+        console.log( this ); 
+        let flag_use_default_index = check_none( name_col_index ) | ( ! this.columns.has( name_col_index ) ), // retrieve a flag indicating whether a default index should be used.
+            arr_index = flag_use_default_index ? nj.arange( this.length ).tolist( ) : this._dict_data[ name_col_index ], // use integer indices by default
+            dict_mapping_index = { }; // initialize a dictionary for mapping
+        for ( let i = 0; i < arr_index.length; i ++ ) {
+            let e = arr_index[ i ]; // retrieve index value at 'i'
+            if ( ! ( e in dict_mapping_index ) ) {
+                dict_mapping_index[ e ] = [ ];
+            }
+            dict_mapping_index[ e ].push( i );
+        }
+        this._dict_mapping_index = dict_mapping_index;
+        this.name_col_index = flag_use_default_index ? undefined : name_col_index; // retrieve the name_col for building an index // update a name_col used for building an index
+    }
+    add_column( name_col, arr_val ) {
+        /*
+        add a new column to the dataframe
+        
+        name_col : the name of new column
+        arr_val : array of values
+        */
+        let length_new_col = check_none( arr_val.length ) ? arr_val.shape[ 0 ] : arr_val.length; // retrieve the length of the new column
+        if ( length_new_col == this.length ) { // check the length of the new column is the same as the length of the current dataframe
+            this._dict_data[ name_col ] = arr_val; // add/update the column of the dataframe
+            this.columns.add( name_col ); // add the column name to the columns attribute.
+        }
+    }
+    get_column( name_col ) {
+        /*
+        retrieve values of the column
+        */
+        if ( this.columns.has( name_col ) ) { // check whether the current dataframe contains 'name_col' column
+            return this._dict_data[ name_col ]; // return the values of the column
+        }
+    }
+    get_integer_indices_of_rows( l_index_value = undefined ) {
+        /*
+        retrieve integer indices of rows according to the given row index values
+        
+        'l_index_value' // a list of index values ('row') for retrieving integer indices 
+        */
+        // retrieve l_int_index for the subset
+        let l_int_index = [ ];
+        if ( check_none( l_index_value ) ) {
+            l_int_index = nj.arange( this.length ).tolist( ); // if no selection was given, use the integer indices of all rows.
+        } else {
+            for ( let index_val of l_index_value ) {
+                if ( index_val in this._dict_mapping_index ) { // check 'index_val' exists in the dataframe
+                    l_int_index.push( ... this._dict_mapping_index[ index_val ] )
+                }
+            }
+        }
+        return l_int_index;
+    }
+    subset( l_index_value = undefined, l_column_value = undefined ) {
+        /* 
+        return a subset of dataframe according to 'l_index_value' and 'l_column_value'
+        */
+        // retrieve l_int_index for the subset
+        let l_int_index = this.get_integer_indices_of_rows( l_index_value );
+        
+        // retrieve a subset of data
+        let dict_data_subset = { }; // initialize dict_data of a new dataframe
+        for ( let col of l_column_value ) {
+            if ( col in this._dict_data ) { // if column name exists in the dataframe
+                let arr_val_subset = [ ], // initialize the array that will contain a subset of data
+                    arr_val = this._dict_data[ col ], // retrieve values of the column
+                    flag_is_array = arr_val instanceof Array; // retrieve 'flag_is_array' indicating whether 'arr_val' is an instance of Array
+                for ( let int_index of l_int_index ) { // for each 'int_index'
+                    arr_val_subset.push( flag_is_array ? arr_val[ int_index ] : arr_val.get( int_index ) ); // retrieve values from NestedArray (class from Zarr.js)
+                }
+                dict_data_subset[ col ] = arr_val_subset; // retrieve the subset 
+            }
+        }
+        return new DataFrame( dict_data_subset, this.name_col_index, l_int_index.length ); // return a subset of DataFrame, using the same index as the current DataFrame
+    }
+}
+// AnnData
+class AnnData {
+    /*
+    a javascript object for containing an AnnData data object
+    
+    X : a sparse/dense/empty matrix containing expression data.
+    */
+    constructor( X = undefined, df_obs = { }, df_var = { }, dict_data_obsm = { }, dict_data_varm = { }, dict_data_uns = { }, verbose = true ) {
+        /*
+        */
+        // set attributes
+        this.verbose = verbose;
+        
+        // check inputs
+        if ( ! ( check_none( X ) | ( X instanceof nj.NdArray ) | ( X instanceof SparseMatrix ) ) ) { // X should be an empty value, numjs array, or a sparse matrix.
+            if ( this.verbose ) {
+                console.log( 'invalid X was given, exiting' )
+            }
+            return;
+        }
+        // set attributes
+        this.X = X; // sparse/dense matrix
+        this.obs = df_obs; // dataframe
+        this.var = df_var;
+        this.obsm = dict_data_obsm;
+        this.varm = dict_data_varm;
+        this.uns = dict_data_uns;
+    }
 }
     
 class ZarrDataFrame {
@@ -513,7 +757,6 @@ class ZarrDataFrame {
                         arr_data = await this._columns[ name_col ].zarr_object.get( [ null, coord_other_axes ] );
                     }
                 }
-                return arr_data;
             } else {
                 // filter is active. apply the active filter to the current zarr object
                 // exit when the number of active entries in the filter is 0.
@@ -565,6 +808,7 @@ class ZarrDataFrame {
                             int_index_entry_after_filtering += 1; // update 'int_index_entry_after_filtering'
                         }
                     }
+                    
                     // return the filtered array as a nested array
                     return new zarr.NestedArray( arr_filtered, l_dims_filtered );
                 }
@@ -609,8 +853,8 @@ class ZarrDataFrame {
                     arr_filtered.set( arr, int_num_values_copied ) // copy the filtered result of a chunk to the combined result
                     int_num_values_copied += arr.length; // update 'int_num_values_copied'
                 }
-                // return the filtered array as a nested array
-                return new zarr.NestedArray( arr_filtered, l_dims_filtered );
+                // retrieve the filtered array as a nested array
+                arr_data = new zarr.NestedArray( arr_filtered, l_dims_filtered );
             }
         } else {
             // when indexing through primary axis is active
@@ -625,8 +869,36 @@ class ZarrDataFrame {
                     arr_data = await this._columns[ name_col ].zarr_object.get( [ coord_primary_axis, coord_other_axes ] );
                 }
             }
-            return arr_data;
         }
+        // retrieve column metadata
+        let col_metadata = this._columns[ name_col ].metadata;
+        if ( col_metadata[ 'flag_categorical' ] ) { // retrieve categorical data
+            if ( arr_data.shape.length > 1 ) { // currently, only a categorical data with 1D shape is supported.
+                return arr_data;
+            }
+            let l_unique_categories = col_metadata[ 'l_value_unique' ], // retrieve a list of unique categories of the given column
+                arr_data_category = [ ];
+            
+            // retrieve categorical data
+            for ( let int_index_category of arr_data.flatten( ) ) {
+                arr_data_category.push( l_unique_categories[ int_index_category ] );
+            }
+            arr_data = arr_data_category;
+        }
+        // return retrieved data
+        return arr_data;
+    }
+    async get_df( l_col ) {
+        /*
+        return a DataFrame for the given list of columns
+        */
+        let dict_data = { };
+        for ( let col of l_col ) { // for each column in the given list of columns
+            if ( this.columns.has( col ) ) { // if the column exists in the dataframe
+                dict_data[ col ] = await this.get_item( col ); // retrieve values of the column
+            }
+        }
+        return new DataFrame( dict_data, undefined, this.n_rows, this.verbose ); // return the retrieved data as a dataframe // use default index
     }
     get_n_rows( ) {
         /* # 2022-06-22 16:36:54 
@@ -649,7 +921,6 @@ class ZarrDataFrame {
         }
     }
 }
-    
 async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = undefined ) {
     /* 
     'l_int_index' WILL BE SORTED
@@ -751,7 +1022,6 @@ async function zarr_get_by_l_int_index( za, l_int_index, coord_other_axes = unde
     // return the filtered array as a nested array
     return new zarr.NestedArray( arr_filtered, l_dims_filtered );
 }
-
 class StringZarr {
     /*
     a stringzarr object contains 2D-array of strings of variable length with chunk shape of ('int_num_of_entries_in_a_chunk', 1), meaning each chunk contains values of a single column
@@ -883,7 +1153,6 @@ class StringZarr {
         return l_parsed_data;
     }
 }
-    
 class RAMtx {
     constructor( path_folder_ramtx, ramdata = undefined, verbose = true, flag_debugging = false ) {
         // these values will be fixed: dtype_of_feature_and_barcode_indices = np.uint32, dtype_of_values = np.float64
@@ -906,9 +1175,9 @@ class RAMtx {
         
         // set attributes
         this.flag_ramtx_sorted_by_id_feature = this.metadata[ 'flag_ramtx_sorted_by_id_feature' ];
-        this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
-        this.int_num_features = this.metadata[ 'int_num_features' ];
-        this.int_num_records = this.metadata[ 'int_num_records' ];
+        this._int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
+        this._int_num_features = this.metadata[ 'int_num_features' ];
+        this._int_num_records = this.metadata[ 'int_num_records' ];
         this.mode = this.metadata[ 'mode' ];
 
         this.is_for_querying_features = this.flag_ramtx_sorted_by_id_feature;
@@ -940,6 +1209,15 @@ class RAMtx {
             za_ba_active_entries.meta.dtype = '|i1'; // change dtype to '|i1'
         }
         this.ba_active_entries = to_ba( await za_ba_active_entries.get( null ) ); // retrieve a filter of active entries
+    }
+    get int_num_barcodes( ) {
+        return this._int_num_barcodes;
+    }
+    get int_num_features( ) {
+        return this._int_num_features;
+    }
+    get int_num_records( ) {
+        return this._int_num_records;
     }
     async get_item( l_int_entry ) {
         /*
@@ -1147,58 +1425,21 @@ class RAMtx {
         // return the retrieved data
         return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
     }
-//     def get_sparse_matrix( self, l_int_entry, flag_return_as_arrays = False ) :
-//         """ # 2022-08-30 11:03:14 
+    async get_sparse_matrix( l_int_entry ) {
+        /* # 2022-08-30 11:03:14 
         
-//         get sparse matrix for the given list of integer representations of the entries.
+        get sparse matrix for the given list of integer representations of the entries.
         
-//         'l_int_entry' : list of int_entries for query
-//         'flag_return_as_arrays' : if True, return three arrays and a single list, 'l_int_barcodes', 'l_int_features', 'l_values', 'l_int_num_records'. 
-//                 'l_int_barcodes', 'l_int_features', 'l_values' : for building a sparse matrix
-//                 'l_int_num_records' : for building an index
-//                 if False, return a scipy.csr sparse matrix
-//         """
-//         l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value = self[ l_int_entry ] # parse retrieved result
-        
-//         if len( l_arr_int_entry_of_axis_not_for_querying ) > 0 : 
-//             # if valid input is available
-//             # combine the arrays
-//             arr_int_entry_of_axis_not_for_querying = np.concatenate( l_arr_int_entry_of_axis_not_for_querying )
-//             arr_value = np.concatenate( l_arr_value )
-//             del l_arr_value # delete intermediate objects
-
-//             # compose 'arr_int_entry_of_axis_for_querying'
-//             arr_int_entry_of_axis_for_querying = np.zeros( len( arr_int_entry_of_axis_not_for_querying ), dtype = self._dtype_of_feature_and_barcode_indices ) # create an empty array
-//             int_pos = 0
-//             for int_entry_of_axis_for_querying, a in zip( l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying ) :
-//                 n = len( a )
-//                 arr_int_entry_of_axis_for_querying[ int_pos : int_pos + n ] = int_entry_of_axis_for_querying # compose 'arr_int_entry_of_axis_for_querying'
-//                 int_pos += n # update the current position
-//             if flag_return_as_arrays :
-//                 l_int_num_records = list( len( a ) for a in l_arr_int_entry_of_axis_not_for_querying ) # when returning arrays instead of a scipy sparse matrix, additionally prepare records that can be utilized for build an index of the data
-//             del l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying # delete intermediate objects
-
-//             # get 'arr_int_barcode' and 'arr_int_feature' based on 'self.is_for_querying_features'
-//             if self.is_for_querying_features :
-//                 arr_int_barcode = arr_int_entry_of_axis_not_for_querying
-//                 arr_int_feature = arr_int_entry_of_axis_for_querying
-//             else :
-//                 arr_int_barcode = arr_int_entry_of_axis_for_querying
-//                 arr_int_feature = arr_int_entry_of_axis_not_for_querying
-//             del arr_int_entry_of_axis_for_querying, arr_int_entry_of_axis_not_for_querying # delete intermediate objects
-
-//             if flag_return_as_arrays : # if 'flag_return_as_arrays' is True, return data as arrays
-//                 return arr_int_barcode, arr_int_feature, arr_value, l_int_num_records
-//         else :
-//             # if input is empty, compose empty inputs 
-//             arr_value, arr_int_barcode, arr_int_feature = [ ], [ ], [ ]
-            
-//         # return data as a sparse matrix
-//         n_bc, n_ft = ( self._int_num_barcodes, self._int_num_features ) if self._ramdata is None else ( len( self._ramdata.bc ), len( self._ramdata.ft ) ) # detect whether the current RAMtx has been attached to a RamData and retrieve the number of barcodes and features accordingly
-//         X = scipy.sparse.csr_matrix( scipy.sparse.coo_matrix( ( arr_value, ( arr_int_barcode, arr_int_feature ) ), shape = ( n_bc, n_ft ) ) ) # convert count data to a sparse matrix
-//         return X # return the composed sparse matrix 
+        'l_int_entry' : list of int_entries for query
+        'flag_return_as_arrays' : if True, return three arrays and a single list, 'l_int_barcodes', 'l_int_features', 'l_values', 'l_int_num_records'. 
+                'l_int_barcodes', 'l_int_features', 'l_values' : for building a sparse matrix
+                'l_int_num_records' : for building an index
+                if False, return a scipy.csr sparse matrix
+        */
+        // return data as a sparse matrix
+        return new SparseMatrix( await this.get_item( l_int_entry ), check_none( this._ramdata ) ? [ this._int_num_barcodes, this._int_num_features ] : [ this._ramdata.bc.length, this._ramdata.ft.length ], ! this.flag_ramtx_sorted_by_id_feature, this.verbose ); // convert count data to a sparse matrix // feature = secondary axis, barcode = primary axis
+    }
 }
-    
 class RamDataAxis {
     constructor( path_folder, name_axis, ba_filter = undefined, ramdata = undefined, dict_kw_zdf = { 'flag_retrieve_categorical_data_as_integers' : false }, dict_kw_view = { 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : 0.1 }, int_index_str_rep = 0, verbose = true, flag_debugging = false ) {
         // set attributes
@@ -1496,7 +1737,7 @@ class RamDataAxis {
         /* # 2022-09-12 02:28:49 
         load string representation of all the active entries of the current axis, and retrieve a mapping from string representation to integer representation
         
-        'int_index_col' : default value is 'self.int_index_str_rep'
+        'int_index_col' : default value is 'this.int_index_str_rep'
         */
         // set default value for 'int_index_col'
         if ( check_none( int_index_col ) ) {
@@ -1550,7 +1791,7 @@ class RamDataAxis {
         let ba_filter_of_selected_entries = new BitSet( );
         
         // # retrieve bitarray filter (or a filter of all active entries in the current layer)
-        let ba_filter = ! check_none( self.filter ) ? self.filter : this.all( true );
+        let ba_filter = ! check_none( this.filter ) ? this.filter : this.all( true );
         
         // ''' handle 'None' '''
         if ( check_none( l ) ) {
@@ -1563,9 +1804,9 @@ class RamDataAxis {
         }
         
         // ''' handle an empty list input '''
-        // # handle empty inputs
+        // # handle empty inputs // when an empty input is given, use all entries
         if ( l.length == 0 ) {
-            return ba_filter_of_selected_entries; // # return results
+            return ba_filter; // # return results
         }
         
         // ''' handle string list input '''
@@ -1619,6 +1860,9 @@ class RamDataAxis {
         return a dictionary for mapping integer representation to string representation
         */
         return this._dict_i_to_str;
+    }
+    get length( ) {
+        return this.meta.n_rows;
     }
 }
 class RamDataLayer {
@@ -1721,7 +1965,7 @@ class RamDataLayer {
         if ( name_mode in this ) {
             return this[ name_mode ];
         }
-        if ( self.verbose ) {
+        if ( this.verbose ) {
             console.log( `ramtx for querying ${name_axis_for_querying} efficiently is not available for layer ${this.name}, containing the following modes: ${[ ... this.modes]}` );
         }
         return undefined;
@@ -1780,7 +2024,7 @@ class RamData {
 
         // load RamDataAxis
         // initialize axis objects
-        this.bc = new RamDataAxis( this._path_folder_ramdata, 'barcodes', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
+        this.bc = new RamDataAxis( this._path_folder_ramdata, 'barcodes', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_barcodes, this.verbose, this.flag_debugging );
         await this.bc.initialize( );
         this.ft = new RamDataAxis( this._path_folder_ramdata, 'features', undefined, this, this.dict_kw_zdf, this.dict_kw_view, this.int_index_str_rep_for_features, this.verbose, this.flag_debugging );
         await this.ft.initialize( );
@@ -1845,7 +2089,7 @@ class RamData {
         this.ft.destroy_view( );
         this.bc.destroy_view( );
     }
-    async compose_filters( self, l_entry_bc = [ ], l_entry_ft = [ ], flag_use_str_repr_bc = false, flag_use_str_repr_ft = false ) {
+    async compose_filters( l_entry_bc = [ ], l_entry_ft = [ ], flag_use_str_repr_bc = false, flag_use_str_repr_ft = false ) {
         /* # 2022-07-16 17:10:07 
         for the given 'barcodes'/'features' entries, compose filters containing the entries, and apply the filters.
         
@@ -1923,60 +2167,88 @@ class RamData {
                 console.log( 'invalid queries, exiting' );
             }
         }
-//         // if the first argument appears to be 'name_layer', load the layer and drop the argument
-//         if isinstance( args[ 0 ], str ) and args[ 0 ] in self.layers :
-//             self.layer = args[ 0 ]
-//             args = args[ 1 : ] 
-//         assert len( args ) <= 4 // # assumes layer has been loaded, and only arguments are for barcode/feature indexing
+        // if the first argument appears to be 'name_layer', load the layer and drop the argument
+        if ( ( typeof args[ 0 ] == 'string' ) & ( this.layers.has( args[ 0 ] ) ) ) {
+            let name_layer = args[ 0 ];
+            await this.load_layer( name_layer ); // load the layer
+            args = args.slice( 1 );
+        }
+        // # assumes layer has been loaded, and remaining arguments are only for barcode/feature indexing
+        if ( args.length > 4 ) {
+            if ( this.verbose ) {
+                console.log( 'the number of arguments are too many, exiting.' )
+            }
+        }
         
-//         args = list( args ) + list( [ ] for i in range( 4 - len( args ) ) ) // # make the number of arguments to 4
-//         l_entry_bc, l_col_bc, l_entry_ft, l_col_ft = args # parse arguments
+        // # make the number of arguments to 4
+        for ( let i = 0; i < 4 - args.length; i ++ ) {
+            args.push( [ ] ); // push an empty array
+        }
+        // # parse arguments
+        let l_entry_bc = args[ 0 ], 
+            l_col_bc = args[ 1 ], 
+            l_entry_ft = args[ 2 ], 
+            l_col_ft = args[ 3 ];
         
-//         // backup the filters
-//         ba_filter_bc_backup = self.bc.filter
-//         ba_filter_ft_backup = self.ft.filter
+        // backup the filters
+        let ba_filter_bc_backup = this.bc.filter,
+            ba_filter_ft_backup = this.ft.filter;
         
-//         // retrieve flags for using string representations in the output
-//         flag_use_str_repr_bc = 'str' in l_col_bc
-//         flag_use_str_repr_ft = 'str' in l_col_ft
+        // retrieve flags for using string representations in the output
+        let flag_use_str_repr_bc = l_col_bc.includes( 'str' ),
+            flag_use_str_repr_ft = l_col_ft.includes( 'str' );
         
-//         // load a layer
-//         if self.layer is None :
-//             if len( self.layers ) == 0 : // # if no layer is available
-//                 if self.verbose :
-//                     logging.info( '[scanpy_embedding] no layer is available. current implementation requires at least one layer, exiting' )
-//                     return
-//             self.layer = list( self.layers )[ 0 ] // # load any layer
+        // load a layer
+        if ( check_none( this.layer ) ) {
+            if ( this.layers.size == 0 ) { // # if no layer is available
+                if ( this.verbose ) {
+                    console.log( 'no layer is available. current implementation requires at least one layer, exiting' );
+                    return;
+                }
+            }
+            await this.load_layer( [ ... this.layers ][ 0 ] ); // load any layer
+        }
         
-//         // compose filters from the queried entries
-//         ba_entry_bc, l_str_bc, ba_entry_ft, l_str_ft = self.compose_filters( l_entry_bc = l_entry_bc, l_entry_ft = l_entry_ft, flag_use_str_repr_bc = flag_use_str_repr_bc, flag_use_str_repr_ft = flag_use_str_repr_ft )
+        // compose filters from the queried entries
+        let res = await this.compose_filters( l_entry_bc, l_entry_ft, flag_use_str_repr_bc, flag_use_str_repr_ft );
+        let ba_entry_bc = res[ 0 ], 
+            l_str_bc = res[ 1 ], 
+            ba_entry_ft = res[ 2 ], 
+            l_str_ft = res[ 3 ];
         
-//         // retrieve ramtx for retrieving data
-//         rtx = self.layer.select_ramtx( ba_entry_bc, ba_entry_ft )
+        // retrieve ramtx for retrieving data
+        let rtx = this.layer.select_ramtx( ba_entry_bc, ba_entry_ft );
         
-//         // set barcode/feature filters for the queried entries
-//         self.bc.filter = ba_entry_bc
-//         self.ft.filter = ba_entry_ft
+        // set barcode/feature filters for the queried entries
+        this.bc.set_filter( ba_entry_bc );
+        this.ft.set_filter( ba_entry_ft );
 
-//         // initialize and destroy the view after retrieving the count matrix
-//         with self as view : // # load 'dict_change' for coordinate conversion according to the given filters, creating the view of the RamData
-//             // # retrieve count data
-//             X = rtx.get_sparse_matrix( [ ] ) // # retrieve count data for all entries currently active in the filter
+        // initialize and destroy the view after retrieving the count matrix
+        // # load 'dict_change' for coordinate conversion according to the given filters, creating the view of the RamData
         
-//         // retrieve meta data as dataframes
-//         df_obs = self.bc.meta.get_df( * l_col_bc )
-//         if flag_use_str_repr_bc : // # add string representations
-//             df_obs.index = l_str_bc
-//             del l_str_bc
-//         df_var = self.ft.meta.get_df( * l_col_ft )
-//         if flag_use_str_repr_ft : // # add string representations
-//             df_var.index = l_str_ft
-//             del l_str_ft
+        // # retrieve count data
+        this.create_view( ); // create view
+        let X = await rtx.get_sparse_matrix( [ ] ) // # retrieve count data for all entries currently active in the filter
+        this.destroy_view( ); // destroy view
         
-//         // build output AnnData object
-//         adata = anndata.AnnData( obs = df_obs, var = df_var ) // # in anndata.X, row = barcode, column = feature // # set obs and var with integer index values
-//         adata.X = X // # add count data
-//         del X
+        // retrieve meta data as dataframes
+        let df_obs = await this.bc.meta.get_df( l_col_bc );
+        
+        if ( flag_use_str_repr_bc ) { // # add string representations
+            df_obs.add_column( 'str', l_str_bc ); // add a column containing string representations
+            df_obs.set_index( 'str' ); // use string representations as index
+            l_str_bc = undefined; // delete 'l_str_bc'
+        }
+        let df_var = await this.ft.meta.get_df( l_col_ft );
+        if ( flag_use_str_repr_ft ) { // # add string representations
+            df_var.add_column( 'str', l_str_ft ); // add a column containing string representations
+            df_var.set_index( 'str' ); // use string representations as index
+            l_str_ft = undefined; // delete 'l_str_ft'
+        }
+        
+        // build output AnnData object
+        let adata = new AnnData( X, df_obs, df_var ) // # in anndata.X, row = barcode, column = feature // # set obs and var with integer index values // # add count data
+        
 //         // # add obsm/varm
 //         for ax, name_attr, l in zip( [ self.ft, self.bc ], [ 'varm', 'obsm' ], [ l_col_ft, l_col_bc ] ) :
 //             for e in l :
@@ -1988,13 +2260,12 @@ class RamData {
 //                     for name_col in e :
 //                         if name_col in ax.meta : # if the column exists in the metadata
 //                             getattr( adata, name_attr )[ name_col ] = ax.meta[ name_col ] if e[ name_col ] is None else ax.meta[ name_col, None, e[ name_col ] ] // # if e[ name_col ] is None, load all data on the secondary axis
-        
 
-//         // restore the filters once the data retrieval has been completed
-//         self.bc.filter = ba_filter_bc_backup
-//         self.ft.filter = ba_filter_ft_backup
+        // restore the filters once the data retrieval has been completed
+        this.bc.set_filter( ba_filter_bc_backup );
+        this.ft.set_filter( ba_filter_ft_backup );
         
-//         return adata // # return resulting AnnData
+        return adata; // # return resulting AnnData
     }
 }
     
