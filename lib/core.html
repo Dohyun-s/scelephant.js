@@ -210,7 +210,7 @@ body {
     <output></output>
     <div class="custextareasdontdopseudoelements"><textarea name="repl" id="repl"></textarea></div>
 </div>
-<div class="content">
+<div class="content" id="canvas">
     <div id="tester" style="width:600px;height:250px;"></div>
 </div>
 <script>
@@ -1293,7 +1293,6 @@ class RAMtx {
             if ( flag_empty_input ) {
                 // ''' handle when empty 'l_int_entry' has been given and filter has been set  '''
                 l_int_entry_filtered = ba_to_integer_indices( ba_filter_axis_for_querying, int_num_entries_axis_for_querying );
-                console.log( 'hi~ l_int_entry_filtered', l_int_entry_filtered );
             } else {
                 // filter 'l_int_entry' according to 'ba_filter_axis_for_querying'
                 for ( let int_entry of l_int_entry ) {
@@ -2001,8 +2000,7 @@ class RamDataLayer {
             }
         }
     }
-}
-    
+}   
 class RamData {
     constructor(  
         path_folder_ramdata, name_layer = 'raw', int_index_str_rep_for_barcodes = 0, int_index_str_rep_for_features = 1, int_num_entries_for_each_weight_calculation_batch = 2000, int_total_weight_for_each_batch = 10000000, dict_kw_zdf = { 'flag_retrieve_categorical_data_as_integers' : false }, dict_kw_view = { 'float_min_proportion_of_active_entries_in_an_axis_for_using_array' : 0.1 }, verbose = true, flag_debugging = false
@@ -2272,13 +2270,13 @@ class RamData {
                 l_col = l_l_col[ i ];
             for ( let e of l_col ) {
                 if ( e instanceof Array ) { // # retrieve all data in the secondary axis
-                    for ( name_col of e ) {
+                    for ( let name_col of e ) {
                         if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
                             adata[ name_adata_attr ][ name_col ] = await ax.meta.get_item( name_col );
                         }
                     }
                 } else if ( e instanceof Object ) { // # indexing through secondary axis
-                    for ( name_col in e ) {
+                    for ( let name_col in e ) {
                         if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
                             adata[ name_adata_attr ][ name_col ] = await ( check_none( e[ name_col ] ) ? ax.meta.get_item( name_col ) : ax.meta.get_item( name_col, undefined, e[ name_col ] ) ); // # if e[ name_col ] is None, load all data on the secondary axis
                         }
@@ -2294,6 +2292,746 @@ class RamData {
         return adata; // # return resulting AnnData
     }
 }
+
+// functions for plotting and interacting with html document
+// for argsort
+let argsort = arr => arr.map( (v, i) => [v, i] ).sort( ).map( a => a[ 1 ] ); // a function for arg-sorting an array
+// for Array operations
+// functions for numpy-like operations
+function ArraySum( l ) { // return the sum of values of an array
+    return l.reduce( (a, b) => a + b, 0 );
+}
+function ArrayIndexing( l, l_index ) {
+    let l_output = [ ];
+    for ( let i = 0; i < l_index.length; i++ ) { l_output.push( l[ l_index[ i ] ] ); }
+    return l_output
+}
+function ArrayBooleanIndexing( l, l_bool ) {
+    let l_output = [ ];
+    for ( let i = 0; i < l_bool.length; i++ ) { if ( l_bool[ i ] ) { l_output.push( l[ i ] ); } }
+    return l_output
+}
+function ArrayBoolAND( l_l ) {
+    let l_output = [ ];
+    for ( let j = 0; j < l_l[ 0 ].length; j++ ) {
+        let output = true;
+        for ( let i = 0; i < l_l.length; i++ ) { output = output && l_l[ i ][ j ]; }
+        l_output.push( output );
+    }
+    return l_output;
+}
+function ArrayBoolOR( l_l ) {
+    let l_output = [ ];
+    for ( let j = 0; j < l_l[ 0 ].length; j++ ) {
+        let output = false;
+        for ( let i = 0; i < l_l.length; i++ ) { output = output || l_l[ i ][ j ]; }
+        l_output.push( output );
+    }
+    return l_output;
+}
+function ArrayBoolNOT( l ) {
+    let l_output = [ ];
+    for ( let i = 0; i < l.length; i++ ) { l_output.push( l[ i ] ? false : true ); }
+    return l_output;
+}
+function ArrayGreaterThan( l, thres ) {
+    let l_output = [ ];
+    for ( let i = 0; i < l.length; i++ ) { l_output.push( l[ i ] > thres ); }
+    return l_output;
+}
+function ArrayLessThan( l, thres ) {
+    let l_output = [ ];
+    for ( let i = 0; i < l.length; i++ ) { l_output.push( l[ i ] < thres ); }
+    return l_output;
+}
+function ArrayFull( length, value ) {
+    let l_output = [ ];
+    for ( let i = 0; i < length; i++ ) { l_output.push( value ); }
+    return l_output;
+}
+function ArrayBroadCasting( l, l_bool, value ) {
+    let l_output = [ ];
+    for ( let i = 0; i < l.length; i++ ) { l_output.push( l_bool[ i ] ? value : l[ i ] ); }
+    return l_output;
+}
+function ArrayCap( l, value ) { // cap value of a given list at the given capping value (manually set maximum value)
+    l_modified = lodash.cloneDeep( l );
+    for ( let i = 0; i < l.length; i ++ ) {
+        if ( l[ i ] > value ) { // cap value of a given list at the given capping value (manually set maximum value)
+            l_modified[ i ] = value;
+        }
+    }
+    return l_modified
+}
+function ArrayFloor( l, value ) { // floor value of a given list at the given flooring value (manually set minimum value)
+    l_modified = lodash.cloneDeep( l );
+    for ( let i = 0; i < l.length; i ++ ) {
+        if ( l[ i ] < value ) { // cap value of a given list at the given capping value (manually set maximum value)
+            l_modified[ i ] = value;
+        }
+    }
+    return l_modified
+}
+function ArrayApply( l, a_function ) { // apply certain function to all of values of a given array
+    let l_output = [ ];
+    for ( let i = 0; i < l.length; i ++ ) {
+        l_output[ i ] = a_function( l[ i ] );
+    }
+    return l_output
+}
+function ArrayMap( l, dictionary, default_value = undefined ) { // map values in a given array using a given dictionary
+    let l_output = [ ];
+    for ( let i = 0; i < l.length; i ++ ) {
+        l_output[ i ] = ( l[ i ] in dictionary ) ? dictionary[ l[ i ] ] : default_value;
+    }
+    return l_output
+}
+function ArrayTranspose( l_l ) { // transpose 2d array
+    let n_row = l_l.length, n_col = l_l[ 0 ].length, l_l_t = [ ]; // transposed 2d array
+    for ( let i = 0; i < n_col; i ++ ) {
+        let l_t = [ ]; // transposed column (now a row)
+        for ( let j = 0; j < n_row; j ++ ) { l_t.push( l_l[ j ][ i ] ); }
+        l_l_t.push( l_t );
+    }
+    return l_l_t;
+}
+function ArrayAsInt( l ) { 
+    let l_int = [ ];
+    for ( let i = 0; i < l.length; i ++ ) {
+        l_int.push( parseInt( l[ i ] ) ); // parse a string into an integer for each entry
+    }
+    return l_int
+} // convert array of strings to array of integers
+function ArrayAverage( l ) { // calculate average of values in the array
+    let sum = l.reduce( ( a, b ) => a + b, 0 );
+    let avg = ( sum / l.length ) || 0;
+    return avg;
+}
+function ArrayMultiply( l, float_multiply_by ) { // return a list with values multiplied by 'float_multiply_by'
+    let l_multiplied = [ ];
+    for ( let i = 0; i < l.length; i ++ ) {
+        l_multiplied.push( l[ i ] * float_multiply_by );
+    }
+    return l_multiplied;
+}
+    
+
+dict_data = { 
+    'canvas' : {
+        'set_name_div' : new Set( )
+    }
+}
+function create_div( name_div, style = "width:1100px;height:1100px;" ) {
+    /*
+    create a new div for plotting graph
+    */
+    if ( ! dict_data.canvas.set_name_div.has( name_div ) ) { // create div when 'name_div' does not exist in the canvas
+        let div_new = document.createElement( 'div' );
+        div_new.id = name_div;
+        div_new.className = 'plot';
+        div_new.style = style; // set style
+        $( '#canvas' )[ 0 ].appendChild( div_new );
+        dict_data.canvas.set_name_div.add( name_div ); // add 'name_div' to the set of div names
+    }
+}
+
+let name_application = 'scelephant.js'
+let config_plotly = { responsive: true, displaylogo: false, toImageButtonOptions: { hoverClosestCartesian: true, format: 'png', filename: name_application, height: 750, width: 1100, scale: 1 }, modeBarButtonsToRemove: [ 'autoScale2d', 'toggleSpikelines', 'hoverCompareCartesian', 'hoverClosestCartesian' ] } // flexible plot width according to the window size  // do not display plotly logo
+
+function adaptive_marker_size( ed, div, dict_kw_args ) {
+    /*
+    adaptively change marker sizes
+    */
+    // if no event was detected, exit
+    if ( Object.entries( ed ).length === 0 ) { return; }
+    
+    // function for calculating responsive marker size
+    function ResponsiveMarkerSize( div, marker_size_default = 5, int_factor_axis_range_to_marker_size = 30, int_factor_marker_size_multiply = 3 ) { // get marker size according to the given parameter and x- and y-axis range of the division containing a plotly plot
+        if ( ! ( 'layout' in div ) ) {
+            return marker_size_default; // if plotly has not been drawn, use the default value for the marker size
+        }
+        let x = div.layout.xaxis, y = div.layout.yaxis,
+            int_marker_size_to_be_updated = Math.min( 10, Math.min( Math.ceil( int_factor_axis_range_to_marker_size / ( x.range[ 1 ] - x.range[ 0 ] ) ), Math.ceil( int_factor_axis_range_to_marker_size / ( y.range[ 1 ] - y.range[ 0 ] ) ) ) * int_factor_marker_size_multiply );
+        return int_marker_size_to_be_updated;
+    }
+    
+    // broadcasting updated zoom level across plots
+    let x = div.layout.xaxis, y = div.layout.yaxis, flag_relayout = false, update = { }; // a flag indicating whether a relayout event is required
+    // ignore when layouts are changed due to autoranging
+    let int_marker_size_current = div.data[ 0 ].marker.size,
+        int_marker_size_to_be_updated = ResponsiveMarkerSize( div, dict_kw_args[ 'marker_size' ], dict_kw_args[ 'int_factor_axis_range_to_marker_size' ], dict_kw_args[ 'int_factor_marker_size_multiply' ] ),
+        flag_restyle = int_marker_size_to_be_updated != int_marker_size_current; // retrieve a marker indicating whether the marker size should be updated 
+
+    if ( flag_restyle ) { // restyle existing plot
+        console.log( "[adaptive_marker_size] restyling marker size to ", int_marker_size_to_be_updated );
+        let update = { marker : div.data[ 0 ].marker };
+        update.marker.size = int_marker_size_to_be_updated;
+        Plotly.restyle( div, update, [ 0 ] );
+    } 
+}
+function draw_graph( name_div, adata, dict_kw_args ) {
+    /*
+    name_div // name of the division to draw plots
+    adata // anndata
+    dict_kw_args // keyworded arguments
+        - name_gene : undefined // if given, show expression of a gene
+        - sort_by_value : true // 
+    
+    */
+    // define default keworded arguments
+    let dict_kw_args_default = {
+        'name_gene' : undefined, // if given, show expression of a gene
+        'sort_by_value' : true, // if true, sort barcodes by value that is used to color points, preventing lower-priority points to cover high-priority points
+        'name_col_embedding' : undefined, // name of obsm data that contains embedding coordinates (assumes NestedArray was given)
+        'name_embedding' : 'UMAP', // name of the embedding method. used to label axes
+        'marker_size' : 3, 
+        'fig_size' : [ 1100, 1100 ], // the figure size of the new plot (height/width)
+        'int_factor_axis_range_to_marker_size' : 30, // for responsive marker size
+        'int_factor_marker_size_multiply' : 3, // for responsive marker size
+        'vmax' : undefined, // set a maximum value to visualize. useful when an outlier exists and dampens the signals
+    }
+    
+    dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
+    // if name_div does not exist, create a new division
+    if ( dict_data.canvas.set_name_div.has( name_div ) ) {
+        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 1 ]}px;height:${dict_kw_args[ 'fig_size' ][ 0 ]}px;` );
+    }
+    // demonstration
+    
+    let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
+    let str_hovertemplate_additional_line = ''; // "<b>" + str_name_option_selected + "</b>: <b>%{marker.color:." + ( ( str_name_option_selected == 'MT Percentage' ) ? 1 : 0 ).toString( ) + "f}</b><br>"; // only MT percentage data will be shown as floating point numbers
+        
+    
+    let marker_size = dict_kw_args[ 'marker_size' ],
+        l_color,
+        l_x = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 0 ] ).flatten( ) ],
+        l_y = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 1 ] ).flatten( ) ];
+    
+    // retrieve color values according to the setting
+    if ( ( ! check_none( dict_kw_args[ 'name_gene' ] ) ) & (  ) ) {
+        adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_gene' ] ] ) ).to_dense( ).T.tolist( )[ 0 ], // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
+    }
+    
+    // cap the values according to the setting
+    if ( ! check_none( dict_kw_args[ 'vmax' ] ) ) { // if valid 'vmax' value has been given
+        l_color = ArrayCap( l_color, dict_kw_args[ 'vmax' ] ); // cap values
+    }
+    
+    // sort by color value according to the setting.
+    if ( dict_kw_args[ 'sort_by_value' ] ) {
+        let argsort_by_color = argsort( l_color );
+        // sort by color value
+        l_x = ArrayIndexing( l_x, argsort_by_color );
+        l_y = ArrayIndexing( l_y, argsort_by_color );
+        l_color = ArrayIndexing( l_color, argsort_by_color );
+    }
+
+    let trace = {
+        mode: 'markers',
+        type: 'scattergl',
+        x: l_x,
+        y: l_y,
+//         customdata: ArrayTranspose( [ dictarr[ col_name_cell_type ],
+//                                       dictarr[ "tissue" ],
+//                                       dictarr[ 'id_cell' ]
+//                                     ] ),
+//         hovertemplate: [ str_hovertemplate_additional_line + "tissue: <b>%{customdata[1]}</b>",
+//                         "cell type: <b>%{customdata[0]}</b>",
+//                         "",
+//                         'UMAP-1' + ": <b>%{x:.2f}</b>",
+//                         'UMAP-2' + ": <b>%{y:.2f}</b>",
+//                         "%{customdata[2]}",
+//                         "<extra></extra>" ].join( "<br>" ),
+        marker: { 
+            color: l_color,
+            size: dict_kw_args[ 'marker_size' ]
+        },
+        line: { 
+            width: 0
+        },
+    };
+    trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
+    
+    let div_plot = $( "#" + name_div )[ 0 ]; // retrieve div to create a plot
+    Plotly.newPlot( div_plot, [ trace ], { margin: { l: 65, r: 65, b: 90, t: 50, pad: 4 }, xaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-1`, zeroline: false }, yaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-2`, zeroline: false }, hovermode: "closest" }, { ... config_plotly, filename: 'single-cell-graph', height: dict_kw_args[ 'fig_size' ][ 0 ], width: dict_kw_args[ 'fig_size' ][ 1 ] } ); // draw scatter plot of the annotation
+    div_plot.on( "plotly_relayout", function( ed ) {
+        adaptive_marker_size( ed, div_plot, dict_kw_args );
+    });
+}
+    
+{
+// object_data.main.gene.expr = { data : { }, data_size : 250 }; // cache of expression data // size of the cache
+// object_data.main.cell_marker = { data : { }, data_size : 5 };
+// object_data.main.gene.correl = { data : { }, data_size : 10 };
+// object_data.main.umap = { tissue : 'not_drawn' }
+// object_data.main.scatter = { x_label : 'UMAP-1', y_label : 'UMAP-2', x_axis_option : '__UMAP__', y_axis_option : '__UMAP__', x_axis_col_name : 'UMAP_1', y_axis_col_name : 'UMAP_2', flag_waiting_selection_of_gene : false, gene_symbol_selected : '', flag_axis_using_gene_expr : true }; // initialize axis of the scatter plot
+// object_data.setting.expression = { };
+// object_data.setting.expression.n_digits_below_floating_point = 3; // number of digits below floading point of the original expression values (converted to integer by multiplying 1000 during delivery of the data)
+// object_data.main.datatable = { 'datatable_cell_marker' : { df : null, name : 'cell_marker' }, 'datatable_correl' : { df : null, name : 'correl_gene' } };
+
+// async function Change_UMAP_Coordinate( str_tissue = null ) { 
+//     if ( str_tissue === null ) {
+//         // change x or y-axis of scatter plot using the current setting
+//         let select_x_axis = $id( 'select_scatter_x_axis' ),
+//             select_y_axis = $id( 'select_scatter_y_axis' ),
+//             x_axis_option_current = select_x_axis.value,
+//             y_axis_option_current = select_y_axis.value,
+//             x_axis_option_previous = object_data.main.scatter.x_axis_option,
+//             y_axis_option_previous = object_data.main.scatter.y_axis_option,
+//             flag_update_x_axis = x_axis_option_current != x_axis_option_previous,
+//             flag_update_y_axis = y_axis_option_current != y_axis_option_previous,
+//             flag_update_axis = flag_update_x_axis | flag_update_y_axis;
+//         if ( ! flag_update_axis ) {
+//             console.log( "[Change_UMAP_Coordinate] no change in x- or y-axis setting detected, exiting" );
+//             return -1
+//         }
+//         if ( flag_update_x_axis ) { // update x-axis
+//             let option_gene = select_x_axis.options[ 1 ];
+//             if( x_axis_option_current == '__UMAP__' ) {
+//                 object_data.main.scatter.x_label = 'UMAP-1';
+//                 object_data.main.scatter.x_axis_option = x_axis_option_current;
+//                 object_data.main.scatter.x_axis_col_name = '__UMAP__';
+//                 // reset select option
+//                 option_gene.value = 'Gene';
+//                 option_gene.innerHTML = 'Gene';
+//                 object_data.main.scatter.flag_axis_using_gene_expr = false;
+//             } else if ( object_data.main.scatter.flag_waiting_selection_of_gene ) {
+//                 // update setting for scatter plot
+//                 let gene_symbol = object_data.main.scatter.gene_symbol_selected;
+//                 object_data.main.scatter.flag_waiting_selection_of_gene = false; // reset flag
+//                 object_data.main.scatter.x_label = gene_symbol;
+//                 object_data.main.scatter.x_axis_option = gene_symbol;
+//                 object_data.main.scatter.x_axis_col_name = '__x_axis_gene_expr__';
+//                 object_data.main.scatter.flag_axis_using_gene_expr = true;
+//                 // update select option
+//                 option_gene.value = gene_symbol;
+//                 option_gene.innerHTML = gene_symbol;
+//             } else {
+//                 object_data.main.scatter.flag_waiting_selection_of_gene = true;
+//                 // lock selection button to allow the selection of axis by clicking gene_symbol
+//                 select_x_axis.disabled = true;
+//                 select_y_axis.disabled = true;
+//                 console.log( '[Change_UMAP_Coordinate] (X-axis) waiting a gene_symbol to be selected' );
+//                 return 1;
+//             }
+//         } else {
+//             let option_gene = select_y_axis.options[ 1 ];
+//             if( y_axis_option_current == '__UMAP__' ) {
+//                 object_data.main.scatter.y_label = 'UMAP-2';
+//                 object_data.main.scatter.y_axis_option = y_axis_option_current;
+//                 object_data.main.scatter.y_axis_col_name = '__UMAP__';
+//                 // reset select option
+//                 option_gene.value = 'Gene';
+//                 option_gene.innerHTML = 'Gene';
+//                 object_data.main.scatter.flag_axis_using_gene_expr = false;
+//             } else if ( object_data.main.scatter.flag_waiting_selection_of_gene ) {
+//                 // update setting for scatter plot
+//                 let gene_symbol = object_data.main.scatter.gene_symbol_selected;
+//                 object_data.main.scatter.flag_waiting_selection_of_gene = false; // reset flag
+//                 object_data.main.scatter.y_label = gene_symbol;
+//                 object_data.main.scatter.y_axis_option = gene_symbol;
+//                 object_data.main.scatter.y_axis_col_name = '__y_axis_gene_expr__';
+//                 object_data.main.scatter.flag_axis_using_gene_expr = true;
+//                 // update select option
+//                 option_gene.value = gene_symbol;
+//                 option_gene.innerHTML = gene_symbol;
+//             } else {
+//                 object_data.main.scatter.flag_waiting_selection_of_gene = true;
+//                 // lock selection button to allow the selection of axis by clicking gene_symbol
+//                 select_x_axis.disabled = true;
+//                 select_y_axis.disabled = true;
+//                 console.log( '[Change_UMAP_Coordinate] (Y-axis) waiting a gene_symbol to be selected' );
+//                 return 1;
+//             }
+//         }
+//     } else { 
+//         // change UMAP coordinates to the UMAP coordinates of the given tissue
+//         if ( str_tissue == object_data.main.umap.tissue ) {
+//             console.log( "[Change_UMAP_Coordinate] UMAP coordinates of", str_tissue, "already drawn, exiting" );
+//             return -1;
+//         }
+//         object_data.main.umap.tissue = str_tissue; // update str_tissue of the main UMAP graph
+//         object_data.main.umap.flag_all_tissues = str_tissue == 'All'; // flag indicating whether UMAP coordinates of all tissues are used.
+//         let dictarr = object_data.file.dict_name_file_to_parsed_data[ "cells.all.tsv.gz.base64.txt" ];
+//         if ( object_data.main.umap.flag_all_tissues ) {
+//             object_data.main.umap.dictarr = dictarr;
+//         } else {
+//             // build a boolean index for retrieving UMAP coordinates (and other data) for the current tissue
+//             let l_tissue = dictarr[ "tissue" ],
+//                 l_bool_index = [ ],
+//                 i = 0;
+//             for ( i = 0; i < l_tissue.length; i ++ ) {
+//                 l_bool_index.push( l_tissue[ i ] == str_tissue );
+//             }
+//             object_data.main.umap.l_bool_index_tissue = l_bool_index;
+//             object_data.main.umap.dictarr = DictArrBooleanIndexing( dictarr, l_bool_index );
+//         }
+//     }
+//     // Update coordinates of scatter plots
+//     // draw cell annotation plot
+//     PlotCellAnnotation( );
+//     // draw expression plot
+//     UpdateGene( );
+// }
+// // preprocessing functions for updating caches
+// function preprocess_expr( data ) {
+//     let str_key = Object.keys( data )[ 0 ];
+//     return ArrayMultiply( data[ str_key ], Math.pow( 0.1, object_data.setting.expression.n_digits_below_floating_point ) );
+// }
+// var plotPreviewGene = document.getElementById( "plotly_searchbox_main_preview" ),
+//     plotSingleCellAnnotation = document.getElementById( "plotly_sclncrna_expression_umap_annotation" ),
+//     plotSingleCellExpression = document.getElementById( "plotly_sclncrna_expression_umap_expression" ),
+//     plotSingleCellExpressionViolin = document.getElementById( "plotly_sclncrna_expression_violine" );
+// object_data.setting.plot.single_cell_scatter = { 
+//     max_height: 750,
+//     marker_size: 3,
+//     int_factor_axis_range_to_marker_size : 30, 
+//     int_factor_marker_size_multiply : 3
+// }; // defsult single-cell scatter plot setting
+// object_data.setting.plot.single_cell_violin = { };
+// var config_plotly = { responsive: true, displaylogo: false, toImageButtonOptions: { hoverClosestCartesian: true, format: 'png', filename: name_application, height: 750, width: 1100, scale: 1 }, modeBarButtonsToRemove: [ 'autoScale2d', 'toggleSpikelines', 'hoverCompareCartesian', 'hoverClosestCartesian' ] } // flexible plot width according to the window size  // do not display plotly logo
+// function SortViolinTrace_Expression( trace_a, trace_b ) { return - ( trace_a.mean_expression_for_sorting - trace_b.mean_expression_for_sorting ) } // Sort Plotly Violin traces displaying expression values based on parameter values
+// // assign color to violine plot traces
+// function String_Check_Substring( string, l_substring ) {
+//     let flag_contains_substring = false;
+//     string = string.toLowerCase( );
+//     for ( let i = 0; i < l_substring.length; i ++ ) {
+//         let substring = l_substring[ i ].toLowerCase( );
+//         if ( string.includes( substring ) ) {
+//             flag_contains_substring = true;
+//             break;
+//         }
+//     }
+//     return flag_contains_substring;
+// }
+// function PlotExpression_scRNA_Seq_Get_Color_for_name_clus( str_name_clus ) { // return color for the given str_name_clus
+//     str_name_clus = str_name_clus.toLowerCase( ); // convert name_clus to lower cases
+//     let color = "#48D1CC"
+//     if ( String_Check_Substring( str_name_clus, [ 'platelet' ] ) ) {
+//         color = "#aec2c1";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'mast cell' ] ) ) {
+//         color = "#ceb3fc";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'uninfected' ] ) ) {
+//         color = "#9ef274";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'infected' ] ) ) {
+//         color = "#ff6b6b";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'rbc' ] ) ) {
+//         color = "#fc4970";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'endo', 'lymphatic', 'endotheli', 'capillary', 'luminal' ] ) ) {
+//         color = "#faf75f";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'dendritic', 'pdc', 'cdc', 'dc_', ' dcs' ] ) ) {
+//         color = "#64b9fa";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'stromal', 'fibroblasts', 'fibs', 'mesenchyme', 'cartilage' ] ) ) {
+//         color = "#fa5f5f";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'goblet', 'ciliated', 'secretory', 'ionocyte', 'club' ] ) ) {
+//         color = "#fce6b6";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'alveolar', 'basal', 'squamous', 'epithelia' ] ) ) {
+//         color = "#ffbad9";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'tcell', 't cell', 't_cell', 't_', 'gd t', 'cd8', 'cd4', 'treg' ] ) ) {
+//         color = "#b89eff";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'mono', 'lymphoid', 'hematopo', 'leukocyt', 'immuno', 'monocyte', 'neutrop', 'macro', 'b_cell', 'b cell', 'plasma cell', 'nk', 'eosinophil', 'naive' ] ) ) {
+//         color = "#e79eff";
+//     } else if ( String_Check_Substring( str_name_clus, [ 'myo' ] ) ) {
+//         color = "#e8a78b";
+//     }
+//     return color;
+// }
+// async function UpdateGene( flag_restyle = false ) { // draw a new plot by default
+//     console.log( "[UpdateGene] updating gene started" );
+//     let str_tissue = object_data.main.umap.tissue, // retrieve current tissue
+//         gene_symbol = object_data.main.gene.gene_symbol;
+
+//     // update plot (Single Cell Expression)
+//     // update cache of expression data
+//     let object_cache = object_data.main.gene.expr;
+//     await UpdateCache( object_cache, preprocess_expr, [ gene_symbol ] ); // retrieve the single cells expression data of the current gene.
+
+//     plotSingleCellExpression.style.height = Math.min( plotSingleCellExpression.offsetWidth, object_data.setting.plot.single_cell_scatter.max_height ) + 'px'; // responsive height ( width = height )
+
+//     let dictarr = object_data.main.umap.dictarr,
+//         l_expr = object_data.main.gene.expr.data[ gene_symbol ].data,
+//         col_name_cell_type = 'cell_type';
+//     if ( ! object_data.main.umap.flag_all_tissues ) {
+//         l_expr = ArrayBooleanIndexing( l_expr, object_data.main.umap.l_bool_index_tissue );
+//         col_name_cell_type = 'tissue_cell_type';
+//     }
+//     // update x-axis values from gene expression data
+//     if ( object_data.main.scatter.x_axis_col_name == '__x_axis_gene_expr__' ) {
+//         let gene_symbol_x_axis = object_data.main.scatter.x_axis_option,
+//             l_expr_x_axis = [ ];
+//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_x_axis ] ); // retrieve the single cells expression data of the current gene.
+//         l_expr_x_axis = object_data.main.gene.expr.data[ gene_symbol_x_axis ].data;
+//         if ( ! object_data.main.umap.flag_all_tissues ) {
+//             l_expr_x_axis = ArrayBooleanIndexing( l_expr_x_axis, object_data.main.umap.l_bool_index_tissue );
+//         }
+//         dictarr[ '__x_axis_gene_expr__' ] = l_expr_x_axis;
+//     } else {
+//         object_data.main.scatter.x_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_1' : 'tissue_UMAP_1';
+//     }
+//     if ( object_data.main.scatter.y_axis_col_name == '__y_axis_gene_expr__' ) {
+//         let gene_symbol_y_axis = object_data.main.scatter.y_axis_option,
+//             l_expr_y_axis = [ ];
+//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_y_axis ] ); // retrieve the single cells expression data of the current gene.
+//         l_expr_y_axis = object_data.main.gene.expr.data[ gene_symbol_y_axis ].data;
+//         if ( ! object_data.main.umap.flag_all_tissues ) {
+//             l_expr_y_axis = ArrayBooleanIndexing( l_expr_y_axis, object_data.main.umap.l_bool_index_tissue );
+//         }
+//         dictarr[ '__y_axis_gene_expr__' ] = l_expr_y_axis;
+//     } else {
+//         object_data.main.scatter.y_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_2' : 'tissue_UMAP_2';
+//     }
+//     // complete the selection process by re-enabling the selection button
+//     $id( 'select_scatter_x_axis' ).disabled = false; 
+//     $id( 'select_scatter_y_axis' ).disabled = false; 
+//     object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size = object_data.main.scatter.flag_axis_using_gene_expr ? 7 : 30;
+//     object_data.setting.plot.single_cell_scatter.marker_size = ResponsiveMarkerSize( plotSingleCellAnnotation, object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size, object_data.setting.plot.single_cell_scatter.int_factor_marker_size_multiply );
+//     console.log( object_data.setting.plot.single_cell_scatter.marker_size );
+//     if ( flag_restyle ) { // restyle existing plot
+//         console.log( "[UpdateGene] restyling existing plot for", gene_symbol );
+//         let update = { 
+//             hovertemplate: ["Expression of <b>" + gene_symbol + "</b>: <b>%{marker.color:.3f}</b>",
+//                             "tissue: <b>%{customdata[1]}</b>",
+//                             "cluster: <b>%{customdata[0]}</b>",
+//                             "",
+//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
+//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
+//                             "%{customdata[2]}",
+//                             "<extra></extra>" ].join( "<br>" ),
+//             marker: { 
+//                 color: l_expr,
+//                 showscale: true,
+//                 colorscale: "YlOrRd",
+//                 reversescale: true,
+//                 size: object_data.setting.plot.single_cell_scatter.marker_size
+//             } };
+//         Plotly.restyle( plotSingleCellExpression, update, [ 0 ] );
+//     } 
+//     else { // draw a new plot
+//         let trace = {
+//             mode: 'markers',
+//             type: 'scattergl',
+//             x: dictarr[ object_data.main.scatter.x_axis_col_name ],
+//             y: dictarr[ object_data.main.scatter.y_axis_col_name ],
+//             customdata: ArrayTranspose( [ dictarr[ col_name_cell_type ],
+//                                           dictarr[ "tissue" ],
+//                                           dictarr[ 'id_cell' ]
+//                                         ] ),
+//             hovertemplate: ["Expression of <b>" + gene_symbol + "</b>: <b>%{marker.color:.3f}</b>",
+//                             "tissue: <b>%{customdata[1]}</b>",
+//                             "cell type: <b>%{customdata[0]}</b>",
+//                             "",
+//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
+//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
+//                             "%{customdata[2]}",
+//                             "<extra></extra>" ].join( "<br>" ),
+//             marker: { 
+//                 color: l_expr,
+//                 showscale: true,
+//                 colorscale: "YlOrRd",
+//                 reversescale: true,
+//                 size: object_data.setting.plot.single_cell_scatter.marker_size
+//             },
+//             line: { 
+//                 width: 0
+//             },
+//         };
+//         Plotly.newPlot( plotSingleCellExpression, [ trace ], { margin: { l: 65, r: 65, b: 90, t: 50, pad: 4 }, xaxis: { title : object_data.main.scatter.x_label, zeroline: false }, yaxis: { title : object_data.main.scatter.y_label, zeroline: false }, hovermode: "closest" }, { ... config_plotly, filename: name_application + '__Expression_of_' + gene_symbol, height: 1100, width: 1100 } ); // draw scatter plot of the annotation
+//         plotSingleCellExpression.on( "plotly_relayout" , function( ed ) {
+//             PlotlySynchronizedLayout( ed, l_div_plotly );
+//         });
+//         plotSingleCellExpression.on( 'plotly_click', async function( data ) {
+//             PlotlyCallBackSingleCellMarker( data.points[ 0 ] );
+//         });
+//     }
+//     // Update correlated genes 
+
+//     object_cache = object_data.main.gene.correl;
+//     await UpdateCache( object_cache, null, [ gene_symbol ] ); // update cache of correlated gene data
+//     Display_DataTable( 'container_datatable_correl', 'datatable_correl', object_cache.data[ gene_symbol ].data, [ "gene_symbol", "correlation_coefficient", "probability" ] );
+//     // change panel name
+//     document.getElementById( "panel_name_correl_gene").innerHTML = "Co-Expressed Genes of " + gene_symbol;
+//     // change datatable name 
+//     object_data.main.datatable[ 'datatable_correl' ].name = `correl_gene.${gene_symbol}`;
+//     // show datatable panel
+//     $( "#container_panel_datatable_correl" ).collapse( 'show' )
+
+//     // Update interaction graph
+// //         LoadRemoteTextFile( "http://www.rna-society.org/rnainter/php_mysql/api.php?keyword=Actb&species=Mus musculus" )
+
+//     // Violin plots
+//     object_data.setting.plot.single_cell_violin.ignore_cells_with_zero_counts = ! document.getElementById( "checkbox__plotly_sclncrna_expression_violine__ignore_cells_with_zero_counts" ).checked; // retrieve current setting
+//     // build list of traces for each category
+//     dictarr = Pivot( object_data.main.umap.dictarr[ col_name_cell_type ], l_expr ); // key = cluster, value = list of expression values.
+//     let trace_template = { 
+//         type: 'violin',
+//         opacity: 0.6,
+//         box: { visible: true, width: 0.075 },
+//         meanline: { visible: true }
+//     },
+//         l_category = Object.keys( dictarr ),
+//         str_separation = ( plotSingleCellExpressionViolin.offsetWidth > 3000 ) ? '<br>' : ' ' ; // set 'str_separation' based on current width to increase responsiveness of the plot
+//     let l_trace = [ ];
+//     for ( let category in dictarr ) {
+//         let l_expr = dictarr[ category ],
+//             n_cells = l_expr.length, // retrieve number of cells for the current category
+//             float_mean_expression = ArrayAverage( l_expr ), // retrieve a mean expression of cells for the current trace
+//             object_RemoveNegativeCells = RemoveNegativeCells( l_expr ), // retrieve list of expression values excluding cells with zero counts
+//             n_cells_with_zero_count = object_RemoveNegativeCells.n_cells_nagative,
+//             l_expr_without_negative_cells = object_RemoveNegativeCells.l_expr_without_negative_cells;
+
+//         let trace = { ... trace_template,
+//                      x0: "", 
+//                      y: [ ],
+//                      name: category,
+//                      line: { color: 'black', width: 2 },
+//                      fillcolor: object_data.setting.plot.annotation.dict_tissue_to_dict_cell_type_to_color[ str_tissue ][ category ],
+//                      points: false, // do not show outliers to increase responsivity
+//                      y_ignore_cells_with_zero_counts__true: l_expr_without_negative_cells,
+//                      y_ignore_cells_with_zero_counts__false: ArrayFull( n_cells_with_zero_count, 0 ).concat( l_expr_without_negative_cells ),
+//                      x0_ignore_cells_with_zero_counts__true: category + str_separation + "(n=" + ( n_cells - n_cells_with_zero_count ) + ' of ' + n_cells + ')',
+//                      x0_ignore_cells_with_zero_counts__false: category + str_separation + "(n=" + n_cells + ')',
+//                      mean_expression_for_sorting: float_mean_expression
+//                     };
+//         l_trace.push( trace );
+//     }
+//     l_trace = l_trace.sort( SortViolinTrace_Expression ); // sort by mean expression
+//     let layout = {
+//         margin: { l: 50, r: 65, b: 150, t: 50, pad: 4 },
+//         yaxis: { title : "Normalized Expression", rangemode: "nonnegative" },
+//         legend: { tracegroupgap: 0 },
+//         violingap: 0, // split violin plot for two covid statuses
+//         violingroupgap: 0,
+//         violinmode: "overlay",
+//     }
+//     for ( let i = 0; i < l_trace.length; i ++ ) { // swap y and x0 values based on the 'object_plot_scrnaseq.option.ignore_cells_with_zero_counts' setting
+//         l_trace[ i ].x0 = object_data.setting.plot.single_cell_violin.ignore_cells_with_zero_counts ? l_trace[ i ].x0_ignore_cells_with_zero_counts__true : l_trace[ i ].x0_ignore_cells_with_zero_counts__false ;
+//         l_trace[ i ].y = object_data.setting.plot.single_cell_violin.ignore_cells_with_zero_counts ? l_trace[ i ].y_ignore_cells_with_zero_counts__true : l_trace[ i ].y_ignore_cells_with_zero_counts__false ;
+//     }
+//     Plotly.newPlot( plotSingleCellExpressionViolin, l_trace, layout, { ... config_plotly, filename: name_application + '__Expression_of_' + gene_symbol, height: 600, width: 1100 } );
+// }
+// object_data.setting.plot.annotation = { };
+// object_data.setting.plot.annotation.dict_tissue_to_dict_cell_type_to_color = {
+//     'All': {'kidney_PT': '#9ACD32', 'kidney_nephrone': '#9932CC', 'lung_AT1': '#FF0000', 'lung_AT2': '#27408B', 'liver_hepatocyte': '#CD5555', 'heart_Fibroblast': '#EEB422', 'lung_Fibroblast': '#CD2626', 'Endothelial': '#90EE90', 'liver_Endo': '#EE4000', 'SMC': '#000080', 'Pericyte': '#8B1C62', 'Plasma': '#00BFFF', 'Intestine_SC': '#8B8B83', 'Intestine TA': '#4EEE94', 'DN': '#EE5C42', 'DP': '#EE00EE', 'DP2': '#7A67EE', 'B cell': '#CDB79E', 'B cell2': '#CDAD00', 'B cell3': '#1874CD', 'T cell': '#CD853F', 'NK': '#4A708B', 'liver_Kuffer': '#8B5742', 'lung_AM': '#CD5555', 'Macrophage': '#5D478B', 'Macrophage2': '#EE9572', 'Myeloid': '#9ACD32', 'Myeloid2': '#009ACD', 'Platlet': '#8B668B', 'RBC': '#CD6839', 'RBC2': '#8B7B8B'},'Kidney': {'PTS1': '#9ACD32', 'PTS1-S2': '#9932CC', 'PTS2': '#FF0000', 'PTS3': '#1874CD', 'ALOH': '#CD5555', 'DCT': '#EEB422', 'CNT': '#00C5CD', 'CD PC': '#90EE90', 'CD IC': '#FF1493', 'Mesangium': '#000080', 'Podocyte': '#8B1C62', 'ENDO': '#00BFFF', 'ENDO2': '#B22222', 'Proliferation': '#4EEE94', 'B cell': '#EE5C42', 'NK': '#EE00EE', 'Macro': '#EE4000', 'Monocyte': '#CDB79E', 'RBC': '#CDAD00'},'Heart': {'Cardiomyocyte': '#EE6AA7', 'Fibro1': '#9932CC', 'Fibro2': '#FF0000', 'Endo': '#CD5555', 'Endo2': '#EEB422', 'Vascular Endothelia': '#00C5CD', 'Pericyte': '#90EE90', 'SMC_pericyte': '#FF1493', 'SMC': '#000080', 'Myofirboblast': '#8B1C62', 'B cell': '#00BFFF', 'NK cell': '#CD96CD', 'Resident Macro': '#4EEE94', 'Resident Macro2': '#EE5C42', 'DC': '#EE00EE', 'Granulocyte': '#EE4000', 'Platelet': '#CDB79E', 'novel': '#1874CD', 'RBC': '#27408B', 'high mt': '#008B45'},'Lung': {'AT1': '#9ACD32', 'AT2': '#9932CC', 'AC': '#FF0000', 'Ciliated': '#1874CD', 'AM': '#CD5555', 'Pericyte': '#EEB422', 'ENDO': '#00C5CD', 'ENDO2': '#90EE90', 'ENDO3': '#FF1493', 'ENDO4': '#000080', 'Mesothelial': '#8B1C62', 'Fibroblast': '#00BFFF', 'Myofibroblast': '#B22222', 'SMC': '#4EEE94', 'SMC2': '#EE5C42', 'Proliferation': '#EE00EE', 'B cell': '#EE4000', 'B cell2': '#CDB79E', 'Naive T cell': '#CDAD00', 'T cell': '#CDC9A5', 'NK cell': '#8B8B83', 'Basophils': '#27408B', 'DC': '#8B5742', 'Neutrophils': '#CD5555', 'Macrophage': '#5D478B', 'Monocyte': '#CD6839', 'Monocyte2': '#9ACD32', 'Immune stromal cell': '#00008B', 'RBC': '#8B668B'},'Thymus': {'DN': '#9ACD32', 'ISP': '#9932CC', 'DP(P)': '#FF0000', 'DP2(P)': '#27408B', 'DP': '#EEB423', 'gd T': '#EEB422', 'ab T': '#CD1076', 'CD8 aa': '#90EE90', 'Cd4 SP': '#EE4000', 'Cd4 SP2': '#000080', 'Cd8 SP': '#8B1C62', 'Cd4 SP(M)': '#00BFFF', 'NK': '#8B8B83', 'DC': '#27408B'},'Liver': {'Hepatocyte': '#9ACD32', 'Hepatocyte2': '#9932CC', 'Cholangiocyte': '#FF0000', 'Stellate cell': '#1874CD', 'Cycling': '#CD5555', 'Kupffer': '#EEB422', 'Kupffer2': '#90EE90', 'ENDO': '#00C5CD', 'ENDO2': '#FF1493', 'B cell': '#000080', 'T cell': '#8B1C62', 'T cell2': '#00BFFF', 'T cell3': '#8B8B83', 'NK cell': '#4EEE94', 'NK cell2': '#EE5C42', 'Macro': '#EE00EE', 'Macro2': '#EE4000', 'Activated Macro': '#CDB79E', 'Granulocyte': '#CDAD00', 'Myeloid': '#FF0000', 'RBC': '#8B8B83'},'Intestine': {'Entero': '#5D478B', 'SC': '#90EE90', 'TA': '#000080', 'Tuft': '#8B8B83', 'PSC': '#EEB422', 'PSC2': '#EE00EE', 'Pericyte': '#8B1C62', 'Pericyte2': '#8B8B83', 'Epithelial': '#CD5555', 'Endo': '#9ACD32', 'Endo2': '#00C5CD', 'Endo3': '#00BFFF', 'BV': '#27408B', 'B cell': '#FF0000', 'B cell2': '#8B5742', 'T cell': '#CD5555', 'T cell2': '#EE4000', 'NK cell': '#CDAD00', 'plasma cell': '#9932CC', 'plasma cell2': '#27408B', 'plasma cell3': '#CDB79E', 'Macro': '#EE4000', 'Mast cell': '#4EEE94', 'Basophile': '#1874CD', 'DC': '#EE5C42'}}; // define color for each cell type
+// object_data.setting.plot.annotation.dict_tissue_to_color = {
+//     "Heart" : '#F8766D', 
+//     "Intestine" : '#B79F00', 
+//     "Kidney" : "#00BA38", 
+//     "Lung" : "#619CFF", 
+//     "Liver" : "#00BFC4", 
+//     "Thymus" : "#F564E3", 
+// }; // define color for each tissue
+// async function PlotCellAnnotation( flag_restyle = false ) { // draw a new plot by default
+//     let str_tissue = object_data.main.umap.tissue, // retrieve current tissue
+//         option_selected = Select_Get_Selected_Option_Using_ID( "select_umap_annotation_data" ),
+//         str_name_data_annotation = option_selected.value, // retrieve name of data for annotations
+//         str_name_option_selected = option_selected.innerHTML; // retrieve the name of the selected option
+
+//     plotSingleCellAnnotation.style.height = Math.min( plotSingleCellAnnotation.offsetWidth, object_data.setting.plot.single_cell_scatter.max_height ) + 'px'; // responsive height ( width = height )
+//     // demonstration
+//     let object_cache = object_data.main.gene.expr;
+//     let dictarr = object_data.main.umap.dictarr, 
+//         col_name_cell_type = ( object_data.main.umap.flag_all_tissues ) ? 'cell_type' : 'tissue_cell_type',
+//         l_color = [ ], marker_colormap = { }, str_hovertemplate_additional_line = '';
+//     // set color 
+//     switch( str_name_data_annotation ) {
+//       case 'tissue':
+//         l_color = ArrayMap( dictarr[ str_name_data_annotation ], object_data.setting.plot.annotation.dict_tissue_to_color );
+//         break;
+//       case 'cell type':
+//         l_color = ArrayMap( dictarr[ col_name_cell_type ], object_data.setting.plot.annotation.dict_tissue_to_dict_cell_type_to_color[ str_tissue ] );
+//         break;
+//       default:
+//         l_color = dictarr[ str_name_data_annotation ];
+//         marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
+//         str_hovertemplate_additional_line = "<b>" + str_name_option_selected + "</b>: <b>%{marker.color:." + ( ( str_name_option_selected == 'MT Percentage' ) ? 1 : 0 ).toString( ) + "f}</b><br>"; // only MT percentage data will be shown as floating point numbers
+//         break;
+//     }
+//     // update x-axis values from gene expression data
+//     if ( object_data.main.scatter.x_axis_col_name == '__x_axis_gene_expr__' ) {
+//         let gene_symbol_x_axis = object_data.main.scatter.x_axis_option,
+//             l_expr_x_axis = [ ];
+//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_x_axis ] ); // retrieve the single cells expression data of the current gene.
+//         l_expr_x_axis = object_data.main.gene.expr.data[ gene_symbol_x_axis ].data;
+//         if ( ! object_data.main.umap.flag_all_tissues ) {
+//             l_expr_x_axis = ArrayBooleanIndexing( l_expr_x_axis, object_data.main.umap.l_bool_index_tissue );
+//         }
+//         dictarr[ '__x_axis_gene_expr__' ] = l_expr_x_axis;
+//     } else {
+//         object_data.main.scatter.x_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_1' : 'tissue_UMAP_1';
+//     }
+//     if ( object_data.main.scatter.y_axis_col_name == '__y_axis_gene_expr__' ) {
+//         let gene_symbol_y_axis = object_data.main.scatter.y_axis_option,
+//             l_expr_y_axis = [ ];
+//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_y_axis ] ); // retrieve the single cells expression data of the current gene.
+//         l_expr_y_axis = object_data.main.gene.expr.data[ gene_symbol_y_axis ].data;
+//         if ( ! object_data.main.umap.flag_all_tissues ) {
+//             l_expr_y_axis = ArrayBooleanIndexing( l_expr_y_axis, object_data.main.umap.l_bool_index_tissue );
+//         }
+//         dictarr[ '__y_axis_gene_expr__' ] = l_expr_y_axis;
+//     }  else {
+//         object_data.main.scatter.y_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_2' : 'tissue_UMAP_2';
+//     }
+//     // complete the selection process by re-enabling the selection button
+//     $id( 'select_scatter_x_axis' ).disabled = false; 
+//     $id( 'select_scatter_y_axis' ).disabled = false; 
+//     object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size = object_data.main.scatter.flag_axis_using_gene_expr ? 7 : 30;
+//     object_data.setting.plot.single_cell_scatter.marker_size = ResponsiveMarkerSize( plotSingleCellAnnotation, object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size, object_data.setting.plot.single_cell_scatter.int_factor_marker_size_multiply );
+//     if ( flag_restyle ) { // restyle existing plot
+//         console.log( "[PlotCellAnnotation] restyling existing plot for", str_name_data_annotation );
+//         let update = {
+//             hovertemplate: [ str_hovertemplate_additional_line + "tissue: <b>%{customdata[1]}</b>",
+//                             "cell type: <b>%{customdata[0]}</b>",
+//                             "",
+//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
+//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
+//                             "%{customdata[2]}",
+//                             "<extra></extra>" ].join( "<br>" ),
+//             marker: { 
+//                 color: l_color,
+//                 size: object_data.setting.plot.single_cell_scatter.marker_size
+//             } };
+//         update.marker = { ... update.marker, ... marker_colormap }; // update setting for showing colormap
+//         Plotly.restyle( plotSingleCellAnnotation, update, [ 0 ] );
+//     } 
+//     else {
+//         let trace = {
+//             mode: 'markers',
+//             type: 'scattergl',
+//             x: dictarr[ object_data.main.scatter.x_axis_col_name ],
+//             y: dictarr[ object_data.main.scatter.y_axis_col_name ],
+//             customdata: ArrayTranspose( [ dictarr[ col_name_cell_type ],
+//                                           dictarr[ "tissue" ],
+//                                           dictarr[ 'id_cell' ]
+//                                         ] ),
+//             hovertemplate: [ str_hovertemplate_additional_line + "tissue: <b>%{customdata[1]}</b>",
+//                             "cell type: <b>%{customdata[0]}</b>",
+//                             "",
+//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
+//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
+//                             "%{customdata[2]}",
+//                             "<extra></extra>" ].join( "<br>" ),
+//             marker: { 
+//                 color: l_color,
+//                 size: object_data.setting.plot.single_cell_scatter.marker_size            
+//             },
+//             line: { 
+//                 width: 0
+//             },
+//         };
+//         trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
+//         Plotly.newPlot( plotSingleCellAnnotation, [ trace ], { margin: { l: 65, r: 65, b: 90, t: 50, pad: 4 }, xaxis: { title : object_data.main.scatter.x_label, zeroline: false }, yaxis: { title : object_data.main.scatter.y_label, zeroline: false }, hovermode: "closest" }, { ... config_plotly, filename: name_application + '__Annotation', height: 1100, width: 1100 } ); // draw scatter plot of the annotation
+
+//         // add interactions
+//         plotSingleCellAnnotation.on( 'plotly_click', async function( data ) {
+//             PlotlyCallBackSingleCellMarker( data.points[ 0 ] );
+//         });
+//         plotSingleCellAnnotation.on( "plotly_relayout" , function( ed ) {
+//             PlotlySynchronizedLayout( ed, l_div_plotly );
+//         });
+//     }
+// }
+}
+    
     
 // when document is ready for interaction
 $(document).ready( function( ) {
