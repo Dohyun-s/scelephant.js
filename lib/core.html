@@ -1,7 +1,24 @@
+<!doctype html>
+<html lang="en">
 <head>
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SC-Elephant Viewer">
+<title>SC-Elephant DB Viewer</title>
+    
+<!-- bootstrap5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js" integrity="sha256-qXBd/EfAdjOA2FGrGAG+b3YBn2tn5A6bhz+LSgYD96k=" crossorigin="anonymous"></script>
+<script> lodash = _.noConflict(); // load script of lodash </script>     
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
 <!-- 
 <script type="module">
   import * as zarr from "https://cdn.skypack.dev/zarrita/v2";
@@ -20,12 +37,7 @@
     
 <!-- ES import -->
 <script type="module">
-    // import utility modules
-    import * as lodash from 'https://cdn.skypack.dev/lodash';
-    window.lodash = lodash;
     // import * as dataframeJs from 'https://cdn.skypack.dev/dataframe-js';
-    import * as numjs from 'https://cdn.skypack.dev/numjs';
-    window.numjs = numjs;
     import * as papaparse from 'https://cdn.skypack.dev/papaparse';
     window.Papa = papaparse;
     import * as pako from 'https://cdn.skypack.dev/pako';
@@ -37,8 +49,6 @@
     import * as d3 from 'https://cdn.skypack.dev/d3';
     
     // import modules for interactions
-    import jquery from 'https://cdn.skypack.dev/jquery';
-    import bootstrap from 'https://cdn.skypack.dev/bootstrap';
     import datatablesNet from 'https://cdn.skypack.dev/datatables.net';
     import yaireoTagify from 'https://cdn.skypack.dev/@yaireo/tagify';
     import hotkeysJs from 'https://cdn.skypack.dev/hotkeys-js';
@@ -79,160 +89,102 @@
 </script>
 
 <style>
-html {
-  background: hsla(0, 100%, 100%, .4);
-  box-sizing: border-box;
-}
 
-*, *::before, *::after {
-  box-sizing: inherit;
-}
-
-body {
-  background:transparent;
-  display: flex;
-  flex-flow: column nowrap;
-  flex-direction: column;
-  font-family: monospace;
-  font-size: 2em;
-  position: relative;
-  min-height: 100vh;
-  margin: 0;
-  justify-content: flex-end;
-}
-
-.custextareasdontdopseudoelements {
-  display: flex;
-  flex-flow: row nowrap;
-  border-top: 1px solid #ccc;
-  padding: .25em;
-/*  position: absolute;
-  bottom: 0;*/
-  width: 100%;
-  background-color: #eee;
-  &::before {
-    content: '>';
-    display: block;
-    color: #ccc;
-    padding: .25em 0;
-  } 
-}
-
-#repl {
-  height: 1.5em;
-  max-height: 80vh;
-  font-size: 1em;
-  border: none;
-  padding: .25em 0 .25em 1em;
-  font-family: monospace;
-  flex: 1 1 100%;
-  background: transparent;
-  tab-size: 4;
-  &:focus {
-    outline: none;
-  }
-}
-
-.rep {
-  margin: 1em 0;
-}
-
-.entry,
-.result {
-  padding-left: 1em;
-  position: relative;
-  margin: 0;
-  
-  &::before {
-    position: absolute;
-    left: .125em;
-  }
-}
-
-.entry {
-  color: hsla(200, 50%, 50%, 1);
-  
-  &::before {
-    content: '>';
-  }
-}
-
-.result {
-  color: #333;
-  
-  &::before {
-    color: hsla(200, 50%, 50%, 1);
-    content: '<';
-  }
-}
-
-.undefined,
-.null {
-  color: #999;
-}
-.string {
-  color: hsl(10, 50%, 50%);
-}
-    
-/* from https://1linelayouts.glitch.me/ */
-/*     body {
-      display: grid;
-      height: 100vh;
-      grid-template: auto 1fr auto / auto 1fr auto
-    } */
-    
-    body {
-      display: grid;
-      grid-template-columns: minmax(350px, 50%) 1fr;
-      padding: 0;
-      margin: 0;
-    }
-
-    .sidebar {
-      height: 100vh;
-      background: lightgreen;
-      font-size: 2rem;
-      text-align: left;
-    }
-
-    .content {
-      padding: 2rem;
-    }
-
-    body {
-      font-family: system-ui, serif;
-    }
 </style>
 
 </head>
 
-<div class="sidebar">
-    <output></output>
-    <div class="custextareasdontdopseudoelements"><textarea name="repl" id="repl"></textarea></div>
-</div>
+<body>
+<nav class="navbar navbar-expand-lg bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">SC-Elephant DB</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">Load RamData</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Link</a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Dropdown
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Action</a></li>
+            <li><a class="dropdown-item" href="#">Another action</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled">Disabled</a>
+        </li>
+      </ul>
+      <form class="d-flex" role="search">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-success" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</nav>
+    
 <div class="content" id="canvas">
     <div id="tester" style="width:600px;height:250px;"></div>
 </div>
+    
+<!-- offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Load RamData</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    <div>
+        <h5>Barcode Axis</h5>
+    </div>
+        
+    <label for="select_filter_bc" class="form-label">Select Barcode Filter</label>
+    <select class="form-select" aria-label="select_filter_bc" id="select_filter_bc">
+    </select>
+      
+    <label for="select_embedding" class="form-label">Select Embeddings</label>
+    <select class="form-select" aria-label="select_embedding" id="select_embedding">
+    </select>
+    <br>
+      
+    <div>
+      <h5>Feature Axis</h5>
+    </div>
+      
+    <label for="select_filter_ft" class="form-label">Select Feature Filter</label>
+    <select class="form-select" aria-label="select_filter_ft" id="select_filter_ft">
+    </select>
+    <br>
+      
+    <div>
+      <h5>Layer</h5>
+    </div>
+        
+    <label for="select_layer" class="form-label">Select Layer</label>
+    <select class="form-select" aria-label="select_layer" id="select_layer">
+    </select>
+    <br>
+
+        
+  </div>
+</div>
+    
+<!-- bootstrap5 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+</body>
+    
 <script>
 
-// zarr.js
-//     path_folder_ramdata = "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/"
-//     "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/X_umap_scanpy_embedding_100_epoch_ml/"
-//     "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/"
-
-//     const z = await zarr.openArray({
-//         store: "http://172.27.30.99/",
-//         path: "web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/X_umap_scanpy_embedding_100_epoch_ml/",
-//         mode: "r"
-//     });    
-
-// // zarrita
-//     store = new zarrita_FetchStore( "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/X_umap_scanpy_embedding_100_epoch_ml/" )
-//     za = await zarrita.get_array( store )
-    
-// store = new zarrita_FetchStore( "http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/barcodes.num_and_cat.zdf/filter_pca_subsampled/" )
-// za = await zarrita.get_array( store )
-    
 // functions from the external references
 // set operations
 function isSuperset(set, subset) {
@@ -1197,7 +1149,8 @@ class RAMtx {
                 mode: "r"
             });
         }
-        
+    }
+    async load_ba_active_entries( ) {
         // load 'ba_active_entries'
         let name_axis_for_querying = this.flag_ramtx_sorted_by_id_feature ? 'features' : 'barcodes',
             za_ba_active_entries = await zarr.openArray({
@@ -1633,7 +1586,7 @@ class RamDataAxis {
         // exclude the entries in 'filter_to_exclude'
         this.set_filter( this.filter.andNot( filter_to_exclude ) );
     }
-    all( flag_return_valid_entries_in_the_currently_active_layer = true ) {
+    all( flag_return_valid_entries_in_the_currently_active_layer = false ) {
         /* # 2022-09-02 00:33:56 
         return bitarray filter with all entries marked 'active'
         
@@ -1652,21 +1605,25 @@ class RamDataAxis {
         ba.setRange( 0, this.int_num_entries, 1 ); // set all entries as 'active' 
         return ba; // return the bitarray filter
     }
-    get_ba_active_entries( ) {
+    get_ba_active_entries( flag_return_valid_entries_in_the_currently_active_layer = false ) {
         /* # 2022-07-16 17:38:04 
         
         return a bitarray object containing currently active entries in the Axis. 
         if a filter is active, return the current filter
-        if a filter is not active, return the return value of Axis.all( flag_return_valid_entries_in_the_currently_active_layer = True )
+        if a filter is not active, return the return value of Axis.all( flag_return_valid_entries_in_the_currently_active_layer )
+        
+        'flag_return_valid_entries_in_the_currently_active_layer' : return bitarray filter containing only the active entries in the current layer 
         */
-        return check_none( this.filter ) ? this.all( true ) : this.filter;
+        return check_none( this.filter ) ? this.all( flag_return_valid_entries_in_the_currently_active_layer ) : this.filter;
     }
-    subsample( float_prop_subsampling = 1 ) {
+    subsample( float_prop_subsampling = 1, flag_return_valid_entries_in_the_currently_active_layer = false ) {
         /* # 2022-07-16 17:12:19 
         subsample active entries in the current filter (or all the active entries with valid data) using the proportion of subsampling ratio 'float_prop_subsampling'
+        
+        'flag_return_valid_entries_in_the_currently_active_layer' : return bitarray filter containing only the active entries in the current layer 
         */
         // retrieve bitarray of active entries
-        let ba_active_entries = this.get_ba_active_entries( );
+        let ba_active_entries = this.get_ba_active_entries( flag_return_valid_entries_in_the_currently_active_layer );
         
         // return the bitarray of all active entries if no subsampling is required
         if ( check_none( float_prop_subsampling ) | ( float_prop_subsampling == 1 ) ) {
@@ -2508,8 +2465,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         l_y = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 1 ] ).flatten( ) ];
     
     // retrieve color values according to the setting
-    if ( ( ! check_none( dict_kw_args[ 'name_gene' ] ) ) & (  ) ) {
-        adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_gene' ] ] ) ).to_dense( ).T.tolist( )[ 0 ], // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
+    if ( ( ! check_none( dict_kw_args[ 'name_gene' ] ) ) & ( dict_kw_args[ 'name_gene' ] in adata.var._dict_mapping_index ) ) {
+        l_color = adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_gene' ] ] ) ).to_dense( ).T.tolist( )[ 0 ]; // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
     }
     
     // cap the values according to the setting
@@ -3044,148 +3001,29 @@ $(document).ready( function( ) {
     Initialize( );
 });
     
+var ram = 1,
+    adata = 1;
 async function Initialize( ) { // initialize the web application
-    // initialize flags
-    TESTER = document.getElementById('tester');
-    Plotly.newPlot( TESTER, [{
-    x: [1, 2, 3, 4, 5],
-    y: [1, 2, 4, 8, 16] }], {
-    margin: { t: 0 } } );
-}
+    // testing anndata for 8k pancreas data
+    ram = new RamData(  "http://172.27.30.99/web_applications/20220718_sce.js/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/" )
+    await ram.initialize( )
+    await ram.bc.change_filter( 'filtered_barcodes' )
+    await ram.ft.change_filter( 'filter_normalized_log1p_highly_variable' )
+    ram.ft.create_view( )
+    await ram.ft.load_str( )
+
+    // test anndata and plotting functions
+    adata = await ram.get_item( [ 'raw', [ ], [ [ "X_umap_scanpy_embedding" ] ], [  'ADM', 'ADRBK2', 'AEBP1', 'AEN', 'AGAP1', 'AGAP3', 'AGRN', 'AGT', 'AGTRAP', 'AHI1', 'AHNAK', 'AHR', 'AKAP12', 'AKAP13', 'AKR1B1', 'AKR1C1', 'AKR1C2', 'AKR1C3', 'ALB', 'ALCAM', 'ALDH1A1', 'ALDH1A3', 'ALDH2', 'ALDH3A2', 'ALDOB', 'ALDOC', 'ALPK3', 'AMBP', 'AMPD2', 'AMY2A', 'AMZ2', 'ANGPT2', 'ANGPTL2', 'ANGPTL4', 'ANKRD10', 'ANKRD37', 'ANP32E', 'ANPEP', 'ANXA1', 'ANXA2', 'ANXA3', 'ANXA4', 'AP1S2', 'AP3B1', 'AP3S1', 'APBB2', 'APCDD1L', 'APH1B', 'APOBEC2', 'APOE', 'AQP1', 'AQP3', 'AREG', 'ARF6', 'ARFGEF1' ], [ 'str' ] ] )
+    create_div( 'new_graph' )
+    draw_graph( 'new_graph', adata, { 'name_gene' : 'ALDOB', 'name_col_embedding' : "X_umap_scanpy_embedding" } )
     
-(function() {
-    'use strict';
-
-    var parseQuery = function() {
-        var search = window.location.search,
-            q = {};
-
-        search.slice(1).split('&').forEach(function(term) {
-            var kv = term.split('=');
-            q[kv[0]] = (kv[1] !== undefined) ? decodeURIComponent(kv[1]) : true;
-        });
-
-        return q;
-    },
-
-    evalHeight = function(input) {
-        input.style.height = (input.value.split('\n').length * 1.5) + 'em';
-    },
-
-    log = (function() {
-        var console = document.querySelector('output');
-        return async function() {
-            var rep = document.createElement('div');
-
-            rep.classList.add( 'rep' );
-            [].slice.call( arguments ).forEach(function( arg ) {
-                var entry = document.createElement('pre'),
-                    result = document.createElement('pre'),
-                    evaled,
-                    resultType;
-
-                entry.classList.add('entry');
-                result.classList.add('result');
-                
-                try {
-                    evaled = eval.call( this, arg );
-                    
-                } catch (e) {
-                    evaled = e.toString();
-                }
-
-                if (evaled === undefined) {
-                    evaled = 'undefined';
-                    resultType = 'undefined';
-                } else if (evaled === null) {
-                    evaled = 'null';
-                    resultType = 'null';
-                } else {
-                    resultType = ({}).toString.call(evaled).replace('[object ', '').replace(']', '').toLowerCase();
-                }
-
-                if (resultType === 'object' || resultType === 'array') {
-                    try {
-                        evaled = JSON.stringify(evaled, null, 2);
-                    } catch (e) {
-
-                    }
-                }
-
-                result.classList.add(resultType);
-
-                if (resultType === 'string') {
-                    evaled = '"' + evaled + '"';
-                }
-
-                stack.unshift(arg);
-
-                entry.textContent = arg;
-                result.textContent = evaled;
-                rep.appendChild(entry);
-                rep.appendChild(result);
-            });
-            console.appendChild(rep);
-        }
-
-    })(),
-        input = document.querySelector('textarea'),
-        stack = [],
-        q = parseQuery();
-
-    input.addEventListener('keypress', function(evt) {
-        var key = evt.which,
-            retVal;
-
-        if (key === 13 && !evt.shiftKey) {
-            log(input.value);
-            input.value = '';
-            input.removeAttribute('style');
-        }
-        // TODO: implement stack navigation.
-
-
-    });
-
-    input.addEventListener('keyup', function(evt) {
-        if (evt.which === 13) {
-
-            if (!evt.shiftKey) {
-                input.value = '';
-            } else {
-                evalHeight(input);
-            }
-        }
-
-        // Backspace
-        if (evt.which === 8) {
-            input.style.height = input.value.split('\n').length + 'em';
-        }
-    });
-
-    input.addEventListener('keydown', function(evt) {
-        var val,
-        beforeTab,
-        afterTab,
-        caratPos;
-
-        // Tabs
-        if (evt.which === 9) {
-            evt.preventDefault();
-            val = input.value;
-            caratPos = input.selectionStart;
-            beforeTab = val.substring(0, input.selectionStart);
-            afterTab = val.substring(input.selectionEnd);
-            input.value = beforeTab + '\t' + afterTab;
-            input.setSelectionRange(caratPos + 1, caratPos + 1);
-        }
-
-    });
-
-    if (q.prime) {
-        input.value = q.prime;
-        evalHeight(input);
-    }
-})();
+//     // initialize flags
+//     TESTER = document.getElementById('tester');
+//     Plotly.newPlot( TESTER, [{
+//     x: [1, 2, 3, 4, 5],
+//     y: [1, 2, 4, 8, 16] }], {
+//     margin: { t: 0 } } );
+}
 
 </script>
+</html>
