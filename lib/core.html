@@ -12,12 +12,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js" integrity="sha256-qXBd/EfAdjOA2FGrGAG+b3YBn2tn5A6bhz+LSgYD96k=" crossorigin="anonymous"></script>
 <script> lodash = _.noConflict(); // load script of lodash </script>     
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script><!-- JQuery -->
 <script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
-
-<!-- JQuery -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js" integrity="sha512-zInFF17qBFVvvvFpIfeBzo7Tj7+rQxLeTJDmbxjBz5/zIr89YVbTNelNhdTT+/DCrxoVzBeUPVFJsczKbB7sew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- for colormaps -->
+<script src="https://cdn.jsdelivr.net/npm/hotkeys-js@3.8.1/dist/hotkeys.min.js" integrity="sha256-4nmnbhmVpr2Rg64+7ysAr93+vQrfc0UvHWwm4W6uXJM=" crossorigin="anonymous"></script><!--hotkeys to add keyboard shortcuts-->
     
 <!-- 
 <script type="module">
@@ -45,27 +44,27 @@
     
     // import modules for plotting
 //     import Plotly from 'https://cdn.skypack.dev/plotly.js'; // cannot be imported from skypack...
-    import * as chromaJs from 'https://cdn.skypack.dev/chroma-js';
-    import * as d3 from 'https://cdn.skypack.dev/d3';
+//     import * as chromaJs from 'https://cdn.skypack.dev/chroma-js';
+//     import * as d3 from 'https://cdn.skypack.dev/d3';
     
-    // import modules for interactions
-    import datatablesNet from 'https://cdn.skypack.dev/datatables.net';
-    import yaireoTagify from 'https://cdn.skypack.dev/@yaireo/tagify';
-    import hotkeysJs from 'https://cdn.skypack.dev/hotkeys-js';
-    import html2canvas from 'https://cdn.skypack.dev/html2canvas';
-    import fileSaver from 'https://cdn.skypack.dev/file-saver';
-    import fontAwesome from 'https://cdn.skypack.dev/font-awesome';
+//     // import modules for interactions
+//     import datatablesNet from 'https://cdn.skypack.dev/datatables.net';
+//     import yaireoTagify from 'https://cdn.skypack.dev/@yaireo/tagify';
+//     import hotkeysJs from 'https://cdn.skypack.dev/hotkeys-js';
+//     import html2canvas from 'https://cdn.skypack.dev/html2canvas';
+//     import fileSaver from 'https://cdn.skypack.dev/file-saver';
+//     import fontAwesome from 'https://cdn.skypack.dev/font-awesome';
     
-    // import Zarrita
-    import * as zarrita from "https://cdn.skypack.dev/zarrita/v2";
-    import { get } from "https://cdn.skypack.dev/zarrita/ndarray"; // "https://cdn.skypack.dev/zarrita/ops";
-    import FetchStore from "https://cdn.skypack.dev/zarrita/storage/fetch";
-    import Blosc from "https://cdn.skypack.dev/numcodecs/blosc";
-    zarrita.registry.set(Blosc.codecId, () => Blosc); // using compression
-    window.Blosc = Blosc
-    window.zarrita = zarrita;
-    window.zarrita_get = get;
-    window.zarrita_FetchStore = FetchStore;
+//     // import Zarrita
+//     import * as zarrita from "https://cdn.skypack.dev/zarrita/v2";
+//     import { get } from "https://cdn.skypack.dev/zarrita/ndarray"; // "https://cdn.skypack.dev/zarrita/ops";
+//     import FetchStore from "https://cdn.skypack.dev/zarrita/storage/fetch";
+//     import Blosc from "https://cdn.skypack.dev/numcodecs/blosc";
+//     zarrita.registry.set(Blosc.codecId, () => Blosc); // using compression
+//     window.Blosc = Blosc
+//     window.zarrita = zarrita;
+//     window.zarrita_get = get;
+//     window.zarrita_FetchStore = FetchStore;
     
     // import Zarr
     import * as zarr from "https://cdn.skypack.dev/zarr";
@@ -75,17 +74,17 @@
     import bitset from 'https://cdn.skypack.dev/bitset';
     window.BitSet = bitset;
     
-    // import umap.js for embedding
-    import * as umapJs from 'https://cdn.skypack.dev/umap-js';
-    window.umapJs = umapJs;
+//     // import umap.js for embedding
+//     import * as umapJs from 'https://cdn.skypack.dev/umap-js';
+//     window.umapJs = umapJs;
     
-    // import hdbscan for clustering
-    import * as hdbscan from 'https://cdn.skypack.dev/hdbscan';
-    window.hdbscan = hdbscan;
+//     // import hdbscan for clustering
+//     import * as hdbscan from 'https://cdn.skypack.dev/hdbscan';
+//     window.hdbscan = hdbscan;
     
-    // import pca for dimension reduction
-    import * as mlPca from 'https://cdn.skypack.dev/ml-pca';
-    window.mlPca = mlPca;
+//     // import pca for dimension reduction
+//     import * as mlPca from 'https://cdn.skypack.dev/ml-pca';
+//     window.mlPca = mlPca;
 </script>
 
 <style>
@@ -166,7 +165,7 @@
     <h5 class="offcanvas-title" id="offcanvasRetrieveAnnDataLabel">Retrieve AnnData from RamData</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
-  <div class="d-grid mx-5 gap-2">
+  <div class="d-grid mx-3 gap-2">
     <button class="btn btn-primary" type="button" onclick="RetrieveAnnData( )">Retrieve AnnData</button>
   </div>
   <div class="offcanvas-body">
@@ -206,7 +205,7 @@
       
     <div class="form-floating">
         <textarea class="form-control" placeholder="Leave a comment here" id="input_str_gene_names" style="height: 150px"></textarea>
-        <label for="floatingTextarea2">Gene Symboles (separated by comma)</label>
+        <label for="input_str_gene_names">Gene Symboles (separated by comma)</label>
     </div>
     <br>
       
@@ -227,16 +226,29 @@
     <h5 class="offcanvas-title" id="offcanvasPlotAnnDataLabel">Plot AnnData</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
+  <div class="d-grid mx-3 gap-2">
+    <button class="btn btn-primary" type="button" onclick="PlotAnnData( )">Plot AnnData</button>
+  </div>
   <div class="offcanvas-body">
-
-    <div class="d-grid gap-2">
-        <button class="btn btn-primary" type="button" onclick="PlotAnnData( )">Plot AnnData</button>
-    </div>
-    <br>
-      
     <label for="select_adata" class="form-label">Select AnnData</label>
     <select class="form-select" aria-label="select_adata" id="select_adata">
     </select>
+    <br>
+      
+    <div>
+      <h5>Colors</h5>
+    </div>
+      
+    <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature" autocomplete="off" checked>
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_feature">Feature</label>
+
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_obs" autocomplete="off">
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_obs">Annotation</label>
+
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_violin" autocomplete="off">
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_violin">Both (Violin)</label>
+    </div>
     <br>
       
     <div class="form-check form-switch">
@@ -254,9 +266,67 @@
     </select>
     <br>
       
+    <div class="form-floating">
+        <textarea class="form-control" placeholder="10" id="input_float_vmax"></textarea>
+        <label for="input_float_vmax">maximum value cutoff</label>
+    </div>
+    <br>
+      
+    <div>
+      <h5>Coordinates</h5>
+    </div>
+      
     <label for="select_embedding_for_plot" class="form-label">Select Embedding</label>
     <select class="form-select" aria-label="select_embedding_for_plot" id="select_embedding_for_plot">
     </select>
+    <br>
+      
+    <div>
+      <h5>Figure</h5>
+    </div>
+    <div class="form-floating">
+        <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel"></textarea>
+        <label for="input_str_name_panel">Output Panel Name (no white spaces)</label>
+    </div>
+    <br>
+      
+    <div class="form-floating">
+        <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure"></textarea>
+        <label for="input_str_name_figure">Output Figure Name</label>
+    </div>
+    <br>
+      
+    <div>
+      <h5>Figure Size</h5>
+    </div>
+    <div class="row g-2">
+      <div class="col-md">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x"></textarea>
+            <label for="input_int_fig_size_x">Width (pixels)</label>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y"></textarea>
+            <label for="input_int_fig_size_y">Height (pixels)</label>
+        </div>
+      </div>
+    </div>
+    <br>
+    
+    <div>
+      <h5>Marker (Point) Size</h5>
+    </div>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="switch_responsive_marker_size_or_static">
+        <label class="form-check-label" for="switch_responsive_marker_size_or_static">Responsive Marker (Point) Size</label>
+    </div>
+    <div class="form-floating">
+        <textarea class="form-control" placeholder="3" id="input_int_marker_size"></textarea>
+        <label for="input_int_marker_size">Marker Size (pixels)</label>
+    </div>
+    <br>
     <br>
         
   </div>
@@ -315,6 +385,23 @@ function difference(setA, setB) {
   }
   return _difference;
 }
+    
+// string functions
+function isString ( value ) { // Returns if a value is a string
+    return typeof value === 'string' || value instanceof String;
+}
+// define hashing funciton of string
+Object.defineProperty(String.prototype, 'hashCode', {
+        value: function() {
+            var hash = 0, i, chr;
+            for (i = 0; i < this.length; i++) {
+                chr   = this.charCodeAt(i);
+                hash  = ((hash << 5) - hash) + chr;
+                hash |= 0; // Convert to 32bit integer
+            }
+        return hash;
+    }
+});
     
 // implemented functions
 function check_none( val ) {
@@ -683,7 +770,7 @@ class ZarrDataFrame {
     async load_column( name_col ) {
         // load metadata if it has not been loaded
         if ( check_none( this.metadata ) ) {
-            await this.load_metadata( );
+            await this.initialize( );
         }
         
         // load zarr object and metadata of a given column name
@@ -772,7 +859,7 @@ class ZarrDataFrame {
         */
         // load metadata if it has not been loaded
         if ( check_none( this.metadata ) ) {
-            await this.load_metadata( );
+            await this.initialize( );
         }
         
         // retrieve flags
@@ -2352,7 +2439,10 @@ function Select_RemoveOptions_Using_ID( id_selectElement ) { // remove all optio
 }
 function Select_Get_Selected_Option_Using_ID( id_selectElement ) { // get selected option in the select element with its id
     let sel = document.getElementById( id_selectElement );
-    
+    // if the number of options is zero, return undefined
+    if ( sel.options.length == 0 ) {
+        return undefined;
+    }
     if ( sel.multiple ) { 
         // if the selection object is multi-selection-object
         let l_option = sel.options, 
@@ -2367,6 +2457,15 @@ function Select_Get_Selected_Option_Using_ID( id_selectElement ) { // get select
     } else { // if selection object is single-selection-object
         return sel.options[ sel.selectedIndex ];
     }
+}
+function Select_Get_Value_from_Option( opt ) {
+    /*
+    get value from the select option
+    */
+    if ( check_none( opt ) ) { // if option is invalid, return option without accessing its value attribute.
+        return opt;
+    }
+    return opt.value
 }
 function Select_AddOptions_Using_ID( id_selectElement, dict_innerHTML_to_value ) { // add options in the select element using id and the given dictionary containing innerHTML (key) and values (values). alternatively, an Array can be given, whose values will be used to initialize both innerHTMLs and values of the options
     // get select element
@@ -2395,7 +2494,19 @@ function Select_AddOptions_Using_ID( id_selectElement, dict_innerHTML_to_value )
 function Select_SelectOption_Using_ID( id_selectElement, value ) { // select value
     // get select element
     let sel = document.getElementById( id_selectElement );
-    sel.value = value;
+    
+    if ( Array.isArray( value ) ) { // if a list of selection values was given
+        let set_value = new Set( value ); // retrieve a set of unique values to select
+        for ( let opt of sel.options ) { // iterate over option
+            if ( set_value.has( opt.value  ) ) { // if the option has the value of the given list of values to select
+                opt.selected = true; // select the option
+            }
+        }
+        sel.value = value;
+    } else {
+        // if only single value was used for selection
+        sel.value = value;
+    }
 }
     
 
@@ -2545,10 +2656,11 @@ let dict_data = {
     'bs_components' : {
         'offcanvasLoadRamData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasLoadRamData" ), { backdrop: true } ),
         'offcanvasRetrieveAnnData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasRetrieveAnnData" ), { backdrop: true } ),
-        'offcanvasPlotAnnData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasPlotAnnData" ), { backdrop: true } )
+        'offcanvasPlotAnnData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasPlotAnnData" ), { backdrop: false, scroll: true } )
     },
     'misc' : { // miscellaneous variables
-        'name_option_no_filter' : 'no filter (all entries)' 
+        'name_option_no_filter' : 'no filter (all entries)',
+        'function_colormap_rainbow' : chroma.scale( [ '#f00','#0f0','#00f','#f00' ] ).mode('hsl') // colormaps
     }
 }
     
@@ -2623,7 +2735,9 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     let dict_kw_args_default = {
         'name_gene' : undefined, // if given, show expression of a gene
         'sort_by_value' : true, // if true, sort barcodes by value that is used to color points, preventing lower-priority points to cover high-priority points
+        'name_col_obs' : undefined, // if given, display values of a column of adata.obs
         'name_col_embedding' : undefined, // name of obsm data that contains embedding coordinates (assumes NestedArray was given)
+        'flag_plot_feature' : true, // if true, plot feature using 'name_gene'. if false, plot obs column from adata.obs
         'name_embedding' : 'UMAP', // name of the embedding method. used to label axes
         'marker_size' : 3, 
         'fig_size' : [ 1100, 1100 ], // the figure size of the new plot (height/width)
@@ -2633,90 +2747,173 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'title' : 'default figure name',
         'fontsize_title' : 24,
         'font_title' : 'Calibri',
+        'flag_responsive_marker_size' : false,
     }
     
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
-    // if name_div does not exist, create a new division
-    if ( ! dict_data.canvas.set_name_div.has( name_div ) ) {
-        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 1 ]}px;height:${dict_kw_args[ 'fig_size' ][ 0 ]}px;` );
+    // if the panel already exists
+    if ( dict_data.canvas.set_name_div.has( name_div ) ) {
+        delete_div( name_div ); // delete the panel
     }
-    // demonstration
+    // create a new panel
+    create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;` );
     
     let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
     let str_hovertemplate_additional_line = ''; // "<b>" + str_name_option_selected + "</b>: <b>%{marker.color:." + ( ( str_name_option_selected == 'MT Percentage' ) ? 1 : 0 ).toString( ) + "f}</b><br>"; // only MT percentage data will be shown as floating point numbers
-        
     
     let marker_size = dict_kw_args[ 'marker_size' ],
-        l_color,
+        l_color = undefined,
+        l_val_feature = undefined,
+        l_val_obs = undefined,
         l_x = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 0 ] ).flatten( ) ],
-        l_y = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 1 ] ).flatten( ) ];
-    
+        l_y = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 1 ] ).flatten( ) ],
+        l_trace = [ ]; // initialize the list of plotly scatter traces
+
+    // retrieve values
     // retrieve color values according to the setting
     if ( ( ! check_none( dict_kw_args[ 'name_gene' ] ) ) & ( dict_kw_args[ 'name_gene' ] in adata.var._dict_mapping_index ) ) {
-        l_color = adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_gene' ] ] ) ).to_dense( ).T.tolist( )[ 0 ]; // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
+        l_val_feature = adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_gene' ] ] ) ).to_dense( ).T.tolist( )[ 0 ]; // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
     }
-    console.log( l_color );
-    
-    // cap the values according to the setting
-    if ( ! check_none( dict_kw_args[ 'vmax' ] ) ) { // if valid 'vmax' value has been given
-        l_color = ArrayCap( l_color, dict_kw_args[ 'vmax' ] ); // cap values
-    }
-    
-    // sort by color value according to the setting.
-    if ( dict_kw_args[ 'sort_by_value' ] ) {
-        let argsort_by_color = argsort( l_color );
-        // sort by color value
-        l_x = ArrayIndexing( l_x, argsort_by_color );
-        l_y = ArrayIndexing( l_y, argsort_by_color );
-        l_color = ArrayIndexing( l_color, argsort_by_color );
+    l_val_obs = adata.obs.get_column( dict_kw_args[ 'name_col_obs' ] );
+    l_color = ( dict_kw_args[ 'flag_plot_feature' ] ) ? l_val_feature : l_val_obs; // retrieve values for setting colors
+    if ( check_none( l_color ) ) { // if invalid inputs were given, exit
+        return;
     }
 
-    let trace = {
-        mode: 'markers',
-        type: 'scattergl',
-        x: l_x,
-        y: l_y,
-//         customdata: ArrayTranspose( [ dictarr[ col_name_cell_type ],
-//                                       dictarr[ "tissue" ],
-//                                       dictarr[ 'id_cell' ]
-//                                     ] ),
-//         hovertemplate: [ str_hovertemplate_additional_line + "tissue: <b>%{customdata[1]}</b>",
-//                         "cell type: <b>%{customdata[0]}</b>",
-//                         "",
-//                         'UMAP-1' + ": <b>%{x:.2f}</b>",
-//                         'UMAP-2' + ": <b>%{y:.2f}</b>",
-//                         "%{customdata[2]}",
-//                         "<extra></extra>" ].join( "<br>" ),
-        marker: { 
-            color: l_color,
-            size: dict_kw_args[ 'marker_size' ]
-        },
-        line: { 
-            width: 0
-        },
-    };
-    trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
+    let flag_color_using_continuous_values = typeof l_color[ 0 ] == 'number', // retrieve a flag indicating whether the array contains float value
+        name_val_for_color = dict_kw_args[ 'flag_plot_feature' ] ? dict_kw_args[ 'name_gene' ] : dict_kw_args[ 'name_col_obs' ]; // retrieve name of values for coloring points
+    
+    if ( flag_color_using_continuous_values ) { // if values are continuous values
+        // cap the values according to the setting
+        if ( ! check_none( dict_kw_args[ 'vmax' ] ) ) { // if valid 'vmax' value has been given
+            l_color = ArrayCap( l_color, dict_kw_args[ 'vmax' ] ); // cap values
+        }
 
-    let div_plot = $( "#" + name_div )[ 0 ], // retrieve div to create a plot
-        layout = { 
-            title : {
-                    text : dict_kw_args[ 'title' ],
-                    font : {
-                        family : dict_kw_args[ 'font_title' ],
-                        size : dict_kw_args[ 'fontsize_title' ]
+        // sort by color value according to the setting.
+        if ( dict_kw_args[ 'sort_by_value' ] ) {
+            let argsort_by_color = argsort( l_color );
+            // sort by color value
+            l_x = ArrayIndexing( l_x, argsort_by_color );
+            l_y = ArrayIndexing( l_y, argsort_by_color );
+            l_color = ArrayIndexing( l_color, argsort_by_color );
+        }
+
+        // compose a single trace when values are continuous
+        let trace = {
+            mode: 'markers',
+            type: 'scattergl',
+            x: l_x,
+            y: l_y,
+            customdata: ArrayTranspose( [ l_color
+                                        ] ),
+            hovertemplate: [ `${name_val_for_color}: %{customdata[0]:.5f}`,
+                            `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
+                            "<extra></extra>" ].join( "<br>" ),
+            marker: { 
+                color: l_color,
+                size: dict_kw_args[ 'marker_size' ]
+            },
+            line: { 
+                width: 0
+            },
+        };
+        trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
+        l_trace.push( trace ); // add trace to the list of traces
+    } else {
+        let dict_category_to_dict_data = { }; // initialize dict_data for each category
+        for ( let i = 0; i < l_color.length; i ++ ) {
+            let e = l_color[ i ],
+                x = l_x[ i ],
+                y = l_y[ i ];
+            // handle 'None' category as a separate category
+            if ( check_none( e ) ) {
+                e = 'None';
+            }
+            // initialize dict_data for the category
+            if ( ! ( e in dict_category_to_dict_data ) ) {
+                dict_category_to_dict_data[ e ] = { l_x: [ ], l_y: [ ] }; 
+            }
+            dict_category_to_dict_data[ e ].l_x.push( x );
+            dict_category_to_dict_data[ e ].l_y.push( y );
+        }
+        
+        // compose trace for 'None' category before other traces can be composed
+        if ( 'None' in dict_category_to_dict_data ) { // if 'None' category exists
+            let e = 'None';
+            let trace = {
+                name: e, // set category name as the name of the trace
+                mode: 'markers',
+                type: 'scattergl',
+                x: dict_category_to_dict_data[ e ].l_x,
+                y: dict_category_to_dict_data[ e ].l_y,
+                hovertemplate: [ `${name_val_for_color}: ${e}`,
+                                `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
+                                "<extra></extra>" ].join( "<br>" ),
+                marker: { 
+                    color: '#f2f2f2', // set color for 'None' category
+                    size: dict_kw_args[ 'marker_size' ]
                 },
-            xref: 'paper',
-            x: 0.05,
-        },
-        margin: { l: 65, r: 65, b: 90, t: 50, pad: 4 }, 
+                line: { 
+                    width: 0
+                },
+            };
+            l_trace.push( trace ); // add trace to the list of traces
+            delete dict_category_to_dict_data[ 'None' ]; // delete 'None' category
+        }
+        
+        // compose traces        
+        for ( let e in dict_category_to_dict_data ) { // for each category
+            let trace = {
+                name: e, // set category name as the name of the trace
+                mode: 'markers',
+                type: 'scattergl',
+                x: dict_category_to_dict_data[ e ].l_x,
+                y: dict_category_to_dict_data[ e ].l_y,
+                hovertemplate: [ `${name_val_for_color}: ${e}`,
+                                `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
+                                "<extra></extra>" ].join( "<br>" ),
+                marker: { 
+                    color: dict_data.misc.function_colormap_rainbow( ( Math.abs( e.hashCode( ) ) % 100 ) / 100 ), // assign color of the entry using hasing
+                    size: dict_kw_args[ 'marker_size' ]
+                },
+                line: { 
+                    width: 0
+                },
+            };
+            l_trace.push( trace ); // add trace to the list of traces
+        }
+    }
+   // draw plot using plotly.js
+   let div_plot = $( "#" + name_div )[ 0 ], // retrieve div to create a plot
+        layout = { 
+        margin: { l: 65, r: 65, b: 90, t: 25, pad: 4 }, 
         xaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-1`, zeroline: false }, 
         yaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-2`, zeroline: false }, 
         hovermode: "closest"
     };
-    Plotly.newPlot( div_plot, [ trace ], layout, { ... config_plotly, filename: 'single-cell-graph', height: dict_kw_args[ 'fig_size' ][ 0 ], width: dict_kw_args[ 'fig_size' ][ 1 ] } ); // draw scatter plot of the annotation
-    div_plot.on( "plotly_relayout", function( ed ) {
-        adaptive_marker_size( ed, div_plot, dict_kw_args );
-    });
+    
+    // if valid 'title' was given, set title name
+    if ( dict_kw_args[ 'title' ].length > 0 ) {
+        layout[ 'title' ] = {
+            text : dict_kw_args[ 'title' ],
+            font : {
+                family : dict_kw_args[ 'font_title' ],
+                size : dict_kw_args[ 'fontsize_title' ]
+            },
+            xref: 'paper',
+            x: 0.05,
+        }
+        layout.margin.t = 50; // increase top margin since figure title will not be set
+    }
+    Plotly.newPlot( div_plot, l_trace, layout, { ... config_plotly, filename: 'single-cell-graph', height: dict_kw_args[ 'fig_size' ][ 0 ], width: dict_kw_args[ 'fig_size' ][ 1 ] } ); // draw scatter plot of the annotation
+
+    
+    // add event listner when 'flag_responsive_marker_size' is set to True
+    if ( dict_kw_args[ 'flag_responsive_marker_size' ] ) {
+        div_plot.on( "plotly_relayout", function( ed ) {
+            adaptive_marker_size( ed, div_plot, dict_kw_args );
+        });
+    }
 }
     
 {
@@ -3211,6 +3408,22 @@ async function Initialize( ) { // initialize the web application
     Select_RemoveOptions_Using_ID( id_select_ramdata );
     Select_AddOptions_Using_ID( id_select_ramdata, dict_ramdata_locations ); // add ramdata objects in the settings
     
+    // set default options
+    document.getElementById( 'input_int_fig_size_x' ).value = '1250';
+    document.getElementById( 'input_int_fig_size_y' ).value = '1000';
+    document.getElementById( 'input_int_marker_size' ).value = '3';
+    document.getElementById( "input_str_name_panel" ).value = 'ELDB';
+    document.getElementById( "input_str_name_figure" ).value = '';
+    
+    /*
+    Demonstration
+    */
+    // load ELDB
+//     await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+//     await RetrieveAnnData( name_ramdata = 'ram' );
+    
+    
+    
     // testing anndata for ELDB (subsampled)
     ram = new RamData(  "http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/", 'normalized_log1p_scaled' )
     await ram.initialize( )
@@ -3224,17 +3437,10 @@ async function Initialize( ) { // initialize the web application
     create_div( 'new_graph' )
     
     draw_graph( 'new_graph', adata, { 'name_gene' : 'CNN3', 'name_col_embedding' : "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" } )
-    
-//     // initialize flags
-//     TESTER = document.getElementById('tester');
-//     Plotly.newPlot( TESTER, [{
-//     x: [1, 2, 3, 4, 5],
-//     y: [1, 2, 4, 8, 16] }], {
-//     margin: { t: 0 } } );
 }
     
 
-async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
+async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
     // get the name of the selected ramdata object
     let id_select_ramdata = 'select_ramdata_object',
         path_folder_ramdata = Select_Get_Selected_Option_Using_ID( id_select_ramdata ).value,
@@ -3279,6 +3485,8 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', 
     // select default filters
     Select_SelectOption_Using_ID( 'select_filter_bc', name_col_filter_default_bc );
     Select_SelectOption_Using_ID( 'select_filter_ft', name_col_filter_default_ft );
+    Select_SelectOption_Using_ID( 'select_annotations_bc', l_name_col_obs_default );
+    Select_SelectOption_Using_ID( 'select_embedding', l_name_col_obsm_default );
     
     // close current panel
     dict_data.bs_components.offcanvasLoadRamData.hide( );
@@ -3287,6 +3495,9 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', 
 }
     
 async function RetrieveAnnData( name_ramdata = 'ram' ) {
+    /*
+    Retrieve AnnData and set attributes for the next panel
+    */
     // retrieve RamData
     let ram = dict_data[ 'dict_ramdata' ][ name_ramdata ],
         name_option_no_filter = dict_data.misc.name_option_no_filter;
@@ -3334,28 +3545,84 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
     Select_AddOptions_Using_ID( 'select_embedding_for_plot', l_name_col_obsm ); 
     
     // close current panel
-    dict_data.bs_components.offcanvasRetrieveAnnData.hide( )
+    dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
     // show next panel
-    dict_data.bs_components.offcanvasPlotAnnData.show( )
+    dict_data.bs_components.offcanvasPlotAnnData.show( );
 }
     
 async function PlotAnnData( ) {
     // retrieve list of input columns and values
     let name_anndata = Select_Get_Selected_Option_Using_ID( 'select_adata' ).value,
-        str_entry_ft = Select_Get_Selected_Option_Using_ID( 'select_str_entry_ft' ).value,
+        name_panel = document.getElementById( 'input_str_name_panel' ).value,
+        name_fig = document.getElementById( 'input_str_name_figure' ).value,
         name_col_obsm = Select_Get_Selected_Option_Using_ID( 'select_embedding_for_plot' ).value,
-        name_col_obs = Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ).value,
+        str_entry_ft = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_str_entry_ft' ) ),
+        name_col_obs = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ) ),
+        flag_plot_feature = document.getElementById( 'switch_plot_entry_ft_or_col_obs' ).checked,
+        flag_responsive_marker_size = document.getElementById( 'switch_responsive_marker_size_or_static' ).checked,
+        int_marker_size = parseInt( document.getElementById( 'input_int_marker_size' ).value ),
+        input_float_vmax = parseFloat( document.getElementById( 'input_int_fig_size_x' ).value ),
+        int_fig_size_x = document.getElementById( 'input_int_fig_size_x' ).value,
+        int_fig_size_y = document.getElementById( 'input_int_fig_size_y' ).value,
         adata = dict_data[ 'dict_anndata' ][ name_anndata ]; // add the reference
-        
+    
     // draw graph
-    console.log( adata, str_entry_ft, name_col_obsm )
-    draw_graph( 'new_graph', adata, { 'name_gene' : str_entry_ft, 'name_col_embedding' : name_col_obsm } )
+    draw_graph( name_panel, adata, { 'name_gene' : str_entry_ft, 'name_col_obs' : name_col_obs, 'flag_plot_feature' : flag_plot_feature, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'fig_size' : [ int_fig_size_x, int_fig_size_y ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size' : isNaN( int_marker_size ) ? 3 : int_marker_size } );
     
     // close current panel
-    dict_data.bs_components.offcanvasRetrieveAnnData.hide( )
+    dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
 }
-    
-    PlotAnnData
 
 </script>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
