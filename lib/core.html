@@ -139,6 +139,11 @@
     
 <div class="content" id="canvas">
 </div>
+<nav class="navbar navbar-light bg-light">
+  <div class="container-fluid">
+    RamData, SC-Elephant, SC-Elephant.js, and ELDB were developed by Hyunsu An at the Gwangju Institute of Science and Technology under the supervision of Professor JiHwan Park.<br>© 2022 Functional Genomics Lab, Gwangju Institute of Science and Technology
+  </div>
+</nav>
     
 <!-- offcanvases -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasLoadRamData" aria-labelledby="offcanvasLoadRamDataLabel">
@@ -160,7 +165,7 @@
 </div>
     
 <!-- offcanvas -->
-<div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasRetrieveAnnData" aria-labelledby="offcanvasRetrieveAnnDataLabel" style="height: 75vh">
+<div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasRetrieveAnnData" aria-labelledby="offcanvasRetrieveAnnDataLabel" style="height: 90vh">
   <div class="offcanvas-header">
     <h5 class="offcanvas-title" id="offcanvasRetrieveAnnDataLabel">Retrieve AnnData from RamData</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -230,41 +235,43 @@
     <button class="btn btn-primary" type="button" onclick="PlotAnnData( )">Plot AnnData</button>
   </div>
   <div class="offcanvas-body">
-    <label for="select_adata" class="form-label">Select AnnData</label>
-    <select class="form-select" aria-label="select_adata" id="select_adata">
-    </select>
+    <div class="form-floating">
+        <select class="form-select" aria-label="select_adata" id="select_adata">
+        </select>
+      <label for="select_adata" class="form-label">Select AnnData</label>
+    </div>
     <br>
       
     <div>
-      <h5>Colors</h5>
+      <h5>Data</h5>
     </div>
       
-    <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature" autocomplete="off" checked>
+    <div class="btn-group d-flex justify-content-center" role="group" aria-label="Basic radio toggle button group">
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature" autocomplete="off">
       <label class="btn btn-outline-primary" for="radio_select_type_graph_feature">Feature</label>
 
       <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_obs" autocomplete="off">
       <label class="btn btn-outline-primary" for="radio_select_type_graph_obs">Annotation</label>
 
-      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_violin" autocomplete="off">
-      <label class="btn btn-outline-primary" for="radio_select_type_graph_violin">Both (Violin)</label>
-    </div>
-    <br>
-      
-    <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="switch_plot_entry_ft_or_col_obs" checked>
-        <label class="form-check-label" for="switch_plot_entry_ft_or_col_obs">Plot Feature Entry</label>
-    </div>
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature_and_obs" autocomplete="off" checked>
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_feature_and_obs">Both</label>
 
-    <label for="select_str_entry_ft" class="form-label">Select Feature Entry</label>
-    <select class="form-select" aria-label="select_str_entry_ft" id="select_str_entry_ft">
-    </select>
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_violin" autocomplete="off">
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_violin">Violin</label>
+    </div>
     <br>
+
+    <div class="form-floating">
+        <select class="form-select" aria-label="select_str_entry_ft" id="select_str_entry_ft">
+        </select>
+      <label for="select_str_entry_ft" class="form-label">Select Feature Entry</label>
+    </div>
       
-    <label for="select_annotations_bc_for_plot" class="form-label">Select Barcode Annotation</label>
-    <select class="form-select" aria-label="select_annotations_bc_for_plot" id="select_annotations_bc_for_plot">
-    </select>
-    <br>
+    <div class="form-floating">
+        <select class="form-select" aria-label="select_annotations_bc_for_plot" id="select_annotations_bc_for_plot">
+        </select>
+      <label for="select_annotations_bc_for_plot" class="form-label">Select Barcode Annotation</label>
+    </div>
       
     <div class="form-floating">
         <textarea class="form-control" placeholder="10" id="input_float_vmax"></textarea>
@@ -2502,7 +2509,6 @@ function Select_SelectOption_Using_ID( id_selectElement, value ) { // select val
                 opt.selected = true; // select the option
             }
         }
-        sel.value = value;
     } else {
         // if only single value was used for selection
         sel.value = value;
@@ -2636,10 +2642,10 @@ function ArrayMultiply( l, float_multiply_by ) { // return a list with values mu
 RamData locations settings [START]
 */
 let dict_ramdata_locations = {
+    '20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes' : 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/',
+    'baron_8K_pancreas_rnaseq_8569_barcodes_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/',
     'all_features_only_gene_6447300_barcodes_sorted_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/',
     'hca_783K_blood_rnaseq_782859_barcodes_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/hca_783K_blood_rnaseq_782859_barcodes_ramdata/',
-    'baron_8K_pancreas_rnaseq_8569_barcodes_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/',
-    '20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes' : 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/',
 }
 /*
 RamData locations settings [END]
@@ -2664,16 +2670,22 @@ let dict_data = {
     }
 }
     
-function create_div( name_div, style = "width:1100px;height:1100px;" ) {
+function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false ) {
     /*
     create a new div for plotting graph
+    
+    'flag_create_dual_div' : create two divisions next to each other
     */
     if ( ! dict_data.canvas.set_name_div.has( name_div ) ) { // create div when 'name_div' does not exist in the canvas
         let div_new = document.createElement( 'div' );
         div_new.id = `${name_div}_container`;
         div_new.className = 'plot_container';
-        div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}" class="plot" style="${style}"></div>`;
-        $( '#canvas' )[ 0 ].appendChild( div_new );
+        if ( flag_create_dual_div ) {
+            div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}__top__" style="${style} class="plot"></div><div id="${name_div}__bottom__" style="${style} class="plot"></div>`;
+        } else {
+            div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}" class="plot" style="${style}"></div>`;
+        }
+        $( '#canvas' )[ 0 ].prepend( div_new );
         dict_data.canvas.set_name_div.add( name_div ); // add 'name_div' to the set of div names
     }
 }
@@ -2722,6 +2734,34 @@ function adaptive_marker_size( ed, div, dict_kw_args ) {
         Plotly.restyle( div, update, [ 0 ] );
     } 
 }
+function synchronized_layout( ed, divs ) {
+    /*
+    synchronization of zoom levels across plotly plots
+    */
+    if ( Object.entries( ed ).length === 0 ) { return; }
+    // broadcasting updated zoom level across plots
+    divs.forEach( ( div, i ) => {
+        let x = div.layout.xaxis, y = div.layout.yaxis, flag_relayout = false, update = { }; // a flag indicating whether a relayout event is required
+        // ignore when layouts are changed due to autoranging
+        if ( ( ed[ "xaxis.autorange" ] && x.autorange ) && ( ed[ "yaxis.autorange" ] && y.autorange ) ) { 
+            return;
+        }
+        // update x-axis
+        if ( x.range[ 0 ] != ed[ "xaxis.range[0]" ] || x.range[ 1 ] != ed[ "xaxis.range[1]" ] ) {
+            flag_relayout = true;
+            update = { ... update, 'xaxis.range[0]': ed[ "xaxis.range[0]" ], 'xaxis.range[1]': ed[ "xaxis.range[1]" ], 'xaxis.autorange': ed[ "xaxis.autorange" ] };
+        }
+        // update y-axis
+        if ( y.range[ 0 ] != ed[ "yaxis.range[0]" ] || y.range[ 1 ] != ed[ "yaxis.range[1]" ] ) {
+            flag_relayout = true;
+            update = { ... update, 'yaxis.range[0]': ed[ "yaxis.range[0]" ], 'yaxis.range[1]': ed[ "yaxis.range[1]" ], 'yaxis.autorange': ed[ "yaxis.autorange" ] };
+        }
+        if ( flag_relayout ) {
+            Plotly.relayout( div, update ); // perform relayout operation
+        }
+
+    });
+}
 function draw_graph( name_div, adata, dict_kw_args ) {
     /*
     name_div // name of the division to draw plots
@@ -2748,15 +2788,20 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'fontsize_title' : 24,
         'font_title' : 'Calibri',
         'flag_responsive_marker_size' : false,
+        'flag_recreate_div' : false, // does recreate the div
     }
     
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
-    // if the panel already exists
-    if ( dict_data.canvas.set_name_div.has( name_div ) ) {
-        delete_div( name_div ); // delete the panel
+    
+    // recreate div if 'flag_recreate_div' is True
+    if ( dict_kw_args[ 'flag_recreate_div' ] ) {
+        // if the panel already exists, delete and recreate the panel
+        if ( dict_data.canvas.set_name_div.has( name_div ) ) {
+            delete_div( name_div ); // delete the panel
+        }
+        // create a new panel
+        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;` );
     }
-    // create a new panel
-    create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;` );
     
     let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
     let str_hovertemplate_additional_line = ''; // "<b>" + str_name_option_selected + "</b>: <b>%{marker.color:." + ( ( str_name_option_selected == 'MT Percentage' ) ? 1 : 0 ).toString( ) + "f}</b><br>"; // only MT percentage data will be shown as floating point numbers
@@ -3414,33 +3459,37 @@ async function Initialize( ) { // initialize the web application
     document.getElementById( 'input_int_marker_size' ).value = '3';
     document.getElementById( "input_str_name_panel" ).value = 'ELDB';
     document.getElementById( "input_str_name_figure" ).value = '';
+    document.getElementById( "input_float_vmax" ).value = '5';
+    Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
     
     /*
     Demonstration
     */
     // load ELDB
-//     await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
-//     await RetrieveAnnData( name_ramdata = 'ram' );
+    await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+    await RetrieveAnnData( name_ramdata = 'ram' );
+    // select data to plot
+    document.getElementById( "select_str_entry_ft" ).value = 'CLDN11';
+    document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+    await PlotAnnData( ); // plot graph
     
-    
-    
-    // testing anndata for ELDB (subsampled)
-    ram = new RamData(  "http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/", 'normalized_log1p_scaled' )
-    await ram.initialize( )
-    await ram.bc.change_filter( 'filtered_barcodes' )
-    await ram.ft.change_filter( 'filter_normalized_log1p_highly_variable' )
-    ram.ft.create_view( )
-    await ram.ft.load_str( )
+//     // testing anndata for ELDB (subsampled)
+//     ram = new RamData(  "http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/", 'normalized_log1p_scaled' )
+//     await ram.initialize( )
+//     await ram.bc.change_filter( 'filtered_barcodes' )
+//     await ram.ft.change_filter( 'filter_normalized_log1p_highly_variable' )
+//     ram.ft.create_view( )
+//     await ram.ft.load_str( )
 
-    // test anndata and plotting functions
-    adata = await ram.get_item( [ 'normalized_log1p_scaled', [ ], [ [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ] ], [ 'CNN3', 'STAG3', 'CACNB4', 'XPO6', 'FGG', 'MAVS', 'CRIM1', 'RBFOX1', 'LYL1', 'HMGCLL1', 'NBPF19', 'LPAR1', 'ALPK3', 'TRIM59', 'MMP1', 'FCN3', 'PEX14', 'CSAD', 'SQLE', 'AKR1C3', 'ABCA1', 'ZNF264', 'FILIP1L', 'ADAM8', 'TBCK', 'MARCHF3' ], [ 'str' ] ] )
-    create_div( 'new_graph' )
+//     // test anndata and plotting functions
+//     adata = await ram.get_item( [ 'normalized_log1p_scaled', [ ], [ [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ] ], [ 'CNN3', 'STAG3', 'CACNB4', 'XPO6', 'FGG', 'MAVS', 'CRIM1', 'RBFOX1', 'LYL1', 'HMGCLL1', 'NBPF19', 'LPAR1', 'ALPK3', 'TRIM59', 'MMP1', 'FCN3', 'PEX14', 'CSAD', 'SQLE', 'AKR1C3', 'ABCA1', 'ZNF264', 'FILIP1L', 'ADAM8', 'TBCK', 'MARCHF3' ], [ 'str' ] ] )
+//     create_div( 'new_graph' )
     
-    draw_graph( 'new_graph', adata, { 'name_gene' : 'CNN3', 'name_col_embedding' : "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" } )
+//     draw_graph( 'new_graph', adata, { 'name_gene' : 'CNN3', 'name_col_embedding' : "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" } )
 }
     
 
-async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
+async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
     // get the name of the selected ramdata object
     let id_select_ramdata = 'select_ramdata_object',
         path_folder_ramdata = Select_Get_Selected_Option_Using_ID( id_select_ramdata ).value,
@@ -3558,17 +3607,40 @@ async function PlotAnnData( ) {
         name_col_obsm = Select_Get_Selected_Option_Using_ID( 'select_embedding_for_plot' ).value,
         str_entry_ft = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_str_entry_ft' ) ),
         name_col_obs = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ) ),
-        flag_plot_feature = document.getElementById( 'switch_plot_entry_ft_or_col_obs' ).checked,
         flag_responsive_marker_size = document.getElementById( 'switch_responsive_marker_size_or_static' ).checked,
         int_marker_size = parseInt( document.getElementById( 'input_int_marker_size' ).value ),
-        input_float_vmax = parseFloat( document.getElementById( 'input_int_fig_size_x' ).value ),
+        input_float_vmax = parseFloat( document.getElementById( 'input_float_vmax' ).value ),
         int_fig_size_x = document.getElementById( 'input_int_fig_size_x' ).value,
         int_fig_size_y = document.getElementById( 'input_int_fig_size_y' ).value,
-        adata = dict_data[ 'dict_anndata' ][ name_anndata ]; // add the reference
+        adata = dict_data[ 'dict_anndata' ][ name_anndata ], // add the reference
+        dict_key_args_for_draw_graph = { 'name_gene' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'fig_size' : [ int_fig_size_x, int_fig_size_y ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size' : isNaN( int_marker_size ) ? 3 : int_marker_size }; // keyworded arguments for the draw_graph function
     
     // draw graph
-    draw_graph( name_panel, adata, { 'name_gene' : str_entry_ft, 'name_col_obs' : name_col_obs, 'flag_plot_feature' : flag_plot_feature, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'fig_size' : [ int_fig_size_x, int_fig_size_y ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size' : isNaN( int_marker_size ) ? 3 : int_marker_size } );
-    
+    if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : true } );
+    } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : false } );
+    } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
+        
+        // create div with dual graphs
+        create_div( name_panel, style = `width:${int_fig_size_x}px;height:${int_fig_size_y}px;`, flag_create_dual_div = true );
+        // draw graphs
+        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : false } );
+        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : true } );
+        
+        // sync two plots
+        let l_div_plotly = [ document.getElementById( `${name_panel}__top__` ), document.getElementById( `${name_panel}__bottom__` ) ];
+        for ( let div of l_div_plotly ) { // for each division with plotly graphs
+            div.on( "plotly_relayout" , function( ed ) { // add event listner for synchronizing layouts
+                synchronized_layout( ed, l_div_plotly );
+            });
+        }
+        
+    } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotations
+        
+    } else {
+        return;
+    }
     // close current panel
     dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
 }
