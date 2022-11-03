@@ -452,7 +452,7 @@ function difference(setA, setB) {
 function isString ( value ) { // Returns if a value is a string
     return typeof value === 'string' || value instanceof String;
 }
-// define hashing funciton of string
+// define hashing funciton of string -> not recommended. please use cyrb53 hashing function
 Object.defineProperty(String.prototype, 'hashCode', {
         value: function() {
             var hash = 0, i, chr;
@@ -464,6 +464,49 @@ Object.defineProperty(String.prototype, 'hashCode', {
         return hash;
     }
 });
+function reverseString(str) {
+    var newString = "";
+    for (var i = str.length - 1; i >= 0; i--) {
+        newString += str[i];
+    }
+    return newString;
+}
+// 53-bit hash with less collision rate than 32-bit hash (from 'https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript')
+const cyrb53 = (str, seed = 0) => {
+  let h1 = 0xdeadbeef ^ seed,
+    h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+};
+// code for pseudorandom number generator (PRNG) with random seed from https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+function xmur3(str) { // random seed generator
+    for(var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353),
+        h = h << 13 | h >>> 19;
+    return function() {
+        h = Math.imul(h ^ h >>> 16, 2246822507);
+        h = Math.imul(h ^ h >>> 13, 3266489909);
+        return (h ^= h >>> 16) >>> 0;
+    }
+}
+function mulberry32(a) { // a simple (PRNG) generator with a 32-bit state
+    return function() {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}   
+let prng_seed = xmur3( "sc-elephant" ), 
+    rand = mulberry32( prng_seed( ) ); // retrieve seed for a PRNG // retrieve a function for PRNG
     
 // implemented functions
 function check_none( val ) {
@@ -567,10 +610,12 @@ class SparseMatrix {
     */
     constructor( l_arr_data, shape, is_for_querying_primary_axis = true, verbose = true ) {
         /*
+        2022/11/03
         */
         // set attributes
         this.is_for_querying_primary_axis = is_for_querying_primary_axis;
         this.shape = shape;
+        this.verbose = verbose;
         // set attributes
         this.length = this.shape[ ( this.is_for_querying_primary_axis ) ? 0 : 1 ]; // retrieve the number of queries 
         if ( l_arr_data instanceof Array ) {
@@ -582,13 +627,7 @@ class SparseMatrix {
                 }
                 return;
             }
-            let int_num_entries_axis_for_querying_with_data = l_arr_data[ 0 ].length;
-            if ( int_num_entries_axis_for_querying_with_data == 0 ) {
-                if ( this.verbose ) {
-                    console.log( 'the number of entries is zero.' )
-                }
-                return;
-            }
+            let int_num_entries_axis_for_querying_with_data = l_arr_data[ 0 ].length; // retrieve the number of entries in the input array
             this._data = { }
             for ( let i = 0; i < int_num_entries_axis_for_querying_with_data; i ++ ) {
                 let int_index_for_querying = l_arr_data[ 0 ][ i ],
@@ -612,12 +651,15 @@ class SparseMatrix {
             args = [ args ];
         }
         // retrieve a list of all the integer indices for the axis for querying for subsetting
-        let l_int_entry_subset = [ ... intersection( new Set( args ), new Set( Object.keys( this._data ).map( ( x ) => { return parseInt( x ); } ) ) ) ].sort( sort_number ), // sort by int_entry // convert integers converted to strings back to integers
+        let len_axis_for_querying = this.shape[ ( this.is_for_querying_primary_axis ) ? 0 : 1 ], // retrieve the length of the axis for querying
+            l_int_entry_subset = [ ... new Set( args ) ].filter( e => ( e >= 0 ) & ( e < len_axis_for_querying ) ).sort( sort_number ), // sort by int_entry // filter out queried indices that are out of the range of the queried axis
             data_subset =  { }, // initialize a new data that will contain a subset of the sparse matrix
             int_entry_new = 0; // 'int_entry_new' after subsetting
         // subset array
         for ( let int_entry of l_int_entry_subset ) {
-            data_subset[ int_entry_new ] = this._data[ int_entry ]; // retrieve data
+            if ( int_entry in this._data ) { // if current object contains data for the 'int_entry' entry
+                data_subset[ int_entry_new ] = this._data[ int_entry ]; // retrieve data
+            }
             int_entry_new += 1; // update 'int_entry_new' 
         }
         // set new shape
@@ -2741,11 +2783,16 @@ let dict_data = {
     },
     'misc' : { // miscellaneous variables
         'name_option_no_filter' : 'no filter (all entries)',
-        'function_colormap_rainbow' : chroma.scale( [ '#f00','#0f0','#00f','#f00' ] ).mode('hsl'), // colormaps
+        'function_colormap_rainbow' : chroma.scale( [ '#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00', '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff', '#ff0080' ] ).mode( 'lab' ), // colormaps
         'name_none' : 'None', // name of 'None' values
     }
 }
-dict_data.misc.get_color_from_string = ( e ) => { return dict_data.misc.function_colormap_rainbow( ( Math.abs( e.hashCode( ) ) % 100 ) / 100 ); }; // define a function to get color from string
+// colormap examples
+// tab20b '#393b79', '#5254a3', '#6b6ecf', '#9c9ede', '#637939', '#8ca252', '#b5cf6b', '#cedb9c', '#8c6d31', '#bd9e39', '#e7ba52', '#e7cb94', '#843c39', '#ad494a', '#d6616b', '#e7969c', '#7b4173', '#a55194', '#ce6dbd', '#de9ed6'
+// 12color rainbow '#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00', '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff', '#ff0080'
+// 
+// 'function_colormap_rainbow' : chroma.scale( [ '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000' ] ), // colormaps
+dict_data.misc.get_color_from_string = ( e ) => { let val = Math.abs( cyrb53( reverseString( e ) ) ); console.log( e, val % 100 ); return dict_data.misc.function_colormap_rainbow( [ ( val % 100 ) / 100, ( val % 10000 ) / 10000, ( val % 1000000 ) / 1000000 ][ parseInt( val % 300000 / 100000 ) ] ); }; // define a function to get color from string
     
 function delete_div( name_div ) {
     /*
@@ -3006,7 +3053,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                     "<extra></extra>" ].join( "<br>" ),
                     marker: { 
-                        color: dict_data.misc.get_color_from_string( e ), // assign color of the entry using hasing
+                        color: dict_data.misc.get_color_from_string( e ).toString( ), // assign color of the entry using hasing
                         size: marker_size
                     },
                     line: { 
@@ -3074,9 +3121,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         // summarize data for each category
         let dict_category_to_dict_data = { }; // initialize dict_data for each category
         for ( let str_entry_ft of set_str_entry_feature ) { // for each feature in 'set_str_entry_feature'
-            console.log( str_entry_ft );
             l_val_feature = adata.X.subset( adata.var.get_integer_indices_of_rows( [ str_entry_ft ] ) ).to_dense( ).T.tolist( )[ 0 ]; // retrieve expression data of a feature
-            console.log(l_val_feature);
             for ( let i = 0; i < l_val_obs.length; i ++ ) { // iterate over entries
                 let e = l_val_obs[ i ], // retrieve the name of the category
                     val = l_val_feature[ i ]; // retrieve expression value
