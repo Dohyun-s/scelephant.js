@@ -139,6 +139,7 @@
     
 <div class="content" id="canvas">
 </div>
+<br>
 <nav class="navbar navbar-light bg-light">
   <div class="container-fluid">
     RamData, SC-Elephant, SC-Elephant.js, and ELDB were developed by Hyunsu An at the Gwangju Institute of Science and Technology under the supervision of Professor JiHwan Park.<br>© 2022 Functional Genomics Lab, Gwangju Institute of Science and Technology
@@ -151,16 +152,25 @@
     <h5 class="offcanvas-title" id="offcanvasLoadRamDataLabel">Load RamData</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
+  <div class="d-grid mx-3 gap-2">
+    <button class="btn btn-primary" type="button" onclick="LoadRamData( )">Load RamData</button>
+  </div>
   <div class="offcanvas-body">
-    <div class="d-grid gap-2">
-        <button class="btn btn-primary" type="button" onclick="LoadRamData( )">Load RamData</button>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="input_ramdata" id="input_ramdata_from_select" checked>
+        <div class="form-floating">
+            <select class="form-select" aria-label="select_ramdata_object" id="select_ramdata_object">
+            </select>
+          <label for="select_ramdata_object" class="form-label">Select RamData Object</label>
+        </div>
     </div>
-    <br>
-    <label for="select_ramdata_object" class="form-label">Select RamData Object</label>
-    <select class="form-select" aria-label="select_ramdata_object" id="select_ramdata_object">
-    </select>
-    <br>
-        
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="input_ramdata" id="input_ramdata_from_text">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="RamData object" id="input_path_remote_ramdata" style="height: 100px"></textarea>
+            <label for="input_path_remote_ramdata">URL of an RamData object</label>
+        </div>
+    </div>      
   </div>
 </div>
     
@@ -171,12 +181,13 @@
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="d-grid mx-3 gap-2">
-    <button class="btn btn-primary" type="button" onclick="RetrieveAnnData( )">Retrieve AnnData</button>
+    <button class="btn btn-primary" type="button" onclick="RetrieveAnnData( )" id="button_for_retrieving_anndata">Retrieve AnnData
+    </button>
   </div>
   <div class="offcanvas-body">
     <div class="form-floating">
         <textarea class="form-control" placeholder="adata" id="input_str_name_adata_output"></textarea>
-        <label for="floatingTextarea">Output AnnData Name</label>
+        <label for="input_str_name_adata_output">Output AnnData Name</label>
     </div>
     <br>
       
@@ -209,7 +220,7 @@
     <br>
       
     <div class="form-floating">
-        <textarea class="form-control" placeholder="Leave a comment here" id="input_str_gene_names" style="height: 150px"></textarea>
+        <textarea class="form-control" placeholder="GAPDH" id="input_str_gene_names" style="height: 150px"></textarea>
         <label for="input_str_gene_names">Gene Symboles (separated by comma)</label>
     </div>
     <br>
@@ -242,11 +253,7 @@
     </div>
     <br>
       
-    <div>
-      <h5>Data</h5>
-    </div>
-      
-    <div class="btn-group d-flex justify-content-center" role="group" aria-label="Basic radio toggle button group">
+    <div class="btn-group d-flex justify-content-center" role="group" aria-label="Basic radio toggle button group" onclick="RearrangePlottingPanel( )" id="radio_select_type_graph">
       <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature" autocomplete="off">
       <label class="btn btn-outline-primary" for="radio_select_type_graph_feature">Feature</label>
 
@@ -258,35 +265,54 @@
 
       <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_violin" autocomplete="off">
       <label class="btn btn-outline-primary" for="radio_select_type_graph_violin">Violin</label>
+        
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_dot" autocomplete="off">
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_dot">Dot</label>
     </div>
     <br>
+      
+    <div>
+      <h5>Data</h5>
+    </div>
 
-    <div class="form-floating">
+    <div class="form-floating" id="plotting_panel_select_str_entry_ft">
         <select class="form-select" aria-label="select_str_entry_ft" id="select_str_entry_ft">
         </select>
       <label for="select_str_entry_ft" class="form-label">Select Feature Entry</label>
     </div>
       
-    <div class="form-floating">
-        <select class="form-select" aria-label="select_annotations_bc_for_plot" id="select_annotations_bc_for_plot">
+    <div class="form-floating" id="plotting_panel_input_l_str_entry_ft_for_plotting">
+        <textarea class="form-control" placeholder="Gene symbols" id="input_l_str_entry_ft_for_plotting" style="height: 100px"></textarea>
+        <label for="input_l_str_entry_ft_for_plotting">Gene Symboles (separated by comma)</label>
+    </div>
+      
+    <div class="form-floating" id="plotting_panel_select_annotations_bc_for_plot">
+        <select class="form-select" aria-label="select_annotations_bc_for_plot" id="select_annotations_bc_for_plot" onchange="UpdateCategories( );">
         </select>
       <label for="select_annotations_bc_for_plot" class="form-label">Select Barcode Annotation</label>
     </div>
       
-    <div class="form-floating">
+    <div class="form-floating" id="plotting_panel_input_l_category_for_plotting">
+        <textarea class="form-control" placeholder="Categories" id="input_l_category_for_plotting" style="height: 100px"></textarea>
+        <label for="input_l_category_for_plotting">Categories of the Barcode Annotation (separated by comma)</label>
+    </div>
+      
+    <div class="form-floating" id="plotting_panel_input_float_vmax">
         <textarea class="form-control" placeholder="10" id="input_float_vmax"></textarea>
         <label for="input_float_vmax">maximum value cutoff</label>
     </div>
     <br>
       
-    <div>
+    <div id="plotting_panel_title_coordinates">
       <h5>Coordinates</h5>
     </div>
       
-    <label for="select_embedding_for_plot" class="form-label">Select Embedding</label>
-    <select class="form-select" aria-label="select_embedding_for_plot" id="select_embedding_for_plot">
-    </select>
+    <div class="form-floating" id="plotting_panel_select_embedding_for_plot">
+        <select class="form-select" aria-label="select_embedding_for_plot" id="select_embedding_for_plot">
+        </select>
+      <label for="select_embedding_for_plot" class="form-label">Select Embedding</label>
     <br>
+    </div>
       
     <div>
       <h5>Figure</h5>
@@ -295,7 +321,6 @@
         <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel"></textarea>
         <label for="input_str_name_panel">Output Panel Name (no white spaces)</label>
     </div>
-    <br>
       
     <div class="form-floating">
         <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure"></textarea>
@@ -321,19 +346,49 @@
       </div>
     </div>
     <br>
+      
+    <div class="row g-4">
+      <div class="col-md">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="1200" id="input_int_margin_x"></textarea>
+            <label for="input_int_fig_size_x">Width (pixels)</label>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y"></textarea>
+            <label for="input_int_fig_size_y">Height (pixels)</label>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x"></textarea>
+            <label for="input_int_fig_size_x">Width (pixels)</label>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="form-floating">
+            <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y"></textarea>
+            <label for="input_int_fig_size_y">Height (pixels)</label>
+        </div>
+      </div>
+    </div>
     
-    <div>
+    <div id="plotting_panel_title_marker_size">
       <h5>Marker (Point) Size</h5>
     </div>
-    <div class="form-check form-switch">
+    <div class="form-check form-switch" id="plotting_panel_switch_responsive_marker_size_or_static">
         <input class="form-check-input" type="checkbox" id="switch_responsive_marker_size_or_static">
         <label class="form-check-label" for="switch_responsive_marker_size_or_static">Responsive Marker (Point) Size</label>
     </div>
-    <div class="form-floating">
-        <textarea class="form-control" placeholder="3" id="input_int_marker_size"></textarea>
-        <label for="input_int_marker_size">Marker Size (pixels)</label>
+    <div class="form-floating" id="plotting_panel_input_int_marker_size_for_scatter">
+        <textarea class="form-control" placeholder="3" id="input_int_marker_size_for_scatter"></textarea>
+        <label for="input_int_marker_size_for_scatter">Marker Size (pixels)</label>
     </div>
-    <br>
+    <div class="form-floating" id="plotting_panel_input_int_marker_size_for_dot_plot">
+        <textarea class="form-control" placeholder="3" id="input_int_marker_size_for_dot_plot"></textarea>
+        <label for="input_int_marker_size_for_dot_plot">Marker Size (pixels)</label>
+    </div>
     <br>
         
   </div>
@@ -2637,6 +2692,26 @@ function ArrayMultiply( l, float_multiply_by ) { // return a list with values mu
     }
     return l_multiplied;
 }
+// accessory functions
+function Pivot( l_index, l, name_none = 'None' ) { // return dictarr where unique entries of l_index are keys and a list of correspondinb values to each entry (key) is a value to each key. // similar to 'Index_list_with_dictionary' function
+    /*
+    name_none = 'None' // name of the 'None' category
+    */
+    let dictarr = { };
+    for ( let i = 0; i < l_index.length; i ++ ) {
+        let index = l_index[ i ];
+        // use 'name_none' if the current value is None value (undefined or null)
+        if ( check_none( index ) ) {
+            index = name_none;
+        }
+        if ( index in dictarr ) {
+            dictarr[ index ].push( l[ i ] );
+        } else {
+            dictarr[ index ] = [ l[ i ] ];
+        }
+    }
+    return dictarr;
+}
     
 /*
 RamData locations settings [START]
@@ -2666,38 +2741,45 @@ let dict_data = {
     },
     'misc' : { // miscellaneous variables
         'name_option_no_filter' : 'no filter (all entries)',
-        'function_colormap_rainbow' : chroma.scale( [ '#f00','#0f0','#00f','#f00' ] ).mode('hsl') // colormaps
+        'function_colormap_rainbow' : chroma.scale( [ '#f00','#0f0','#00f','#f00' ] ).mode('hsl'), // colormaps
+        'name_none' : 'None', // name of 'None' values
     }
 }
+dict_data.misc.get_color_from_string = ( e ) => { return dict_data.misc.function_colormap_rainbow( ( Math.abs( e.hashCode( ) ) % 100 ) / 100 ); }; // define a function to get color from string
     
-function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false ) {
-    /*
-    create a new div for plotting graph
-    
-    'flag_create_dual_div' : create two divisions next to each other
-    */
-    if ( ! dict_data.canvas.set_name_div.has( name_div ) ) { // create div when 'name_div' does not exist in the canvas
-        let div_new = document.createElement( 'div' );
-        div_new.id = `${name_div}_container`;
-        div_new.className = 'plot_container';
-        if ( flag_create_dual_div ) {
-            div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}__top__" style="${style} class="plot"></div><div id="${name_div}__bottom__" style="${style} class="plot"></div>`;
-        } else {
-            div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}" class="plot" style="${style}"></div>`;
-        }
-        $( '#canvas' )[ 0 ].prepend( div_new );
-        dict_data.canvas.set_name_div.add( name_div ); // add 'name_div' to the set of div names
-    }
-}
 function delete_div( name_div ) {
     /*
-    create the given div for plotting graph
+    delete the given div for plotting graph
     */
     if ( dict_data.canvas.set_name_div.has( name_div ) ) { // delete div when 'name_div' exists in the canvas
         let div = document.getElementById( `${name_div}_container` );
         div.remove( ); // delete the div from the document
         dict_data.canvas.set_name_div.delete( name_div ); // delete the name of div from the set of divisions
     }
+}
+function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false ) {
+    /*
+    create a new div for plotting graph
+    
+    'flag_create_dual_div' : create two divisions next to each other
+    */
+    let div_new = document.createElement( 'div' );
+    div_new.id = `${name_div}_container_new`; // set temporary id
+    div_new.className = 'plot_container';
+    if ( flag_create_dual_div ) {
+        div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}__top__" style="${style} class="plot"></div><div id="${name_div}__bottom__" style="${style} class="plot"></div>`;
+    } else {
+        div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}" class="plot" style="${style}"></div>`;
+    }
+    if ( dict_data.canvas.set_name_div.has( name_div ) ) { // if the panel already exists in the canvas, replace previous div. with new div.
+        document.getElementById( `${name_div}_container` ).replaceWith( div_new );
+        div_new.id = `${name_div}_container`; // set id of the container
+    } else {
+        // if the panel does not exist in the canvas, prepend div at the top.
+        div_new.id = `${name_div}_container`; // set id of the container
+        document.getElementById( 'canvas' ).prepend( div_new );
+    }
+    dict_data.canvas.set_name_div.add( name_div ); // add 'name_div' to the set of div names
 }
 
 let name_application = 'scelephant.js'
@@ -2767,19 +2849,21 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     name_div // name of the division to draw plots
     adata // anndata
     dict_kw_args // keyworded arguments
-        - name_gene : undefined // if given, show expression of a gene
+        - name_feature : undefined // if given, show expression of a gene
         - sort_by_value : true // 
     
     */  
     // define default keworded arguments
     let dict_kw_args_default = {
-        'name_gene' : undefined, // if given, show expression of a gene
+        'name_type_graph' : 'scatter', // the name of the type of the graph. [ 'scatter', 'violin', 'dot' ] 
+        'name_feature' : undefined, // if given, show expression of a feature
         'sort_by_value' : true, // if true, sort barcodes by value that is used to color points, preventing lower-priority points to cover high-priority points
         'name_col_obs' : undefined, // if given, display values of a column of adata.obs
         'name_col_embedding' : undefined, // name of obsm data that contains embedding coordinates (assumes NestedArray was given)
-        'flag_plot_feature' : true, // if true, plot feature using 'name_gene'. if false, plot obs column from adata.obs
+        'flag_plot_feature' : true, // if true, plot feature using 'name_feature'. if false, plot obs column from adata.obs
         'name_embedding' : 'UMAP', // name of the embedding method. used to label axes
-        'marker_size' : 3, 
+        'marker_size_for_scatter_plot' : 3, // marker size for scatter plot
+        'marker_size_for_dot_plot' : 30, // marker size for dot plot
         'fig_size' : [ 1100, 1100 ], // the figure size of the new plot (height/width)
         'int_factor_axis_range_to_marker_size' : 30, // for responsive marker size
         'int_factor_marker_size_multiply' : 3, // for responsive marker size
@@ -2788,155 +2872,278 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'fontsize_title' : 24,
         'font_title' : 'Calibri',
         'flag_responsive_marker_size' : false,
-        'flag_recreate_div' : false, // does recreate the div
+        'flag_recreate_div' : false, // recreate the div
+        'l_str_entry_feature' : undefined, // a list of string representation of features for drawing dot plots. by default use all loaded string representation of features
+        'l_name_category_in_col_obs' : undefined, // a list of name of categories in the column of adata.obs for drawing dot plots or violin plots. by default, all categories will be used
     }
-    
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
     
     // recreate div if 'flag_recreate_div' is True
     if ( dict_kw_args[ 'flag_recreate_div' ] ) {
-        // if the panel already exists, delete and recreate the panel
-        if ( dict_data.canvas.set_name_div.has( name_div ) ) {
-            delete_div( name_div ); // delete the panel
-        }
-        // create a new panel
-        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;` );
+        // initialize div (single graph)
+        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false );
     }
     
     let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
-    let str_hovertemplate_additional_line = ''; // "<b>" + str_name_option_selected + "</b>: <b>%{marker.color:." + ( ( str_name_option_selected == 'MT Percentage' ) ? 1 : 0 ).toString( ) + "f}</b><br>"; // only MT percentage data will be shown as floating point numbers
     
-    let marker_size = dict_kw_args[ 'marker_size' ],
-        l_color = undefined,
-        l_val_feature = undefined,
+    let l_val_feature = undefined,
         l_val_obs = undefined,
-        l_x = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 0 ] ).flatten( ) ],
-        l_y = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 1 ] ).flatten( ) ],
-        l_trace = [ ]; // initialize the list of plotly scatter traces
+        l_trace = [ ], // initialize the list of plotly scatter traces
+        div_plot = $( "#" + name_div )[ 0 ], // retrieve div to create a plot
+        layout,
+        config = { ... config_plotly, height: dict_kw_args[ 'fig_size' ][ 0 ], width: dict_kw_args[ 'fig_size' ][ 1 ] };
 
     // retrieve values
     // retrieve color values according to the setting
-    if ( ( ! check_none( dict_kw_args[ 'name_gene' ] ) ) & ( dict_kw_args[ 'name_gene' ] in adata.var._dict_mapping_index ) ) {
-        l_val_feature = adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_gene' ] ] ) ).to_dense( ).T.tolist( )[ 0 ]; // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
+    if ( ( ! check_none( dict_kw_args[ 'name_feature' ] ) ) & ( dict_kw_args[ 'name_feature' ] in adata.var._dict_mapping_index ) & ( ! check_none( dict_kw_args[ 'flag_plot_feature' ] ) ) ) { // 'flag_plot_feature' should not be 'None' value
+        l_val_feature = adata.X.subset( adata.var.get_integer_indices_of_rows( [ dict_kw_args[ 'name_feature' ] ] ) ).to_dense( ).T.tolist( )[ 0 ]; // [ ... adata.obs.get_column( 'raw_sum' ).flatten( ) ]
     }
     l_val_obs = adata.obs.get_column( dict_kw_args[ 'name_col_obs' ] );
-    l_color = ( dict_kw_args[ 'flag_plot_feature' ] ) ? l_val_feature : l_val_obs; // retrieve values for setting colors
-    if ( check_none( l_color ) ) { // if invalid inputs were given, exit
-        return;
-    }
-
-    let flag_color_using_continuous_values = typeof l_color[ 0 ] == 'number', // retrieve a flag indicating whether the array contains float value
-        name_val_for_color = dict_kw_args[ 'flag_plot_feature' ] ? dict_kw_args[ 'name_gene' ] : dict_kw_args[ 'name_col_obs' ]; // retrieve name of values for coloring points
     
-    if ( flag_color_using_continuous_values ) { // if values are continuous values
-        // cap the values according to the setting
-        if ( ! check_none( dict_kw_args[ 'vmax' ] ) ) { // if valid 'vmax' value has been given
-            l_color = ArrayCap( l_color, dict_kw_args[ 'vmax' ] ); // cap values
+    if ( dict_kw_args[ 'name_type_graph' ] == 'scatter' ) { // draw scatter plot using the data
+        // initialize
+        let l_color = ( dict_kw_args[ 'flag_plot_feature' ] ) ? l_val_feature : l_val_obs, // retrieve values for setting colors
+            l_x = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 0 ] ).flatten( ) ],
+            l_y = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 1 ] ).flatten( ) ],
+            marker_size = dict_kw_args[ 'marker_size_for_scatter_plot' ]; // retrieve marker size for scatter plot
+        
+        if ( check_none( l_color ) ) { // if invalid inputs were given, exit
+            return;
         }
 
-        // sort by color value according to the setting.
-        if ( dict_kw_args[ 'sort_by_value' ] ) {
-            let argsort_by_color = argsort( l_color );
-            // sort by color value
-            l_x = ArrayIndexing( l_x, argsort_by_color );
-            l_y = ArrayIndexing( l_y, argsort_by_color );
-            l_color = ArrayIndexing( l_color, argsort_by_color );
-        }
+        let flag_color_using_continuous_values = typeof l_color[ 0 ] == 'number', // retrieve a flag indicating whether the array contains float value
+            name_val_for_color = dict_kw_args[ 'flag_plot_feature' ] ? dict_kw_args[ 'name_feature' ] : dict_kw_args[ 'name_col_obs' ]; // retrieve name of values for coloring points
 
-        // compose a single trace when values are continuous
-        let trace = {
-            mode: 'markers',
-            type: 'scattergl',
-            x: l_x,
-            y: l_y,
-            customdata: ArrayTranspose( [ l_color
-                                        ] ),
-            hovertemplate: [ `${name_val_for_color}: %{customdata[0]:.5f}`,
-                            `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
-                            "<extra></extra>" ].join( "<br>" ),
-            marker: { 
-                color: l_color,
-                size: dict_kw_args[ 'marker_size' ]
-            },
-            line: { 
-                width: 0
-            },
+        if ( flag_color_using_continuous_values ) { // if values are continuous values
+            // cap the values according to the setting
+            if ( ! check_none( dict_kw_args[ 'vmax' ] ) ) { // if valid 'vmax' value has been given
+                l_color = ArrayCap( l_color, dict_kw_args[ 'vmax' ] ); // cap values
+            }
+
+            // sort by color value according to the setting.
+            if ( dict_kw_args[ 'sort_by_value' ] ) {
+                let argsort_by_color = argsort( l_color );
+                // sort by color value
+                l_x = ArrayIndexing( l_x, argsort_by_color );
+                l_y = ArrayIndexing( l_y, argsort_by_color );
+                l_color = ArrayIndexing( l_color, argsort_by_color );
+            }
+
+            // compose a single trace when values are continuous
+            let trace = {
+                mode: 'markers',
+                type: 'scattergl',
+                x: l_x,
+                y: l_y,
+                customdata: ArrayTranspose( [ l_color
+                                            ] ),
+                hovertemplate: [ `${name_val_for_color}: %{customdata[0]:.5f}`,
+                                `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
+                                "<extra></extra>" ].join( "<br>" ),
+                marker: { 
+                    color: l_color,
+                    size: marker_size
+                },
+                line: { 
+                    width: 0
+                },
+            };
+            trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
+            l_trace.push( trace ); // add trace to the list of traces
+        } else {
+            let dict_category_to_dict_data = { }; // initialize dict_data for each category
+            for ( let i = 0; i < l_color.length; i ++ ) {
+                let e = l_color[ i ],
+                    x = l_x[ i ],
+                    y = l_y[ i ];
+                // handle 'None' category as a separate category
+                if ( check_none( e ) ) {
+                    e = dict_data.misc.name_none;
+                }
+                // initialize dict_data for the category
+                if ( ! ( e in dict_category_to_dict_data ) ) {
+                    dict_category_to_dict_data[ e ] = { l_x: [ ], l_y: [ ] }; 
+                }
+                dict_category_to_dict_data[ e ].l_x.push( x );
+                dict_category_to_dict_data[ e ].l_y.push( y );
+            }
+
+            // compose trace for 'None' category before other traces can be composed
+            if ( dict_data.misc.name_none in dict_category_to_dict_data ) { // if 'None' category exists
+                let e = dict_data.misc.name_none;
+                let trace = {
+                    name: e, // set category name as the name of the trace
+                    mode: 'markers',
+                    type: 'scattergl',
+                    x: dict_category_to_dict_data[ e ].l_x,
+                    y: dict_category_to_dict_data[ e ].l_y,
+                    hovertemplate: [ `${name_val_for_color}: ${e}`,
+                                    `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
+                                    "<extra></extra>" ].join( "<br>" ),
+                    marker: { 
+                        color: '#f2f2f2', // set color for 'None' category
+                        size: marker_size
+                    },
+                    line: { 
+                        width: 0
+                    },
+                };
+                l_trace.push( trace ); // add trace to the list of traces
+                delete dict_category_to_dict_data[ 'None' ]; // delete 'None' category
+            }
+
+            // compose traces        
+            let l_name_category = Object.keys( dict_category_to_dict_data );
+            l_name_category = l_name_category.sort( ); // sort categories 
+            for ( let e of l_name_category ) { // for each category (in the sorted order)
+                let trace = {
+                    name: e, // set category name as the name of the trace
+                    mode: 'markers',
+                    type: 'scattergl',
+                    x: dict_category_to_dict_data[ e ].l_x,
+                    y: dict_category_to_dict_data[ e ].l_y,
+                    hovertemplate: [ `${name_val_for_color}: ${e}`,
+                                    `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
+                                    "<extra></extra>" ].join( "<br>" ),
+                    marker: { 
+                        color: dict_data.misc.get_color_from_string( e ), // assign color of the entry using hasing
+                        size: marker_size
+                    },
+                    line: { 
+                        width: 0
+                    },
+                };
+                l_trace.push( trace ); // add trace to the list of traces
+            }
+        }
+       // compose layout and configure settings
+       layout = { 
+            margin: { l: 65, r: 65, b: 90, t: 25, pad: 4 }, 
+            xaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-1`, zeroline: false }, 
+            yaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-2`, zeroline: false }, 
+            hovermode: "closest"
         };
-        trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
-        l_trace.push( trace ); // add trace to the list of traces
-    } else {
+        config = { ... config, filename: 'single-cell-scatter-graph' };
+    } else if ( dict_kw_args[ 'name_type_graph' ] == 'violin' ) { // draw scatter plot 
+        // build list of traces for each category
+        let dictarr = Pivot( l_val_obs, l_val_feature, name_none = dict_data.misc.name_none ), // key = cluster, value = list of expression values.
+            set_name_category_in_col_obs = new Set( check_none( dict_kw_args[ 'l_name_category_in_col_obs' ] ) ? Object.keys( dictarr ) : dict_kw_args[ 'l_name_category_in_col_obs' ] ), // use all categories if 'l_name_category_in_col_obs' is None
+            trace_template = { 
+                type: 'violin',
+                opacity: 0.6,
+                box: { visible: true, width: 0.075 },
+                meanline: { visible: true }
+            }, // define basic template
+            str_separation = ( div_plot.offsetWidth > 3000 ) ? '<br>' : ' '; // set 'str_separation' based on current width to increase responsiveness of the plot
+        for ( let category in dictarr ) { // for each category
+            if ( set_name_category_in_col_obs.has( category ) ) { // add a trace if the category is in 'set_name_category_in_col_obs'
+                let l_expr = dictarr[ category ],
+                    n_cells = l_expr.length, // retrieve number of cells for the current category
+                    float_mean_expression = ArrayAverage( l_expr ); // retrieve a mean expression of cells for the current trace
+                let trace = { ... trace_template,
+                             name: category,
+                             line: { color: 'black', width: 2 },
+                             fillcolor: dict_data.misc.get_color_from_string( category ).toString( ), // assign color of the entry using hasing,
+                             points: false, // do not show outliers to increase responsivity
+                             y: l_expr,
+                             x0: `${category}${str_separation}(n=${n_cells})`,
+                             mean_expression_for_sorting: float_mean_expression
+                            };
+                l_trace.push( trace );
+            }
+        }
+        // Sort Plotly Violin traces based on expression values
+        function SortViolinTraceUsingExpression( trace_a, trace_b ) { return - ( trace_a.mean_expression_for_sorting - trace_b.mean_expression_for_sorting ) }; 
+        l_trace = l_trace.sort( SortViolinTraceUsingExpression ); // sort by mean expression
+        
+        // compose layout and configure settings
+        layout = {
+            margin: { l: 50, r: 65, b: 150, t: 5, pad: 4 },
+            yaxis: { title : `Expression of ${dict_kw_args[ 'name_feature' ]}`, rangemode: "nonnegative" },
+            legend: { tracegroupgap: 0 },
+            violingap: 0, // split violin plot for two covid statuses
+            violingroupgap: 0,
+            violinmode: "overlay",
+        }
+        config = { ... config, filename: `single-cell-violin-graph-${dict_kw_args[ 'name_feature' ]}` };
+    } else if ( dict_kw_args[ 'name_type_graph' ] == 'dot' ) {
+        let set_str_entry_feature = new Set( dict_kw_args[ 'l_str_entry_feature' ] ), 
+            set_name_category_in_col_obs = new Set( dict_kw_args[ 'l_name_category_in_col_obs' ] ); 
+        set_str_entry_feature = intersection( set_str_entry_feature, new Set( adata.var.get_column( 'str' ) ) ); // retrieve intersection with the genes 
+        
+        // summarize data for each category
         let dict_category_to_dict_data = { }; // initialize dict_data for each category
-        for ( let i = 0; i < l_color.length; i ++ ) {
-            let e = l_color[ i ],
-                x = l_x[ i ],
-                y = l_y[ i ];
-            // handle 'None' category as a separate category
-            if ( check_none( e ) ) {
-                e = 'None';
+        for ( let str_entry_ft of set_str_entry_feature ) { // for each feature in 'set_str_entry_feature'
+            console.log( str_entry_ft );
+            l_val_feature = adata.X.subset( adata.var.get_integer_indices_of_rows( [ str_entry_ft ] ) ).to_dense( ).T.tolist( )[ 0 ]; // retrieve expression data of a feature
+            console.log(l_val_feature);
+            for ( let i = 0; i < l_val_obs.length; i ++ ) { // iterate over entries
+                let e = l_val_obs[ i ], // retrieve the name of the category
+                    val = l_val_feature[ i ]; // retrieve expression value
+
+                // handle 'None' category as a separate category
+                if ( check_none( e ) ) {
+                    e = dict_data.misc.name_none;
+                }
+                if ( set_name_category_in_col_obs.has( e ) ) { // only include name_category in 'set_name_category_in_col_obs'
+                    // initialize dict_data for the category
+                    if ( ! ( e in dict_category_to_dict_data ) ) {
+                        dict_category_to_dict_data[ e ] = { }; 
+                    }
+                    // initialize the array to collect the data
+                    if ( ! ( str_entry_ft in dict_category_to_dict_data[ e ] ) ) {
+                        dict_category_to_dict_data[ e ][ str_entry_ft ] = [ ];  
+                    }
+                    dict_category_to_dict_data[ e ][ str_entry_ft ].push( val );
+                }
             }
-            // initialize dict_data for the category
-            if ( ! ( e in dict_category_to_dict_data ) ) {
-                dict_category_to_dict_data[ e ] = { l_x: [ ], l_y: [ ] }; 
+        }
+        set_name_category_in_col_obs = new Set( Object.keys( dict_category_to_dict_data ) ); // retrieve 'set_name_category_in_col_obs' containing only valid name_category
+        let l_str_entry_feature = dict_kw_args[ 'l_str_entry_feature' ].filter( e => set_str_entry_feature.has( e ) ),
+            l_name_category_in_col_obs = dict_kw_args[ 'l_name_category_in_col_obs' ].filter( e => set_name_category_in_col_obs.has( e ) ), // filter the list with a set containing valid entries (preserve the original orders)
+            trace = {
+                type: 'scatter',
+                x: [ ],
+                y: [ ],
+                mode: 'markers',
+                marker: {
+                    color: [ ],
+                    line: {
+                        color: 'rgba(156, 165, 196, 1.0)',
+                        width: 1,
+                    },
+                    symbol: 'circle',
+                    size: [ ],
+                    ... marker_colormap
+                }
+            };
+        for ( let str_entry_ft of l_str_entry_feature ) {
+            for ( let name_category of l_name_category_in_col_obs ) {
+                let l_val = dict_category_to_dict_data[ name_category ][ str_entry_ft ], // retrieve list of values
+                    n_non_zeros = 0;
+                for ( let val of l_val ) {
+                    if ( val > 0 ) {
+                        n_non_zeros ++;
+                    }
+                }
+                // add point to the scatter plot
+                trace.x.push( str_entry_ft );
+                trace.y.push( name_category );
+                trace.marker.color.push( ArrayAverage( l_val ) ); // collect average expression
+                trace.marker.size.push( ( n_non_zeros / l_val.length ) * dict_kw_args[ 'marker_size_for_dot_plot' ] ) // measure the proportion of the barcodes expressing the feature
             }
-            dict_category_to_dict_data[ e ].l_x.push( x );
-            dict_category_to_dict_data[ e ].l_y.push( y );
         }
+        // compose traces
+        l_trace.push( trace );
         
-        // compose trace for 'None' category before other traces can be composed
-        if ( 'None' in dict_category_to_dict_data ) { // if 'None' category exists
-            let e = 'None';
-            let trace = {
-                name: e, // set category name as the name of the trace
-                mode: 'markers',
-                type: 'scattergl',
-                x: dict_category_to_dict_data[ e ].l_x,
-                y: dict_category_to_dict_data[ e ].l_y,
-                hovertemplate: [ `${name_val_for_color}: ${e}`,
-                                `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
-                                "<extra></extra>" ].join( "<br>" ),
-                marker: { 
-                    color: '#f2f2f2', // set color for 'None' category
-                    size: dict_kw_args[ 'marker_size' ]
-                },
-                line: { 
-                    width: 0
-                },
-            };
-            l_trace.push( trace ); // add trace to the list of traces
-            delete dict_category_to_dict_data[ 'None' ]; // delete 'None' category
-        }
-        
-        // compose traces        
-        for ( let e in dict_category_to_dict_data ) { // for each category
-            let trace = {
-                name: e, // set category name as the name of the trace
-                mode: 'markers',
-                type: 'scattergl',
-                x: dict_category_to_dict_data[ e ].l_x,
-                y: dict_category_to_dict_data[ e ].l_y,
-                hovertemplate: [ `${name_val_for_color}: ${e}`,
-                                `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
-                                "<extra></extra>" ].join( "<br>" ),
-                marker: { 
-                    color: dict_data.misc.function_colormap_rainbow( ( Math.abs( e.hashCode( ) ) % 100 ) / 100 ), // assign color of the entry using hasing
-                    size: dict_kw_args[ 'marker_size' ]
-                },
-                line: { 
-                    width: 0
-                },
-            };
-            l_trace.push( trace ); // add trace to the list of traces
-        }
+        // compose layout and configure settings
+        layout = { margin: { l: 140, r: 40, b: 50, t: 80 } };
+        config = { ... config, filename: 'single-cell-dot-plot' };
+    } else {
+        return; // exit if invalid graph type has been given
     }
-   // draw plot using plotly.js
-   let div_plot = $( "#" + name_div )[ 0 ], // retrieve div to create a plot
-        layout = { 
-        margin: { l: 65, r: 65, b: 90, t: 25, pad: 4 }, 
-        xaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-1`, zeroline: false }, 
-        yaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-2`, zeroline: false }, 
-        hovermode: "closest"
-    };
     
+    // draw plot using plotly.js
     // if valid 'title' was given, set title name
     if ( dict_kw_args[ 'title' ].length > 0 ) {
         layout[ 'title' ] = {
@@ -2948,492 +3155,20 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             xref: 'paper',
             x: 0.05,
         }
-        layout.margin.t = 50; // increase top margin since figure title will not be set
+        layout.margin.t += 30; // increase top margin since figure title will not be set
     }
-    Plotly.newPlot( div_plot, l_trace, layout, { ... config_plotly, filename: 'single-cell-graph', height: dict_kw_args[ 'fig_size' ][ 0 ], width: dict_kw_args[ 'fig_size' ][ 1 ] } ); // draw scatter plot of the annotation
+    Plotly.newPlot( div_plot, l_trace, layout, config ); // draw scatter plot of the annotation
 
-    
-    // add event listner when 'flag_responsive_marker_size' is set to True
-    if ( dict_kw_args[ 'flag_responsive_marker_size' ] ) {
-        div_plot.on( "plotly_relayout", function( ed ) {
-            adaptive_marker_size( ed, div_plot, dict_kw_args );
-        });
+    // for scatter plot, add event listner when 'flag_responsive_marker_size' is set to True
+    if ( dict_kw_args[ 'name_type_graph' ] == 'scatter' ) {
+        if ( dict_kw_args[ 'flag_responsive_marker_size' ] ) {
+            div_plot.on( "plotly_relayout", function( ed ) {
+                adaptive_marker_size( ed, div_plot, dict_kw_args );
+            });
+        }
     }
 }
-    
-{
-// object_data.main.gene.expr = { data : { }, data_size : 250 }; // cache of expression data // size of the cache
-// object_data.main.cell_marker = { data : { }, data_size : 5 };
-// object_data.main.gene.correl = { data : { }, data_size : 10 };
-// object_data.main.umap = { tissue : 'not_drawn' }
-// object_data.main.scatter = { x_label : 'UMAP-1', y_label : 'UMAP-2', x_axis_option : '__UMAP__', y_axis_option : '__UMAP__', x_axis_col_name : 'UMAP_1', y_axis_col_name : 'UMAP_2', flag_waiting_selection_of_gene : false, gene_symbol_selected : '', flag_axis_using_gene_expr : true }; // initialize axis of the scatter plot
-// object_data.setting.expression = { };
-// object_data.setting.expression.n_digits_below_floating_point = 3; // number of digits below floading point of the original expression values (converted to integer by multiplying 1000 during delivery of the data)
-// object_data.main.datatable = { 'datatable_cell_marker' : { df : null, name : 'cell_marker' }, 'datatable_correl' : { df : null, name : 'correl_gene' } };
 
-// async function Change_UMAP_Coordinate( str_tissue = null ) { 
-//     if ( str_tissue === null ) {
-//         // change x or y-axis of scatter plot using the current setting
-//         let select_x_axis = $id( 'select_scatter_x_axis' ),
-//             select_y_axis = $id( 'select_scatter_y_axis' ),
-//             x_axis_option_current = select_x_axis.value,
-//             y_axis_option_current = select_y_axis.value,
-//             x_axis_option_previous = object_data.main.scatter.x_axis_option,
-//             y_axis_option_previous = object_data.main.scatter.y_axis_option,
-//             flag_update_x_axis = x_axis_option_current != x_axis_option_previous,
-//             flag_update_y_axis = y_axis_option_current != y_axis_option_previous,
-//             flag_update_axis = flag_update_x_axis | flag_update_y_axis;
-//         if ( ! flag_update_axis ) {
-//             console.log( "[Change_UMAP_Coordinate] no change in x- or y-axis setting detected, exiting" );
-//             return -1
-//         }
-//         if ( flag_update_x_axis ) { // update x-axis
-//             let option_gene = select_x_axis.options[ 1 ];
-//             if( x_axis_option_current == '__UMAP__' ) {
-//                 object_data.main.scatter.x_label = 'UMAP-1';
-//                 object_data.main.scatter.x_axis_option = x_axis_option_current;
-//                 object_data.main.scatter.x_axis_col_name = '__UMAP__';
-//                 // reset select option
-//                 option_gene.value = 'Gene';
-//                 option_gene.innerHTML = 'Gene';
-//                 object_data.main.scatter.flag_axis_using_gene_expr = false;
-//             } else if ( object_data.main.scatter.flag_waiting_selection_of_gene ) {
-//                 // update setting for scatter plot
-//                 let gene_symbol = object_data.main.scatter.gene_symbol_selected;
-//                 object_data.main.scatter.flag_waiting_selection_of_gene = false; // reset flag
-//                 object_data.main.scatter.x_label = gene_symbol;
-//                 object_data.main.scatter.x_axis_option = gene_symbol;
-//                 object_data.main.scatter.x_axis_col_name = '__x_axis_gene_expr__';
-//                 object_data.main.scatter.flag_axis_using_gene_expr = true;
-//                 // update select option
-//                 option_gene.value = gene_symbol;
-//                 option_gene.innerHTML = gene_symbol;
-//             } else {
-//                 object_data.main.scatter.flag_waiting_selection_of_gene = true;
-//                 // lock selection button to allow the selection of axis by clicking gene_symbol
-//                 select_x_axis.disabled = true;
-//                 select_y_axis.disabled = true;
-//                 console.log( '[Change_UMAP_Coordinate] (X-axis) waiting a gene_symbol to be selected' );
-//                 return 1;
-//             }
-//         } else {
-//             let option_gene = select_y_axis.options[ 1 ];
-//             if( y_axis_option_current == '__UMAP__' ) {
-//                 object_data.main.scatter.y_label = 'UMAP-2';
-//                 object_data.main.scatter.y_axis_option = y_axis_option_current;
-//                 object_data.main.scatter.y_axis_col_name = '__UMAP__';
-//                 // reset select option
-//                 option_gene.value = 'Gene';
-//                 option_gene.innerHTML = 'Gene';
-//                 object_data.main.scatter.flag_axis_using_gene_expr = false;
-//             } else if ( object_data.main.scatter.flag_waiting_selection_of_gene ) {
-//                 // update setting for scatter plot
-//                 let gene_symbol = object_data.main.scatter.gene_symbol_selected;
-//                 object_data.main.scatter.flag_waiting_selection_of_gene = false; // reset flag
-//                 object_data.main.scatter.y_label = gene_symbol;
-//                 object_data.main.scatter.y_axis_option = gene_symbol;
-//                 object_data.main.scatter.y_axis_col_name = '__y_axis_gene_expr__';
-//                 object_data.main.scatter.flag_axis_using_gene_expr = true;
-//                 // update select option
-//                 option_gene.value = gene_symbol;
-//                 option_gene.innerHTML = gene_symbol;
-//             } else {
-//                 object_data.main.scatter.flag_waiting_selection_of_gene = true;
-//                 // lock selection button to allow the selection of axis by clicking gene_symbol
-//                 select_x_axis.disabled = true;
-//                 select_y_axis.disabled = true;
-//                 console.log( '[Change_UMAP_Coordinate] (Y-axis) waiting a gene_symbol to be selected' );
-//                 return 1;
-//             }
-//         }
-//     } else { 
-//         // change UMAP coordinates to the UMAP coordinates of the given tissue
-//         if ( str_tissue == object_data.main.umap.tissue ) {
-//             console.log( "[Change_UMAP_Coordinate] UMAP coordinates of", str_tissue, "already drawn, exiting" );
-//             return -1;
-//         }
-//         object_data.main.umap.tissue = str_tissue; // update str_tissue of the main UMAP graph
-//         object_data.main.umap.flag_all_tissues = str_tissue == 'All'; // flag indicating whether UMAP coordinates of all tissues are used.
-//         let dictarr = object_data.file.dict_name_file_to_parsed_data[ "cells.all.tsv.gz.base64.txt" ];
-//         if ( object_data.main.umap.flag_all_tissues ) {
-//             object_data.main.umap.dictarr = dictarr;
-//         } else {
-//             // build a boolean index for retrieving UMAP coordinates (and other data) for the current tissue
-//             let l_tissue = dictarr[ "tissue" ],
-//                 l_bool_index = [ ],
-//                 i = 0;
-//             for ( i = 0; i < l_tissue.length; i ++ ) {
-//                 l_bool_index.push( l_tissue[ i ] == str_tissue );
-//             }
-//             object_data.main.umap.l_bool_index_tissue = l_bool_index;
-//             object_data.main.umap.dictarr = DictArrBooleanIndexing( dictarr, l_bool_index );
-//         }
-//     }
-//     // Update coordinates of scatter plots
-//     // draw cell annotation plot
-//     PlotCellAnnotation( );
-//     // draw expression plot
-//     UpdateGene( );
-// }
-// // preprocessing functions for updating caches
-// function preprocess_expr( data ) {
-//     let str_key = Object.keys( data )[ 0 ];
-//     return ArrayMultiply( data[ str_key ], Math.pow( 0.1, object_data.setting.expression.n_digits_below_floating_point ) );
-// }
-// var plotPreviewGene = document.getElementById( "plotly_searchbox_main_preview" ),
-//     plotSingleCellAnnotation = document.getElementById( "plotly_sclncrna_expression_umap_annotation" ),
-//     plotSingleCellExpression = document.getElementById( "plotly_sclncrna_expression_umap_expression" ),
-//     plotSingleCellExpressionViolin = document.getElementById( "plotly_sclncrna_expression_violine" );
-// object_data.setting.plot.single_cell_scatter = { 
-//     max_height: 750,
-//     marker_size: 3,
-//     int_factor_axis_range_to_marker_size : 30, 
-//     int_factor_marker_size_multiply : 3
-// }; // defsult single-cell scatter plot setting
-// object_data.setting.plot.single_cell_violin = { };
-// var config_plotly = { responsive: true, displaylogo: false, toImageButtonOptions: { hoverClosestCartesian: true, format: 'png', filename: name_application, height: 750, width: 1100, scale: 1 }, modeBarButtonsToRemove: [ 'autoScale2d', 'toggleSpikelines', 'hoverCompareCartesian', 'hoverClosestCartesian' ] } // flexible plot width according to the window size  // do not display plotly logo
-// function SortViolinTrace_Expression( trace_a, trace_b ) { return - ( trace_a.mean_expression_for_sorting - trace_b.mean_expression_for_sorting ) } // Sort Plotly Violin traces displaying expression values based on parameter values
-// // assign color to violine plot traces
-// function String_Check_Substring( string, l_substring ) {
-//     let flag_contains_substring = false;
-//     string = string.toLowerCase( );
-//     for ( let i = 0; i < l_substring.length; i ++ ) {
-//         let substring = l_substring[ i ].toLowerCase( );
-//         if ( string.includes( substring ) ) {
-//             flag_contains_substring = true;
-//             break;
-//         }
-//     }
-//     return flag_contains_substring;
-// }
-// function PlotExpression_scRNA_Seq_Get_Color_for_name_clus( str_name_clus ) { // return color for the given str_name_clus
-//     str_name_clus = str_name_clus.toLowerCase( ); // convert name_clus to lower cases
-//     let color = "#48D1CC"
-//     if ( String_Check_Substring( str_name_clus, [ 'platelet' ] ) ) {
-//         color = "#aec2c1";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'mast cell' ] ) ) {
-//         color = "#ceb3fc";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'uninfected' ] ) ) {
-//         color = "#9ef274";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'infected' ] ) ) {
-//         color = "#ff6b6b";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'rbc' ] ) ) {
-//         color = "#fc4970";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'endo', 'lymphatic', 'endotheli', 'capillary', 'luminal' ] ) ) {
-//         color = "#faf75f";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'dendritic', 'pdc', 'cdc', 'dc_', ' dcs' ] ) ) {
-//         color = "#64b9fa";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'stromal', 'fibroblasts', 'fibs', 'mesenchyme', 'cartilage' ] ) ) {
-//         color = "#fa5f5f";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'goblet', 'ciliated', 'secretory', 'ionocyte', 'club' ] ) ) {
-//         color = "#fce6b6";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'alveolar', 'basal', 'squamous', 'epithelia' ] ) ) {
-//         color = "#ffbad9";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'tcell', 't cell', 't_cell', 't_', 'gd t', 'cd8', 'cd4', 'treg' ] ) ) {
-//         color = "#b89eff";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'mono', 'lymphoid', 'hematopo', 'leukocyt', 'immuno', 'monocyte', 'neutrop', 'macro', 'b_cell', 'b cell', 'plasma cell', 'nk', 'eosinophil', 'naive' ] ) ) {
-//         color = "#e79eff";
-//     } else if ( String_Check_Substring( str_name_clus, [ 'myo' ] ) ) {
-//         color = "#e8a78b";
-//     }
-//     return color;
-// }
-// async function UpdateGene( flag_restyle = false ) { // draw a new plot by default
-//     console.log( "[UpdateGene] updating gene started" );
-//     let str_tissue = object_data.main.umap.tissue, // retrieve current tissue
-//         gene_symbol = object_data.main.gene.gene_symbol;
-
-//     // update plot (Single Cell Expression)
-//     // update cache of expression data
-//     let object_cache = object_data.main.gene.expr;
-//     await UpdateCache( object_cache, preprocess_expr, [ gene_symbol ] ); // retrieve the single cells expression data of the current gene.
-
-//     plotSingleCellExpression.style.height = Math.min( plotSingleCellExpression.offsetWidth, object_data.setting.plot.single_cell_scatter.max_height ) + 'px'; // responsive height ( width = height )
-
-//     let dictarr = object_data.main.umap.dictarr,
-//         l_expr = object_data.main.gene.expr.data[ gene_symbol ].data,
-//         col_name_cell_type = 'cell_type';
-//     if ( ! object_data.main.umap.flag_all_tissues ) {
-//         l_expr = ArrayBooleanIndexing( l_expr, object_data.main.umap.l_bool_index_tissue );
-//         col_name_cell_type = 'tissue_cell_type';
-//     }
-//     // update x-axis values from gene expression data
-//     if ( object_data.main.scatter.x_axis_col_name == '__x_axis_gene_expr__' ) {
-//         let gene_symbol_x_axis = object_data.main.scatter.x_axis_option,
-//             l_expr_x_axis = [ ];
-//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_x_axis ] ); // retrieve the single cells expression data of the current gene.
-//         l_expr_x_axis = object_data.main.gene.expr.data[ gene_symbol_x_axis ].data;
-//         if ( ! object_data.main.umap.flag_all_tissues ) {
-//             l_expr_x_axis = ArrayBooleanIndexing( l_expr_x_axis, object_data.main.umap.l_bool_index_tissue );
-//         }
-//         dictarr[ '__x_axis_gene_expr__' ] = l_expr_x_axis;
-//     } else {
-//         object_data.main.scatter.x_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_1' : 'tissue_UMAP_1';
-//     }
-//     if ( object_data.main.scatter.y_axis_col_name == '__y_axis_gene_expr__' ) {
-//         let gene_symbol_y_axis = object_data.main.scatter.y_axis_option,
-//             l_expr_y_axis = [ ];
-//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_y_axis ] ); // retrieve the single cells expression data of the current gene.
-//         l_expr_y_axis = object_data.main.gene.expr.data[ gene_symbol_y_axis ].data;
-//         if ( ! object_data.main.umap.flag_all_tissues ) {
-//             l_expr_y_axis = ArrayBooleanIndexing( l_expr_y_axis, object_data.main.umap.l_bool_index_tissue );
-//         }
-//         dictarr[ '__y_axis_gene_expr__' ] = l_expr_y_axis;
-//     } else {
-//         object_data.main.scatter.y_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_2' : 'tissue_UMAP_2';
-//     }
-//     // complete the selection process by re-enabling the selection button
-//     $id( 'select_scatter_x_axis' ).disabled = false; 
-//     $id( 'select_scatter_y_axis' ).disabled = false; 
-//     object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size = object_data.main.scatter.flag_axis_using_gene_expr ? 7 : 30;
-//     object_data.setting.plot.single_cell_scatter.marker_size = ResponsiveMarkerSize( plotSingleCellAnnotation, object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size, object_data.setting.plot.single_cell_scatter.int_factor_marker_size_multiply );
-//     console.log( object_data.setting.plot.single_cell_scatter.marker_size );
-//     if ( flag_restyle ) { // restyle existing plot
-//         console.log( "[UpdateGene] restyling existing plot for", gene_symbol );
-//         let update = { 
-//             hovertemplate: ["Expression of <b>" + gene_symbol + "</b>: <b>%{marker.color:.3f}</b>",
-//                             "tissue: <b>%{customdata[1]}</b>",
-//                             "cluster: <b>%{customdata[0]}</b>",
-//                             "",
-//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
-//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
-//                             "%{customdata[2]}",
-//                             "<extra></extra>" ].join( "<br>" ),
-//             marker: { 
-//                 color: l_expr,
-//                 showscale: true,
-//                 colorscale: "YlOrRd",
-//                 reversescale: true,
-//                 size: object_data.setting.plot.single_cell_scatter.marker_size
-//             } };
-//         Plotly.restyle( plotSingleCellExpression, update, [ 0 ] );
-//     } 
-//     else { // draw a new plot
-//         let trace = {
-//             mode: 'markers',
-//             type: 'scattergl',
-//             x: dictarr[ object_data.main.scatter.x_axis_col_name ],
-//             y: dictarr[ object_data.main.scatter.y_axis_col_name ],
-//             customdata: ArrayTranspose( [ dictarr[ col_name_cell_type ],
-//                                           dictarr[ "tissue" ],
-//                                           dictarr[ 'id_cell' ]
-//                                         ] ),
-//             hovertemplate: ["Expression of <b>" + gene_symbol + "</b>: <b>%{marker.color:.3f}</b>",
-//                             "tissue: <b>%{customdata[1]}</b>",
-//                             "cell type: <b>%{customdata[0]}</b>",
-//                             "",
-//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
-//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
-//                             "%{customdata[2]}",
-//                             "<extra></extra>" ].join( "<br>" ),
-//             marker: { 
-//                 color: l_expr,
-//                 showscale: true,
-//                 colorscale: "YlOrRd",
-//                 reversescale: true,
-//                 size: object_data.setting.plot.single_cell_scatter.marker_size
-//             },
-//             line: { 
-//                 width: 0
-//             },
-//         };
-//         Plotly.newPlot( plotSingleCellExpression, [ trace ], { margin: { l: 65, r: 65, b: 90, t: 50, pad: 4 }, xaxis: { title : object_data.main.scatter.x_label, zeroline: false }, yaxis: { title : object_data.main.scatter.y_label, zeroline: false }, hovermode: "closest" }, { ... config_plotly, filename: name_application + '__Expression_of_' + gene_symbol, height: 1100, width: 1100 } ); // draw scatter plot of the annotation
-//         plotSingleCellExpression.on( "plotly_relayout" , function( ed ) {
-//             PlotlySynchronizedLayout( ed, l_div_plotly );
-//         });
-//         plotSingleCellExpression.on( 'plotly_click', async function( data ) {
-//             PlotlyCallBackSingleCellMarker( data.points[ 0 ] );
-//         });
-//     }
-//     // Update correlated genes 
-
-//     object_cache = object_data.main.gene.correl;
-//     await UpdateCache( object_cache, null, [ gene_symbol ] ); // update cache of correlated gene data
-//     Display_DataTable( 'container_datatable_correl', 'datatable_correl', object_cache.data[ gene_symbol ].data, [ "gene_symbol", "correlation_coefficient", "probability" ] );
-//     // change panel name
-//     document.getElementById( "panel_name_correl_gene").innerHTML = "Co-Expressed Genes of " + gene_symbol;
-//     // change datatable name 
-//     object_data.main.datatable[ 'datatable_correl' ].name = `correl_gene.${gene_symbol}`;
-//     // show datatable panel
-//     $( "#container_panel_datatable_correl" ).collapse( 'show' )
-
-//     // Update interaction graph
-// //         LoadRemoteTextFile( "http://www.rna-society.org/rnainter/php_mysql/api.php?keyword=Actb&species=Mus musculus" )
-
-//     // Violin plots
-//     object_data.setting.plot.single_cell_violin.ignore_cells_with_zero_counts = ! document.getElementById( "checkbox__plotly_sclncrna_expression_violine__ignore_cells_with_zero_counts" ).checked; // retrieve current setting
-//     // build list of traces for each category
-//     dictarr = Pivot( object_data.main.umap.dictarr[ col_name_cell_type ], l_expr ); // key = cluster, value = list of expression values.
-//     let trace_template = { 
-//         type: 'violin',
-//         opacity: 0.6,
-//         box: { visible: true, width: 0.075 },
-//         meanline: { visible: true }
-//     },
-//         l_category = Object.keys( dictarr ),
-//         str_separation = ( plotSingleCellExpressionViolin.offsetWidth > 3000 ) ? '<br>' : ' ' ; // set 'str_separation' based on current width to increase responsiveness of the plot
-//     let l_trace = [ ];
-//     for ( let category in dictarr ) {
-//         let l_expr = dictarr[ category ],
-//             n_cells = l_expr.length, // retrieve number of cells for the current category
-//             float_mean_expression = ArrayAverage( l_expr ), // retrieve a mean expression of cells for the current trace
-//             object_RemoveNegativeCells = RemoveNegativeCells( l_expr ), // retrieve list of expression values excluding cells with zero counts
-//             n_cells_with_zero_count = object_RemoveNegativeCells.n_cells_nagative,
-//             l_expr_without_negative_cells = object_RemoveNegativeCells.l_expr_without_negative_cells;
-
-//         let trace = { ... trace_template,
-//                      x0: "", 
-//                      y: [ ],
-//                      name: category,
-//                      line: { color: 'black', width: 2 },
-//                      fillcolor: object_data.setting.plot.annotation.dict_tissue_to_dict_cell_type_to_color[ str_tissue ][ category ],
-//                      points: false, // do not show outliers to increase responsivity
-//                      y_ignore_cells_with_zero_counts__true: l_expr_without_negative_cells,
-//                      y_ignore_cells_with_zero_counts__false: ArrayFull( n_cells_with_zero_count, 0 ).concat( l_expr_without_negative_cells ),
-//                      x0_ignore_cells_with_zero_counts__true: category + str_separation + "(n=" + ( n_cells - n_cells_with_zero_count ) + ' of ' + n_cells + ')',
-//                      x0_ignore_cells_with_zero_counts__false: category + str_separation + "(n=" + n_cells + ')',
-//                      mean_expression_for_sorting: float_mean_expression
-//                     };
-//         l_trace.push( trace );
-//     }
-//     l_trace = l_trace.sort( SortViolinTrace_Expression ); // sort by mean expression
-//     let layout = {
-//         margin: { l: 50, r: 65, b: 150, t: 50, pad: 4 },
-//         yaxis: { title : "Normalized Expression", rangemode: "nonnegative" },
-//         legend: { tracegroupgap: 0 },
-//         violingap: 0, // split violin plot for two covid statuses
-//         violingroupgap: 0,
-//         violinmode: "overlay",
-//     }
-//     for ( let i = 0; i < l_trace.length; i ++ ) { // swap y and x0 values based on the 'object_plot_scrnaseq.option.ignore_cells_with_zero_counts' setting
-//         l_trace[ i ].x0 = object_data.setting.plot.single_cell_violin.ignore_cells_with_zero_counts ? l_trace[ i ].x0_ignore_cells_with_zero_counts__true : l_trace[ i ].x0_ignore_cells_with_zero_counts__false ;
-//         l_trace[ i ].y = object_data.setting.plot.single_cell_violin.ignore_cells_with_zero_counts ? l_trace[ i ].y_ignore_cells_with_zero_counts__true : l_trace[ i ].y_ignore_cells_with_zero_counts__false ;
-//     }
-//     Plotly.newPlot( plotSingleCellExpressionViolin, l_trace, layout, { ... config_plotly, filename: name_application + '__Expression_of_' + gene_symbol, height: 600, width: 1100 } );
-// }
-// object_data.setting.plot.annotation = { };
-// object_data.setting.plot.annotation.dict_tissue_to_dict_cell_type_to_color = {
-//     'All': {'kidney_PT': '#9ACD32', 'kidney_nephrone': '#9932CC', 'lung_AT1': '#FF0000', 'lung_AT2': '#27408B', 'liver_hepatocyte': '#CD5555', 'heart_Fibroblast': '#EEB422', 'lung_Fibroblast': '#CD2626', 'Endothelial': '#90EE90', 'liver_Endo': '#EE4000', 'SMC': '#000080', 'Pericyte': '#8B1C62', 'Plasma': '#00BFFF', 'Intestine_SC': '#8B8B83', 'Intestine TA': '#4EEE94', 'DN': '#EE5C42', 'DP': '#EE00EE', 'DP2': '#7A67EE', 'B cell': '#CDB79E', 'B cell2': '#CDAD00', 'B cell3': '#1874CD', 'T cell': '#CD853F', 'NK': '#4A708B', 'liver_Kuffer': '#8B5742', 'lung_AM': '#CD5555', 'Macrophage': '#5D478B', 'Macrophage2': '#EE9572', 'Myeloid': '#9ACD32', 'Myeloid2': '#009ACD', 'Platlet': '#8B668B', 'RBC': '#CD6839', 'RBC2': '#8B7B8B'},'Kidney': {'PTS1': '#9ACD32', 'PTS1-S2': '#9932CC', 'PTS2': '#FF0000', 'PTS3': '#1874CD', 'ALOH': '#CD5555', 'DCT': '#EEB422', 'CNT': '#00C5CD', 'CD PC': '#90EE90', 'CD IC': '#FF1493', 'Mesangium': '#000080', 'Podocyte': '#8B1C62', 'ENDO': '#00BFFF', 'ENDO2': '#B22222', 'Proliferation': '#4EEE94', 'B cell': '#EE5C42', 'NK': '#EE00EE', 'Macro': '#EE4000', 'Monocyte': '#CDB79E', 'RBC': '#CDAD00'},'Heart': {'Cardiomyocyte': '#EE6AA7', 'Fibro1': '#9932CC', 'Fibro2': '#FF0000', 'Endo': '#CD5555', 'Endo2': '#EEB422', 'Vascular Endothelia': '#00C5CD', 'Pericyte': '#90EE90', 'SMC_pericyte': '#FF1493', 'SMC': '#000080', 'Myofirboblast': '#8B1C62', 'B cell': '#00BFFF', 'NK cell': '#CD96CD', 'Resident Macro': '#4EEE94', 'Resident Macro2': '#EE5C42', 'DC': '#EE00EE', 'Granulocyte': '#EE4000', 'Platelet': '#CDB79E', 'novel': '#1874CD', 'RBC': '#27408B', 'high mt': '#008B45'},'Lung': {'AT1': '#9ACD32', 'AT2': '#9932CC', 'AC': '#FF0000', 'Ciliated': '#1874CD', 'AM': '#CD5555', 'Pericyte': '#EEB422', 'ENDO': '#00C5CD', 'ENDO2': '#90EE90', 'ENDO3': '#FF1493', 'ENDO4': '#000080', 'Mesothelial': '#8B1C62', 'Fibroblast': '#00BFFF', 'Myofibroblast': '#B22222', 'SMC': '#4EEE94', 'SMC2': '#EE5C42', 'Proliferation': '#EE00EE', 'B cell': '#EE4000', 'B cell2': '#CDB79E', 'Naive T cell': '#CDAD00', 'T cell': '#CDC9A5', 'NK cell': '#8B8B83', 'Basophils': '#27408B', 'DC': '#8B5742', 'Neutrophils': '#CD5555', 'Macrophage': '#5D478B', 'Monocyte': '#CD6839', 'Monocyte2': '#9ACD32', 'Immune stromal cell': '#00008B', 'RBC': '#8B668B'},'Thymus': {'DN': '#9ACD32', 'ISP': '#9932CC', 'DP(P)': '#FF0000', 'DP2(P)': '#27408B', 'DP': '#EEB423', 'gd T': '#EEB422', 'ab T': '#CD1076', 'CD8 aa': '#90EE90', 'Cd4 SP': '#EE4000', 'Cd4 SP2': '#000080', 'Cd8 SP': '#8B1C62', 'Cd4 SP(M)': '#00BFFF', 'NK': '#8B8B83', 'DC': '#27408B'},'Liver': {'Hepatocyte': '#9ACD32', 'Hepatocyte2': '#9932CC', 'Cholangiocyte': '#FF0000', 'Stellate cell': '#1874CD', 'Cycling': '#CD5555', 'Kupffer': '#EEB422', 'Kupffer2': '#90EE90', 'ENDO': '#00C5CD', 'ENDO2': '#FF1493', 'B cell': '#000080', 'T cell': '#8B1C62', 'T cell2': '#00BFFF', 'T cell3': '#8B8B83', 'NK cell': '#4EEE94', 'NK cell2': '#EE5C42', 'Macro': '#EE00EE', 'Macro2': '#EE4000', 'Activated Macro': '#CDB79E', 'Granulocyte': '#CDAD00', 'Myeloid': '#FF0000', 'RBC': '#8B8B83'},'Intestine': {'Entero': '#5D478B', 'SC': '#90EE90', 'TA': '#000080', 'Tuft': '#8B8B83', 'PSC': '#EEB422', 'PSC2': '#EE00EE', 'Pericyte': '#8B1C62', 'Pericyte2': '#8B8B83', 'Epithelial': '#CD5555', 'Endo': '#9ACD32', 'Endo2': '#00C5CD', 'Endo3': '#00BFFF', 'BV': '#27408B', 'B cell': '#FF0000', 'B cell2': '#8B5742', 'T cell': '#CD5555', 'T cell2': '#EE4000', 'NK cell': '#CDAD00', 'plasma cell': '#9932CC', 'plasma cell2': '#27408B', 'plasma cell3': '#CDB79E', 'Macro': '#EE4000', 'Mast cell': '#4EEE94', 'Basophile': '#1874CD', 'DC': '#EE5C42'}}; // define color for each cell type
-// object_data.setting.plot.annotation.dict_tissue_to_color = {
-//     "Heart" : '#F8766D', 
-//     "Intestine" : '#B79F00', 
-//     "Kidney" : "#00BA38", 
-//     "Lung" : "#619CFF", 
-//     "Liver" : "#00BFC4", 
-//     "Thymus" : "#F564E3", 
-// }; // define color for each tissue
-// async function PlotCellAnnotation( flag_restyle = false ) { // draw a new plot by default
-//     let str_tissue = object_data.main.umap.tissue, // retrieve current tissue
-//         option_selected = Select_Get_Selected_Option_Using_ID( "select_umap_annotation_data" ),
-//         str_name_data_annotation = option_selected.value, // retrieve name of data for annotations
-//         str_name_option_selected = option_selected.innerHTML; // retrieve the name of the selected option
-
-//     plotSingleCellAnnotation.style.height = Math.min( plotSingleCellAnnotation.offsetWidth, object_data.setting.plot.single_cell_scatter.max_height ) + 'px'; // responsive height ( width = height )
-//     // demonstration
-//     let object_cache = object_data.main.gene.expr;
-//     let dictarr = object_data.main.umap.dictarr, 
-//         col_name_cell_type = ( object_data.main.umap.flag_all_tissues ) ? 'cell_type' : 'tissue_cell_type',
-//         l_color = [ ], marker_colormap = { }, str_hovertemplate_additional_line = '';
-//     // set color 
-//     switch( str_name_data_annotation ) {
-//       case 'tissue':
-//         l_color = ArrayMap( dictarr[ str_name_data_annotation ], object_data.setting.plot.annotation.dict_tissue_to_color );
-//         break;
-//       case 'cell type':
-//         l_color = ArrayMap( dictarr[ col_name_cell_type ], object_data.setting.plot.annotation.dict_tissue_to_dict_cell_type_to_color[ str_tissue ] );
-//         break;
-//       default:
-//         l_color = dictarr[ str_name_data_annotation ];
-//         marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
-//         str_hovertemplate_additional_line = "<b>" + str_name_option_selected + "</b>: <b>%{marker.color:." + ( ( str_name_option_selected == 'MT Percentage' ) ? 1 : 0 ).toString( ) + "f}</b><br>"; // only MT percentage data will be shown as floating point numbers
-//         break;
-//     }
-//     // update x-axis values from gene expression data
-//     if ( object_data.main.scatter.x_axis_col_name == '__x_axis_gene_expr__' ) {
-//         let gene_symbol_x_axis = object_data.main.scatter.x_axis_option,
-//             l_expr_x_axis = [ ];
-//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_x_axis ] ); // retrieve the single cells expression data of the current gene.
-//         l_expr_x_axis = object_data.main.gene.expr.data[ gene_symbol_x_axis ].data;
-//         if ( ! object_data.main.umap.flag_all_tissues ) {
-//             l_expr_x_axis = ArrayBooleanIndexing( l_expr_x_axis, object_data.main.umap.l_bool_index_tissue );
-//         }
-//         dictarr[ '__x_axis_gene_expr__' ] = l_expr_x_axis;
-//     } else {
-//         object_data.main.scatter.x_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_1' : 'tissue_UMAP_1';
-//     }
-//     if ( object_data.main.scatter.y_axis_col_name == '__y_axis_gene_expr__' ) {
-//         let gene_symbol_y_axis = object_data.main.scatter.y_axis_option,
-//             l_expr_y_axis = [ ];
-//         await UpdateCache( object_cache, preprocess_expr, [ gene_symbol_y_axis ] ); // retrieve the single cells expression data of the current gene.
-//         l_expr_y_axis = object_data.main.gene.expr.data[ gene_symbol_y_axis ].data;
-//         if ( ! object_data.main.umap.flag_all_tissues ) {
-//             l_expr_y_axis = ArrayBooleanIndexing( l_expr_y_axis, object_data.main.umap.l_bool_index_tissue );
-//         }
-//         dictarr[ '__y_axis_gene_expr__' ] = l_expr_y_axis;
-//     }  else {
-//         object_data.main.scatter.y_axis_col_name = ( object_data.main.umap.flag_all_tissues ) ? 'UMAP_2' : 'tissue_UMAP_2';
-//     }
-//     // complete the selection process by re-enabling the selection button
-//     $id( 'select_scatter_x_axis' ).disabled = false; 
-//     $id( 'select_scatter_y_axis' ).disabled = false; 
-//     object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size = object_data.main.scatter.flag_axis_using_gene_expr ? 7 : 30;
-//     object_data.setting.plot.single_cell_scatter.marker_size = ResponsiveMarkerSize( plotSingleCellAnnotation, object_data.setting.plot.single_cell_scatter.int_factor_axis_range_to_marker_size, object_data.setting.plot.single_cell_scatter.int_factor_marker_size_multiply );
-//     if ( flag_restyle ) { // restyle existing plot
-//         console.log( "[PlotCellAnnotation] restyling existing plot for", str_name_data_annotation );
-//         let update = {
-//             hovertemplate: [ str_hovertemplate_additional_line + "tissue: <b>%{customdata[1]}</b>",
-//                             "cell type: <b>%{customdata[0]}</b>",
-//                             "",
-//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
-//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
-//                             "%{customdata[2]}",
-//                             "<extra></extra>" ].join( "<br>" ),
-//             marker: { 
-//                 color: l_color,
-//                 size: object_data.setting.plot.single_cell_scatter.marker_size
-//             } };
-//         update.marker = { ... update.marker, ... marker_colormap }; // update setting for showing colormap
-//         Plotly.restyle( plotSingleCellAnnotation, update, [ 0 ] );
-//     } 
-//     else {
-//         let trace = {
-//             mode: 'markers',
-//             type: 'scattergl',
-//             x: dictarr[ object_data.main.scatter.x_axis_col_name ],
-//             y: dictarr[ object_data.main.scatter.y_axis_col_name ],
-//             customdata: ArrayTranspose( [ dictarr[ col_name_cell_type ],
-//                                           dictarr[ "tissue" ],
-//                                           dictarr[ 'id_cell' ]
-//                                         ] ),
-//             hovertemplate: [ str_hovertemplate_additional_line + "tissue: <b>%{customdata[1]}</b>",
-//                             "cell type: <b>%{customdata[0]}</b>",
-//                             "",
-//                             object_data.main.scatter.x_label + ": <b>%{x:.2f}</b>",
-//                             object_data.main.scatter.y_label + ": <b>%{y:.2f}</b>",
-//                             "%{customdata[2]}",
-//                             "<extra></extra>" ].join( "<br>" ),
-//             marker: { 
-//                 color: l_color,
-//                 size: object_data.setting.plot.single_cell_scatter.marker_size            
-//             },
-//             line: { 
-//                 width: 0
-//             },
-//         };
-//         trace.marker = { ... trace.marker, ... marker_colormap }; // update setting for showing colormap
-//         Plotly.newPlot( plotSingleCellAnnotation, [ trace ], { margin: { l: 65, r: 65, b: 90, t: 50, pad: 4 }, xaxis: { title : object_data.main.scatter.x_label, zeroline: false }, yaxis: { title : object_data.main.scatter.y_label, zeroline: false }, hovermode: "closest" }, { ... config_plotly, filename: name_application + '__Annotation', height: 1100, width: 1100 } ); // draw scatter plot of the annotation
-
-//         // add interactions
-//         plotSingleCellAnnotation.on( 'plotly_click', async function( data ) {
-//             PlotlyCallBackSingleCellMarker( data.points[ 0 ] );
-//         });
-//         plotSingleCellAnnotation.on( "plotly_relayout" , function( ed ) {
-//             PlotlySynchronizedLayout( ed, l_div_plotly );
-//         });
-//     }
-// }
-}
-    
 // when document is ready for interaction
 $(document).ready( function( ) {
     $('[data-toggle="tooltip"]').tooltip( ); // enable tooltips
@@ -3445,8 +3180,6 @@ $(document).ready( function( ) {
     Initialize( );
 });
     
-var ram = 1,
-    adata = 1;
 async function Initialize( ) { // initialize the web application
     // add names of ramdata objects to the loadramdata panel
     let id_select_ramdata = 'select_ramdata_object';
@@ -3456,11 +3189,14 @@ async function Initialize( ) { // initialize the web application
     // set default options
     document.getElementById( 'input_int_fig_size_x' ).value = '1250';
     document.getElementById( 'input_int_fig_size_y' ).value = '1000';
-    document.getElementById( 'input_int_marker_size' ).value = '3';
+    document.getElementById( 'input_int_marker_size_for_scatter' ).value = '3';
+    document.getElementById( 'input_int_marker_size_for_dot_plot' ).value = '30';
     document.getElementById( "input_str_name_panel" ).value = 'ELDB';
     document.getElementById( "input_str_name_figure" ).value = '';
     document.getElementById( "input_float_vmax" ).value = '5';
     Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
+    document.getElementById( "input_path_remote_ramdata" ).value = 'http://172.27.30.99/web_applications/20220718_sce.js/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/';
+    document.getElementById( "radio_select_type_graph" ).click( ); // select type of the graph
     
     /*
     Demonstration
@@ -3472,28 +3208,18 @@ async function Initialize( ) { // initialize the web application
     document.getElementById( "select_str_entry_ft" ).value = 'CLDN11';
     document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
     await PlotAnnData( ); // plot graph
-    
-//     // testing anndata for ELDB (subsampled)
-//     ram = new RamData(  "http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/", 'normalized_log1p_scaled' )
-//     await ram.initialize( )
-//     await ram.bc.change_filter( 'filtered_barcodes' )
-//     await ram.ft.change_filter( 'filter_normalized_log1p_highly_variable' )
-//     ram.ft.create_view( )
-//     await ram.ft.load_str( )
-
-//     // test anndata and plotting functions
-//     adata = await ram.get_item( [ 'normalized_log1p_scaled', [ ], [ [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ] ], [ 'CNN3', 'STAG3', 'CACNB4', 'XPO6', 'FGG', 'MAVS', 'CRIM1', 'RBFOX1', 'LYL1', 'HMGCLL1', 'NBPF19', 'LPAR1', 'ALPK3', 'TRIM59', 'MMP1', 'FCN3', 'PEX14', 'CSAD', 'SQLE', 'AKR1C3', 'ABCA1', 'ZNF264', 'FILIP1L', 'ADAM8', 'TBCK', 'MARCHF3' ], [ 'str' ] ] )
-//     create_div( 'new_graph' )
-    
-//     draw_graph( 'new_graph', adata, { 'name_gene' : 'CNN3', 'name_col_embedding' : "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" } )
 }
     
-
+// UI components for retrieving RamData, AnnData, and visualize AnnData
 async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
-    // get the name of the selected ramdata object
-    let id_select_ramdata = 'select_ramdata_object',
-        path_folder_ramdata = Select_Get_Selected_Option_Using_ID( id_select_ramdata ).value,
+    // get URL of the selected ramdata object
+    let path_folder_ramdata,
         name_option_no_filter = dict_data.misc.name_option_no_filter;
+    if ( document.getElementById( "input_ramdata_from_select" ).checked ) { // select ramdata from select component 
+        path_folder_ramdata = Select_Get_Selected_Option_Using_ID( 'select_ramdata_object' ).value;
+    } else if ( document.getElementById( "input_ramdata_from_text" ).checked ) { // select ramdata from text component
+        path_folder_ramdata = document.getElementById( "input_path_remote_ramdata" ).value;
+    }
     
     // set default adata name
     document.getElementById( "input_str_name_adata_output" ).value = name_adata_default;
@@ -3547,6 +3273,10 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
     /*
     Retrieve AnnData and set attributes for the next panel
     */
+    // disable the button while retrieving the anndata
+    document.getElementById( 'button_for_retrieving_anndata' ).disabled = true;
+    document.getElementById( 'button_for_retrieving_anndata' ).innerHTML = `Retrieve AnnData  <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>`; // add spinner indicating ramdata is being retrieved       
+    
     // retrieve RamData
     let ram = dict_data[ 'dict_ramdata' ][ name_ramdata ],
         name_option_no_filter = dict_data.misc.name_option_no_filter;
@@ -3593,6 +3323,13 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
     Select_AddOptions_Using_ID( 'select_annotations_bc_for_plot', l_name_col_obs ); 
     Select_AddOptions_Using_ID( 'select_embedding_for_plot', l_name_col_obsm ); 
     
+    // set appropriate default input
+    document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value = l_str_entry_ft.join( ', ' )
+    
+    // enable the button once the anndata was retrieved
+    document.getElementById( 'button_for_retrieving_anndata' ).innerHTML = `Retrieve AnnData`; // remove the spinner
+    document.getElementById( 'button_for_retrieving_anndata' ).disabled = false;
+    
     // close current panel
     dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
     // show next panel
@@ -3608,25 +3345,28 @@ async function PlotAnnData( ) {
         str_entry_ft = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_str_entry_ft' ) ),
         name_col_obs = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ) ),
         flag_responsive_marker_size = document.getElementById( 'switch_responsive_marker_size_or_static' ).checked,
-        int_marker_size = parseInt( document.getElementById( 'input_int_marker_size' ).value ),
+        int_marker_size_for_scatter_plot = parseInt( document.getElementById( 'input_int_marker_size_for_scatter' ).value ),
+        input_int_marker_size_for_dot_plot = parseInt( document.getElementById( 'input_int_marker_size_for_dot_plot' ).value ),
         input_float_vmax = parseFloat( document.getElementById( 'input_float_vmax' ).value ),
         int_fig_size_x = document.getElementById( 'input_int_fig_size_x' ).value,
         int_fig_size_y = document.getElementById( 'input_int_fig_size_y' ).value,
-        adata = dict_data[ 'dict_anndata' ][ name_anndata ], // add the reference
-        dict_key_args_for_draw_graph = { 'name_gene' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'fig_size' : [ int_fig_size_x, int_fig_size_y ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size' : isNaN( int_marker_size ) ? 3 : int_marker_size }; // keyworded arguments for the draw_graph function
+        l_str_entry_feature = document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ),
+        l_name_category_in_col_obs = document.getElementById( 'input_l_category_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ),
+        adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve the reference
+        dict_key_args_for_draw_graph = { 'name_feature' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'fig_size' : [ int_fig_size_x, int_fig_size_y ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size_for_scatter_plot' : isNaN( int_marker_size_for_scatter_plot ) ? 3 : int_marker_size_for_scatter_plot, 'marker_size_for_dot_plot' : isNaN( input_int_marker_size_for_dot_plot ) ? 3 : input_int_marker_size_for_dot_plot }; // keyworded arguments for the draw_graph function
     
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : true } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : true } );
     } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : false } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : false } );
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
-        
-        // create div with dual graphs
+        // initialize div (dual graphs)
         create_div( name_panel, style = `width:${int_fig_size_x}px;height:${int_fig_size_y}px;`, flag_create_dual_div = true );
+            
         // draw graphs
-        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : false } );
-        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : true } );
+        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : false } );
+        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : true } );
         
         // sync two plots
         let l_div_plotly = [ document.getElementById( `${name_panel}__top__` ), document.getElementById( `${name_panel}__bottom__` ) ];
@@ -3636,25 +3376,118 @@ async function PlotAnnData( ) {
             });
         }
         
-    } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotations
-        
-    } else {
-        return;
+    } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs } );
+    } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs } );
     }
-    // close current panel
-    dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
+//     // close current panel
+//     dict_data.bs_components.offcanvasPlotAnnData.hide( );
 }
 
+// for increasing interactivity
+function UpdateCategories( ) {
+    /*
+    update categories of 'input_l_category_for_plotting' based on 'select_annotations_bc_for_plot'
+    */
+    let name_anndata = Select_Get_Selected_Option_Using_ID( 'select_adata' ).value,
+        name_col_obs = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ) ),
+        adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve the reference
+        l_val_obs = adata.obs.get_column( name_col_obs ), // retrieve barcode annotations
+        set_val_obs = new Set( l_val_obs ); // retrieve unique values
+    // handle None values
+    for ( let e of [ undefined, null ] ) { // for each value representing 'None'
+        if ( set_val_obs.has( e ) ) { // replace the value with the unified string value representing 'None'
+            set_val_obs.delete( e )
+            set_val_obs.add( dict_data.misc.name_none ); // add value represenging 'None' values
+        }
+    }
+    // set 'input_l_category_for_plotting'
+    document.getElementById( 'input_l_category_for_plotting' ).value = [ ... set_val_obs ].sort( ).join( ', ' ) // sort by string
+}
+
+function RearrangePlottingPanel( ) {
+    /*
+    rearrange plotting panel appropriate for each graph type for better interactivity
+    */
+    // draw graph
+    if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
+        document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = false;
+        document.getElementById( 'plotting_panel_title_coordinates' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = false;
+        
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = false;
+        document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
+        
+    } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
+        document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = false;
+        document.getElementById( 'plotting_panel_title_coordinates' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = false;
+        
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = false;
+        document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
+        
+    } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
+        document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = false;
+        document.getElementById( 'plotting_panel_title_coordinates' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = false;
+        
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = false;
+        document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
+        
+    } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
+        document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = true;
+        document.getElementById( 'plotting_panel_title_coordinates' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = true;
+        
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = true;
+        document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
+        
+        UpdateCategories( ); // update categories
+        
+    } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
+        document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = true;
+        document.getElementById( 'plotting_panel_title_coordinates' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = true;
+        
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = false;
+        document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = false;
+        
+        UpdateCategories( ); // update categories
+    }
+}
 </script>
 </html>
-
-
-
-
-
-
-
-
 
 
 
