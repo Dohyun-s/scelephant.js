@@ -253,7 +253,7 @@
     </div>
     <br>
       
-    <div class="btn-group d-flex justify-content-center" role="group" aria-label="Basic radio toggle button group" onclick="RearrangePlottingPanel( )" id="radio_select_type_graph">
+    <div class="btn-group d-flex justify-content-center" role="group" aria-label="Basic radio toggle button group" onclick="RearrangePlottingPanel( );" id="radio_select_type_graph">
       <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature" autocomplete="off">
       <label class="btn btn-outline-primary" for="radio_select_type_graph_feature">Feature</label>
 
@@ -331,47 +331,100 @@
     <div>
       <h5>Figure Size</h5>
     </div>
-    <div class="row g-2">
-      <div class="col-md">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x"></textarea>
-            <label for="input_int_fig_size_x">Width (pixels)</label>
+    <div id="panel_figure_size_and_margin_setting_for_scatter_graph">
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_scatter_graph"></textarea>
+                <label for="input_int_fig_size_x_for_scatter_graph">Width (pixels)</label>
+            </div>
+          </div>
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_scatter_graph"></textarea>
+                <label for="input_int_fig_size_y_for_scatter_graph">Height (pixels)</label>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="col-md">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y"></textarea>
-            <label for="input_int_fig_size_y">Height (pixels)</label>
+
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_scatter_graph"></textarea>
+                <label for="input_int_margin_l_for_scatter_graph">Left Margin (pixels)</label>
+            </div>
+          </div>
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_scatter_graph"></textarea>
+                <label for="input_int_margin_b_for_scatter_graph">Bottom Margin (pixels)</label>
+            </div>
+          </div>
         </div>
-      </div>
     </div>
-    <br>
       
-    <div class="row g-4">
-      <div class="col-md">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="1200" id="input_int_margin_x"></textarea>
-            <label for="input_int_fig_size_x">Width (pixels)</label>
+    <div id="panel_figure_size_and_margin_setting_for_violin_graph">
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_violin_graph"></textarea>
+                <label for="input_int_fig_size_x_for_violin_graph">Width (pixels)</label>
+            </div>
+          </div>
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_violin_graph"></textarea>
+                <label for="input_int_fig_size_y_for_violin_graph">Height (pixels)</label>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="col-md">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y"></textarea>
-            <label for="input_int_fig_size_y">Height (pixels)</label>
+
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_violin_graph"></textarea>
+                <label for="input_int_margin_l_for_violin_graph">Left Margin (pixels)</label>
+            </div>
+          </div>
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_violin_graph"></textarea>
+                <label for="input_int_margin_b_for_violin_graph">Bottom Margin (pixels)</label>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="col-md">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x"></textarea>
-            <label for="input_int_fig_size_x">Width (pixels)</label>
+    </div>
+      
+    <div id="panel_figure_size_and_margin_setting_for_dot_graph">
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_dot_graph"></textarea>
+                <label for="input_int_fig_size_x_for_dot_graph">Width (pixels)</label>
+            </div>
+          </div>
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_dot_graph"></textarea>
+                <label for="input_int_fig_size_y_for_dot_graph">Height (pixels)</label>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="col-md">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y"></textarea>
-            <label for="input_int_fig_size_y">Height (pixels)</label>
+
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_dot_graph"></textarea>
+                <label for="input_int_margin_l_for_dot_graph">Left Margin (pixels)</label>
+            </div>
+          </div>
+          <div class="col-md">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_dot_graph"></textarea>
+                <label for="input_int_margin_b_for_dot_graph">Bottom Margin (pixels)</label>
+            </div>
+          </div>
         </div>
-      </div>
     </div>
     
     <div id="plotting_panel_title_marker_size">
@@ -2792,7 +2845,7 @@ let dict_data = {
 // 12color rainbow '#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00', '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff', '#ff0080'
 // 
 // 'function_colormap_rainbow' : chroma.scale( [ '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000' ] ), // colormaps
-dict_data.misc.get_color_from_string = ( e ) => { let val = Math.abs( cyrb53( reverseString( e ) ) ); console.log( e, val % 100 ); return dict_data.misc.function_colormap_rainbow( [ ( val % 100 ) / 100, ( val % 10000 ) / 10000, ( val % 1000000 ) / 1000000 ][ parseInt( val % 300000 / 100000 ) ] ); }; // define a function to get color from string
+dict_data.misc.get_color_from_string = ( e ) => { let val = Math.abs( cyrb53( reverseString( e ) ) ); return dict_data.misc.function_colormap_rainbow( [ ( val % 100 ) / 100, ( val % 10000 ) / 10000, ( val % 1000000 ) / 1000000 ][ parseInt( val % 300000 / 100000 ) ] ); }; // define a function to get color from string
     
 function delete_div( name_div ) {
     /*
@@ -2922,6 +2975,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'flag_recreate_div' : false, // recreate the div
         'l_str_entry_feature' : undefined, // a list of string representation of features for drawing dot plots. by default use all loaded string representation of features
         'l_name_category_in_col_obs' : undefined, // a list of name of categories in the column of adata.obs for drawing dot plots or violin plots. by default, all categories will be used
+        'margin' : { l: 65, r: 65, b: 90, t: 25, pad: 4 }, // margin of the plotly graph
     }
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
     
@@ -3065,7 +3119,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         }
        // compose layout and configure settings
        layout = { 
-            margin: { l: 65, r: 65, b: 90, t: 25, pad: 4 }, 
+            margin: { l: 65, r: 65, b: 90, t: 25, pad: 4, ... dict_kw_args[ 'margin' ] }, 
             xaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-1`, zeroline: false }, 
             yaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-2`, zeroline: false }, 
             hovermode: "closest"
@@ -3105,7 +3159,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         
         // compose layout and configure settings
         layout = {
-            margin: { l: 50, r: 65, b: 150, t: 5, pad: 4 },
+            margin: { l: 50, r: 65, b: 150, t: 5, pad: 4, ... dict_kw_args[ 'margin' ] },
             yaxis: { title : `Expression of ${dict_kw_args[ 'name_feature' ]}`, rangemode: "nonnegative" },
             legend: { tracegroupgap: 0 },
             violingap: 0, // split violin plot for two covid statuses
@@ -3148,6 +3202,10 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             l_name_category_in_col_obs = dict_kw_args[ 'l_name_category_in_col_obs' ].filter( e => set_name_category_in_col_obs.has( e ) ), // filter the list with a set containing valid entries (preserve the original orders)
             trace = {
                 type: 'scatter',
+                customdata: [ ],
+                hovertemplate: [ `<b>%{x}</b> : %{customdata[0]:.5f}`,
+                                `<b>%{y}</b>`,
+                                "<extra></extra>" ].join( "<br>" ),
                 x: [ ],
                 y: [ ],
                 mode: 'markers',
@@ -3174,15 +3232,17 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 // add point to the scatter plot
                 trace.x.push( str_entry_ft );
                 trace.y.push( name_category );
-                trace.marker.color.push( ArrayAverage( l_val ) ); // collect average expression
+                let val_avg = ArrayAverage( l_val ); // calculate average expression
+                trace.marker.color.push( val_avg ); // collect average expression
                 trace.marker.size.push( ( n_non_zeros / l_val.length ) * dict_kw_args[ 'marker_size_for_dot_plot' ] ) // measure the proportion of the barcodes expressing the feature
+                trace.customdata.push( [ val_avg ] ); // collect the custom data
             }
         }
         // compose traces
         l_trace.push( trace );
         
         // compose layout and configure settings
-        layout = { margin: { l: 140, r: 40, b: 50, t: 80 } };
+        layout = { margin: { l: 140, r: 40, b: 50, t: 20, ... dict_kw_args[ 'margin' ] } };
         config = { ... config, filename: 'single-cell-dot-plot' };
     } else {
         return; // exit if invalid graph type has been given
@@ -3232,8 +3292,21 @@ async function Initialize( ) { // initialize the web application
     Select_AddOptions_Using_ID( id_select_ramdata, dict_ramdata_locations ); // add ramdata objects in the settings
     
     // set default options
-    document.getElementById( 'input_int_fig_size_x' ).value = '1250';
-    document.getElementById( 'input_int_fig_size_y' ).value = '1000';
+    document.getElementById( 'input_int_fig_size_x_for_scatter_graph' ).value = '1250';
+    document.getElementById( 'input_int_fig_size_y_for_scatter_graph' ).value = '1000';
+    document.getElementById( 'input_int_margin_l_for_scatter_graph' ).value = '65'; 
+    document.getElementById( 'input_int_margin_b_for_scatter_graph' ).value = '90';
+    
+    document.getElementById( 'input_int_fig_size_x_for_violin_graph' ).value = '1250';
+    document.getElementById( 'input_int_fig_size_y_for_violin_graph' ).value = '500';
+    document.getElementById( 'input_int_margin_l_for_violin_graph' ).value = '65';
+    document.getElementById( 'input_int_margin_b_for_violin_graph' ).value = '200';
+    
+    document.getElementById( 'input_int_fig_size_x_for_dot_graph' ).value = '1250';
+    document.getElementById( 'input_int_fig_size_y_for_dot_graph' ).value = '1000';
+    document.getElementById( 'input_int_margin_l_for_dot_graph' ).value = '275';
+    document.getElementById( 'input_int_margin_b_for_dot_graph' ).value = '50';
+    
     document.getElementById( 'input_int_marker_size_for_scatter' ).value = '3';
     document.getElementById( 'input_int_marker_size_for_dot_plot' ).value = '30';
     document.getElementById( "input_str_name_panel" ).value = 'ELDB';
@@ -3247,16 +3320,30 @@ async function Initialize( ) { // initialize the web application
     Demonstration
     */
     // load ELDB
-    await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+    await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
     await RetrieveAnnData( name_ramdata = 'ram' );
-    // select data to plot
-    document.getElementById( "select_str_entry_ft" ).value = 'CLDN11';
+    
+    // demonstrate violin plot
+    document.getElementById( "input_str_name_panel" ).value = 'ELDB_violin_plot_example';
+    document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
+    document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__organism_part';
+    document.getElementById( "radio_select_type_graph_violin" ).click( );
+    await PlotAnnData( ); // plot graph
+    // demonstrate dot plot
+    document.getElementById( "input_str_name_panel" ).value = 'ELDB_dot_plot_example';
     document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+    document.getElementById( "radio_select_type_graph_dot" ).click( );
+    await PlotAnnData( ); // plot graph
+    // demonstrate scatter plot
+    document.getElementById( "input_str_name_panel" ).value = 'ELDB_scatter_plot_example';
+    document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
+    document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+    document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
     await PlotAnnData( ); // plot graph
 }
     
 // UI components for retrieving RamData, AnnData, and visualize AnnData
-async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
+async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
     // get URL of the selected ramdata object
     let path_folder_ramdata,
         name_option_no_filter = dict_data.misc.name_option_no_filter;
@@ -3391,14 +3478,28 @@ async function PlotAnnData( ) {
         name_col_obs = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ) ),
         flag_responsive_marker_size = document.getElementById( 'switch_responsive_marker_size_or_static' ).checked,
         int_marker_size_for_scatter_plot = parseInt( document.getElementById( 'input_int_marker_size_for_scatter' ).value ),
-        input_int_marker_size_for_dot_plot = parseInt( document.getElementById( 'input_int_marker_size_for_dot_plot' ).value ),
+        input_int_marker_size_for_dot_plot = parseInt( document.getElementById( 'input_int_marker_size_for_dot_plot' ).value ),        
         input_float_vmax = parseFloat( document.getElementById( 'input_float_vmax' ).value ),
-        int_fig_size_x = document.getElementById( 'input_int_fig_size_x' ).value,
-        int_fig_size_y = document.getElementById( 'input_int_fig_size_y' ).value,
         l_str_entry_feature = document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ),
         l_name_category_in_col_obs = document.getElementById( 'input_l_category_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ),
+        
+        int_fig_size_x_for_scatter_graph = parseInt( document.getElementById( 'input_int_fig_size_x_for_scatter_graph' ).value ),
+        int_fig_size_y_for_scatter_graph = parseInt( document.getElementById( 'input_int_fig_size_y_for_scatter_graph' ).value ),
+        int_margin_l_for_scatter_graph = parseInt( document.getElementById( 'input_int_margin_l_for_scatter_graph' ).value ),
+        int_margin_b_for_scatter_graph = parseInt( document.getElementById( 'input_int_margin_b_for_scatter_graph' ).value ),
+    
+        int_fig_size_x_for_violin_graph = parseInt( document.getElementById( 'input_int_fig_size_x_for_violin_graph' ).value ),
+        int_fig_size_y_for_violin_graph = parseInt( document.getElementById( 'input_int_fig_size_y_for_violin_graph' ).value ),
+        int_margin_l_for_violin_graph = parseInt( document.getElementById( 'input_int_margin_l_for_violin_graph' ).value ),
+        int_margin_b_for_violin_graph = parseInt( document.getElementById( 'input_int_margin_b_for_violin_graph' ).value ),
+    
+        int_fig_size_x_for_dot_graph = parseInt( document.getElementById( 'input_int_fig_size_x_for_dot_graph' ).value ),
+        int_fig_size_y_for_dot_graph = parseInt( document.getElementById( 'input_int_fig_size_y_for_dot_graph' ).value ),
+        int_margin_l_for_dot_graph = parseInt( document.getElementById( 'input_int_margin_l_for_dot_graph' ).value ),
+        int_margin_b_for_dot_graph = parseInt( document.getElementById( 'input_int_margin_b_for_dot_graph' ).value ),
+        
         adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve the reference
-        dict_key_args_for_draw_graph = { 'name_feature' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'fig_size' : [ int_fig_size_x, int_fig_size_y ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size_for_scatter_plot' : isNaN( int_marker_size_for_scatter_plot ) ? 3 : int_marker_size_for_scatter_plot, 'marker_size_for_dot_plot' : isNaN( input_int_marker_size_for_dot_plot ) ? 3 : input_int_marker_size_for_dot_plot }; // keyworded arguments for the draw_graph function
+        dict_key_args_for_draw_graph = { 'name_feature' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'title' : name_fig, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'margin' : { l : int_margin_l_for_scatter_graph, b : int_margin_b_for_scatter_graph }, 'fig_size' : [ int_fig_size_x_for_scatter_graph, int_fig_size_y_for_scatter_graph ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size_for_scatter_plot' : isNaN( int_marker_size_for_scatter_plot ) ? 3 : int_marker_size_for_scatter_plot, 'marker_size_for_dot_plot' : isNaN( input_int_marker_size_for_dot_plot ) ? 3 : input_int_marker_size_for_dot_plot }; // keyworded arguments for the draw_graph function
     
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
@@ -3407,7 +3508,7 @@ async function PlotAnnData( ) {
         draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : false } );
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
         // initialize div (dual graphs)
-        create_div( name_panel, style = `width:${int_fig_size_x}px;height:${int_fig_size_y}px;`, flag_create_dual_div = true );
+        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true );
             
         // draw graphs
         draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : false } );
@@ -3422,9 +3523,9 @@ async function PlotAnnData( ) {
         }
         
     } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_violin_graph, int_fig_size_y_for_violin_graph ], 'margin' : { l : int_margin_l_for_violin_graph, b : int_margin_b_for_violin_graph } } );
     } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_dot_graph, int_fig_size_y_for_dot_graph ], 'margin' : { l : int_margin_l_for_dot_graph, b : int_margin_b_for_dot_graph } } );
     }
 //     // close current panel
 //     dict_data.bs_components.offcanvasPlotAnnData.hide( );
@@ -3470,6 +3571,11 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = false;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
         
+        // figsize setting
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        
     } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
@@ -3483,6 +3589,11 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = false;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = false;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
+        
+        // figsize setting
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
@@ -3498,6 +3609,11 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = false;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
         
+        // figsize setting
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        
     } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
@@ -3511,6 +3627,11 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = true;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = true;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
+        
+        // figsize setting
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
         
         UpdateCategories( ); // update categories
         
@@ -3528,11 +3649,55 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = true;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = false;
         
+        // figsize setting
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = false;
+        
         UpdateCategories( ); // update categories
     }
 }
+    
+/* 
+Hot-key settings
+*/
+function stopPropagation(e)
+{
+    e = e || event;/* get IE event ( not passed ) */
+    e.stopPropagation? e.stopPropagation() : e.cancelBubble = true;
+}
+hotkeys( 'alt+q,alt+w,alt+e,ctrl+i,command+i', function ( event, handler ) {
+    // disable defaults
+    event.preventDefault( );
+    event.returnValue = false;
+    stopPropagation( event );
+    switch ( handler.key ) {
+        case 'alt+q': 
+        case 'option+q': 
+            dict_data.bs_components.offcanvasLoadRamData.toggle( );
+            break;
+        case 'alt+w': 
+        case 'option+w': 
+            dict_data.bs_components.offcanvasRetrieveAnnData.toggle( );
+            break;
+        case 'alt+e': 
+        case 'option+e': 
+            dict_data.bs_components.offcanvasPlotAnnData.toggle( );
+            break;
+        case 'ctrl+i': 
+        case 'command+i': 
+            break;
+        default: alert( event );
+    }
+}); 
 </script>
 </html>
+
+
+
+
+
+
 
 
 
