@@ -90,7 +90,8 @@
 <style>
 
 </style>
-
+<!-- icon of the document -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2020%2020'%3E%3Ctext%20x='0'%20y='16'%20style='filter:%20invert(100%);'%3E🐘%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
 </head>
 
 <body>
@@ -444,6 +445,123 @@
     </div>
     <br>
         
+  </div>
+</div>
+    
+    
+<!-- Modals for tutorials -->
+<div class="modal fade" id="modal_for_tutorial" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal_for_tutorial" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Welcome to SC-Elephant🐘.js Web Viewer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        SC-Elephant.js Viewer can be used to analyze RamData hosted on the web, including Amazon AWS S3 or GitHub Page, without the use of expensive server-side applications, like that of cellxgene or Shiny-based applications. All the scripts are executed in the client-side.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="StartTutorial( );">Start Tutorial</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+<div class="modal fade" id="modal_for_tutorial_intro" data-bs-backdrop="false" data-bs-keyboard="false" aria-hidden="true" aria-labelledby="modal_for_tutorial_label_intro" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_label_intro">What is SC-Elephant.js?</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Show a second modal and hide this one with the button below.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="StartTutorialRamData( );">1) Load RamData</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+<div class="modal fade" id="modal_for_tutorial_ramdata" data-bs-backdrop="false" data-bs-keyboard="false" aria-hidden="true" aria-labelledby="modal_for_tutorial_ramdata_label" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_ramdata_label">1) Load RamData</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Show a second modal and hide this one with the button below.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="StartTutorialAnnData( );">2) Retrieve AnnData</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+<div class="modal fade" id="modal_for_tutorial_anndata" data-bs-backdrop="false" data-bs-keyboard="false" aria-hidden="true" aria-labelledby="modal_for_tutorial_anndata_label" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_anndata_label">2) Retrieve AnnData</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Show a second modal and hide this one with the button below.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="StartTutorialPlotAnnData( );">3) Plot AnnData</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+<div class="modal fade" id="modal_for_tutorial_plot_anndata" data-bs-backdrop="false" data-bs-keyboard="false" aria-hidden="true" aria-labelledby="modal_for_tutorial_plot_anndata_label" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_plot_anndata_label">3) Plot AnnData</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Show a second modal and hide this one with the button below.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="CompleteTutorial( );">Complete Tutorial</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+<div class="modal fade" id="modal_keyboard_shortcuts" data-bs-backdrop="true" data-bs-keyboard="true" aria-hidden="true" aria-labelledby="modal_keyboard_shortcuts_label" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal_keyboard_shortcuts_label">Keyboard Shortcuts</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-body">
+            <h5 class="text-muted mb-2" style="font-size:20px">Panels</h5>
+            <p><kbd>Alt</kbd> + <kbd>q</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <p><kbd>Alt</kbd> + <kbd>w</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <p><kbd>Alt</kbd> + <kbd>e</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <br>
+            <h5 class="text-muted mb-2" style="font-size:20px">Plotting</h5>
+            <p><kbd>Alt</kbd> + <kbd>r</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            
+            <h5 class="text-muted mb-2" style="font-size:20px">Miscellaneous</h5>
+            <p><kbd>Ctrl</kbd> + <kbd>i</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <br>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" type="button" data-bs-dismiss="modal" aria-label="Close">Close</button>
+      </div>
+    </div>
   </div>
 </div>
     
@@ -2832,7 +2950,13 @@ let dict_data = {
     'bs_components' : {
         'offcanvasLoadRamData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasLoadRamData" ), { backdrop: true } ),
         'offcanvasRetrieveAnnData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasRetrieveAnnData" ), { backdrop: true } ),
-        'offcanvasPlotAnnData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasPlotAnnData" ), { backdrop: false, scroll: true } )
+        'offcanvasPlotAnnData' : new bootstrap.Offcanvas( document.getElementById( "offcanvasPlotAnnData" ), { backdrop: false, scroll: true } ),
+        'modal_introduction' : new bootstrap.Modal( document.getElementById('modal_for_tutorial'), { keyboard: false, backdrop: 'static', focus: true } ),
+        'modal_for_tutorial_intro' : new bootstrap.Modal( document.getElementById('modal_for_tutorial_intro'), { keyboard: false, backdrop: false, focus: true } ),
+        'modal_for_tutorial_ramdata' : new bootstrap.Modal( document.getElementById('modal_for_tutorial_ramdata'), { keyboard: false, backdrop: false, focus: true } ),
+        'modal_for_tutorial_anndata' : new bootstrap.Modal( document.getElementById('modal_for_tutorial_anndata'), { keyboard: false, backdrop: false, focus: true } ),
+        'modal_for_tutorial_plot_anndata' : new bootstrap.Modal( document.getElementById('modal_for_tutorial_plot_anndata'), { keyboard: false, backdrop: false, focus: true } ),
+        'modal_keyboard_shortcuts' : new bootstrap.Modal( document.getElementById('modal_keyboard_shortcuts'), { keyboard: true, backdrop: true, focus: true } ),
     },
     'misc' : { // miscellaneous variables
         'name_option_no_filter' : 'no filter (all entries)',
@@ -3276,16 +3400,24 @@ function draw_graph( name_div, adata, dict_kw_args ) {
 
 // when document is ready for interaction
 $(document).ready( function( ) {
-    $('[data-toggle="tooltip"]').tooltip( ); // enable tooltips
-    $('[data-tooltip="tooltip"]').tooltip( );
-    $('[data-tooltip-always-active="tooltip"]').tooltip( );
+//     $('[data-toggle="tooltip"]').tooltip( ); // enable tooltips
+//     $('[data-tooltip="tooltip"]').tooltip( );
+//     $('[data-tooltip-always-active="tooltip"]').tooltip( );
+    
+//     // enable popovers
+//     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+//     const popoverList = [...popoverTriggerList].map( popoverTriggerEl => new bootstrap.Popover( popoverTriggerEl ) );
+    
 //     $( '#modal_introduction' ).modal( 'show' ); // show introduction modal
 //     Toggle_Tooltips( ); // set tooltips status
 //     object_plot_MolecularMimicryMap.hovermode = "closest"; // set initial status
     Initialize( );
 });
     
-async function Initialize( ) { // initialize the web application
+async function Initialize( flag_perform_demonstration = true ) { // initialize the web application
+    // open the welcome modal
+    dict_data.bs_components.modal_introduction.show( );
+    
     // add names of ramdata objects to the loadramdata panel
     let id_select_ramdata = 'select_ramdata_object';
     Select_RemoveOptions_Using_ID( id_select_ramdata );
@@ -3316,30 +3448,32 @@ async function Initialize( ) { // initialize the web application
     document.getElementById( "input_path_remote_ramdata" ).value = 'http://172.27.30.99/web_applications/20220718_sce.js/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/';
     document.getElementById( "radio_select_type_graph" ).click( ); // select type of the graph
     
-    /*
-    Demonstration
-    */
-    // load ELDB
-    await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
-    await RetrieveAnnData( name_ramdata = 'ram' );
-    
-    // demonstrate violin plot
-    document.getElementById( "input_str_name_panel" ).value = 'ELDB_violin_plot_example';
-    document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-    document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__organism_part';
-    document.getElementById( "radio_select_type_graph_violin" ).click( );
-    await PlotAnnData( ); // plot graph
-    // demonstrate dot plot
-    document.getElementById( "input_str_name_panel" ).value = 'ELDB_dot_plot_example';
-    document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
-    document.getElementById( "radio_select_type_graph_dot" ).click( );
-    await PlotAnnData( ); // plot graph
-    // demonstrate scatter plot
-    document.getElementById( "input_str_name_panel" ).value = 'ELDB_scatter_plot_example';
-    document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-    document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
-    document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
-    await PlotAnnData( ); // plot graph
+    if ( flag_perform_demonstration ) {
+        /*
+        Demonstration
+        */
+        // load ELDB
+        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+        await RetrieveAnnData( name_ramdata = 'ram' );
+
+        // demonstrate violin plot
+        document.getElementById( "input_str_name_panel" ).value = 'ELDB_violin_plot_example';
+        document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__organism_part';
+        document.getElementById( "radio_select_type_graph_violin" ).click( );
+        await PlotAnnData( ); // plot graph
+        // demonstrate dot plot
+        document.getElementById( "input_str_name_panel" ).value = 'ELDB_dot_plot_example';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+        document.getElementById( "radio_select_type_graph_dot" ).click( );
+        await PlotAnnData( ); // plot graph
+        // demonstrate scatter plot
+        document.getElementById( "input_str_name_panel" ).value = 'ELDB_scatter_plot_example';
+        document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+        document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
+        await PlotAnnData( ); // plot graph
+    }
 }
     
 // UI components for retrieving RamData, AnnData, and visualize AnnData
@@ -3666,7 +3800,7 @@ function stopPropagation(e)
     e = e || event;/* get IE event ( not passed ) */
     e.stopPropagation? e.stopPropagation() : e.cancelBubble = true;
 }
-hotkeys( 'alt+q,alt+w,alt+e,ctrl+i,command+i', function ( event, handler ) {
+hotkeys( 'alt+q,alt+w,alt+e,alt+r,ctrl+i,command+i', function ( event, handler ) {
     // disable defaults
     event.preventDefault( );
     event.returnValue = false;
@@ -3684,22 +3818,101 @@ hotkeys( 'alt+q,alt+w,alt+e,ctrl+i,command+i', function ( event, handler ) {
         case 'option+e': 
             dict_data.bs_components.offcanvasPlotAnnData.toggle( );
             break;
+        case 'alt+r': 
+        case 'option+r': 
+            PlotAnnData( );
+            break;
         case 'ctrl+i': 
         case 'command+i': 
+            dict_data.bs_components.modal_for_tutorial_intro.toggle( );
             break;
         default: alert( event );
     }
 }); 
+    
+/*
+Start a Tutorial
+*/
+function Scroll_to_the_Top( ) {
+    document.body.scrollTop = 0; // For Safari
+    document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+}
+function StartTutorial( ) {
+    /*
+    start tutorial
+    */
+    // hide all panels
+    dict_data.bs_components.offcanvasLoadRamData.hide( );
+    dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
+    dict_data.bs_components.offcanvasPlotAnnData.hide( );
+    
+    // hide the previous model
+    dict_data.bs_components.modal_introduction.hide( );
+    
+    // open the current model
+    dict_data.bs_components.modal_for_tutorial_intro.show( );
+    
+    // move to the top of the application
+    Scroll_to_the_Top( );
+}
+function StartTutorialRamData( ) {
+    /*
+    StartTutorialRamData
+    */
+    // hide all panels
+    dict_data.bs_components.offcanvasLoadRamData.show( );
+    dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
+    dict_data.bs_components.offcanvasPlotAnnData.hide( );
+    
+    // hide the previous model
+    dict_data.bs_components.modal_for_tutorial_intro.hide( );
+    
+    // open the current model
+    dict_data.bs_components.modal_for_tutorial_ramdata.show( );
+}
+function StartTutorialAnnData( ) {
+    /*
+    StartTutorialAnnData
+    */
+    // hide all panels
+    dict_data.bs_components.offcanvasLoadRamData.hide( );
+    dict_data.bs_components.offcanvasRetrieveAnnData.show( );
+    dict_data.bs_components.offcanvasPlotAnnData.hide( );
+    
+    // hide the previous model
+    dict_data.bs_components.modal_for_tutorial_ramdata.hide( );
+    
+    // open the current model
+    dict_data.bs_components.modal_for_tutorial_anndata.show( );
+}
+function StartTutorialPlotAnnData( ) {
+    /*
+    StartTutorialPlotAnnData
+    */
+    // hide all panels
+    dict_data.bs_components.offcanvasLoadRamData.hide( );
+    dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
+    dict_data.bs_components.offcanvasPlotAnnData.show( );
+    
+    // hide the previous model
+    dict_data.bs_components.modal_for_tutorial_anndata.hide( );
+    
+    // open the current model
+    dict_data.bs_components.modal_for_tutorial_plot_anndata.show( );
+}
+function CompleteTutorial( ) {
+    /*
+    CompleteTutorial
+    */
+    // hide the previous model
+    dict_data.bs_components.modal_for_tutorial_plot_anndata.hide( );
+    
+    // open the current model
+    dict_data.bs_components.modal_keyboard_shortcuts.show( );
+}
+    
 </script>
 </html>
-
-
-
-
-
-
-
-
 
 
 
