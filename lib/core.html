@@ -248,7 +248,7 @@
   </div>
   <div class="offcanvas-body">
     <div class="form-floating">
-        <select class="form-select" aria-label="select_adata" id="select_adata">
+        <select class="form-select" aria-label="select_adata" id="select_adata" onchange="UpdatePanelPlotAnnData( );">
         </select>
       <label for="select_adata" class="form-label">Select AnnData</label>
     </div>
@@ -3534,7 +3534,30 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', 
     // show next panel
     dict_data.bs_components.offcanvasRetrieveAnnData.show( );
 }
+
+function UpdatePanelPlotAnnData( ) {
+    /*
+    update the panel for plotting AnnData for the AnnData currently selected in 'select_adata'
+    */
+    let name_anndata = Select_Get_Selected_Option_Using_ID( 'select_adata' ).value, // retrieve name of the selected AnnData
+        adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve anndata
+        l_str_entry_ft = adata.var.get_column( 'str' ).sort( ), // retrieve list of str_entry_ft
+        l_name_col_obs = [ ... difference( adata.obs.columns, new Set( [ 'str' ] ) ) ].sort( );
+        l_name_col_obsm = Object.keys( adata.obsm );
     
+    // reset options
+    Select_RemoveOptions_Using_ID( 'select_str_entry_ft' );
+    Select_RemoveOptions_Using_ID( 'select_annotations_bc_for_plot' );
+    Select_RemoveOptions_Using_ID( 'select_embedding_for_plot' );
+    
+    // add appropriate options
+    Select_AddOptions_Using_ID( 'select_str_entry_ft', l_str_entry_ft ); 
+    Select_AddOptions_Using_ID( 'select_annotations_bc_for_plot', l_name_col_obs ); 
+    Select_AddOptions_Using_ID( 'select_embedding_for_plot', l_name_col_obsm ); 
+    
+    // set appropriate default input
+    document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value = l_str_entry_ft.join( ', ' );
+}
 async function RetrieveAnnData( name_ramdata = 'ram' ) {
     /*
     Retrieve AnnData and set attributes for the next panel
@@ -3570,27 +3593,17 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
     // load string representations of the feature axis
     await ram.ft.load_str( )
     
-    // test anndata and plotting functions
+    // retrieve anndata and plotting functions
     let adata = await ram.get_item( [ name_layer, [ ], [ l_name_col_obsm, ... l_name_col_obs ], l_str_entry_feature, [ 'str' ] ] )
     dict_data[ 'dict_anndata' ][ name_anndata ] = adata; // add the reference
+
+    // update adata select options
+    let l_name_adata = Object.keys( dict_data[ 'dict_anndata' ] ).sort( ); // retrieve list of available name_adata
+    Select_RemoveOptions_Using_ID( 'select_adata' ); // reset options
+    Select_AddOptions_Using_ID( 'select_adata', l_name_adata ); // add appropriate options
     
-    let l_name_adata = Object.keys( dict_data[ 'dict_anndata' ] ).sort( ), // retrieve list of available name_adata
-        l_str_entry_ft = adata.var.get_column( 'str' ).sort( ); // retrieve list of str_entry_ft
-    
-    // reset options
-    Select_RemoveOptions_Using_ID( 'select_adata' );
-    Select_RemoveOptions_Using_ID( 'select_str_entry_ft' );
-    Select_RemoveOptions_Using_ID( 'select_annotations_bc_for_plot' );
-    Select_RemoveOptions_Using_ID( 'select_embedding_for_plot' );
-    
-    // add appropriate options
-    Select_AddOptions_Using_ID( 'select_adata', l_name_adata ); 
-    Select_AddOptions_Using_ID( 'select_str_entry_ft', l_str_entry_ft ); 
-    Select_AddOptions_Using_ID( 'select_annotations_bc_for_plot', l_name_col_obs ); 
-    Select_AddOptions_Using_ID( 'select_embedding_for_plot', l_name_col_obsm ); 
-    
-    // set appropriate default input
-    document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value = l_str_entry_ft.join( ', ' )
+    // update panel for plotting AnnData
+    UpdatePanelPlotAnnData( );
     
     // enable the button once the anndata was retrieved
     document.getElementById( 'button_for_retrieving_anndata' ).innerHTML = `Retrieve AnnData`; // remove the spinner
