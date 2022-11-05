@@ -88,7 +88,19 @@
 </script>
 
 <style>
-
+<style>
+.image {
+  max-width: 100%; !important; 
+  width: 750px !important;
+}
+.image-small {
+  max-width: 100%; !important; 
+  width: 500px !important;
+}
+.image-very-small {
+  max-width: 100%; !important; 
+  width: 350px !important;
+}
 </style>
 <!-- icon of the document -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2020%2020'%3E%3Ctext%20x='0'%20y='16'%20style='filter:%20invert(100%);'%3E🐘%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
@@ -454,7 +466,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="staticBackdropLabel">Welcome to SC-Elephant🐘.js Web Viewer</h5>
+        <h5 class="modal-title" id="staticBackdropLabel">Welcome to SC-Elephant🐘<b><tt>.js</tt></b> Web Viewer</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -472,11 +484,17 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modal_for_tutorial_label_intro">What is SC-Elephant.js?</h1>
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_label_intro">What is <b><tt>SC-Elephant.js?</tt></b></h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Show a second modal and hide this one with the button below.
+        <p>
+            <tt>SC-Elephant.js</tt> is a JavaScript implementation of <a href="https://github.com/ahs2202/scelephant" target="_blank" rel="noopener noreferrer"><b>SC-Elephant</b></a> (Single-Cell Extremely Large Data Analysis Platform), a Python package for the analysis of extremely large single-cell data in a very memory-efficient manner. <tt>SC-Elephant.js</tt> allows analysis of RamData in a web browser, increasing the accessibility of a single-cell data.
+          <br>  
+          <div class="d-flex justify-content-center">
+            <img class="image-very-small" src="http://172.27.30.99/web_applications/20220718_sce.js/images/scelephant.js.logo.png" alt="scelephant_logo"/>
+          </div>
+        </p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" onclick="StartTutorialRamData( );">1) Load RamData</button>
@@ -489,13 +507,15 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modal_for_tutorial_ramdata_label">1) Load RamData</h1>
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_ramdata_label">Start Tutorial</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Show a second modal and hide this one with the button below.
+        <tt>SC-Elephant.py</tt> generates a <b><tt>RamData</tt></b> object for the analysis of a single-cell data matrix.
+          <br><br>The resulting <tt>RamData</tt> object, once uploaded to web (with <i>CORS</i> enabled), can be analyzed by <tt>SC-Elephant.py</tt> or <tt>.js</tt>. Here, using <tt>SC-Elephant.js</tt>, a <tt>RamData</tt> object can be visualized and explored.
       </div>
       <div class="modal-footer">
+        <button class="btn btn-secondary me-auto" onclick="StartTutorial( );">1) Load RamData</button>
         <button class="btn btn-primary" onclick="StartTutorialAnnData( );">2) Retrieve AnnData</button>
       </div>
     </div>
@@ -510,9 +530,18 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Show a second modal and hide this one with the button below.
+        A <tt>RamData</tt> object is composed of two <b><tt>RamDataAxis</tt></b> (<b>Axis</b>) objects and multiple <b><tt>RamDataLayer</tt></b> (<b>Layer</b>) objects.
+        <br>
+        <br>
+        The two RamDataAxis objects, <b>'Barcodes'</b> and <b>'Features'</b> objects, use <b><tt>'filter'</tt></b> to select cells (barcodes) and genes (features) before retrieving data from the <tt>RamData</tt> object.
+        <br>
+        <br>
+          <div class="d-flex justify-content-center">
+            <img class="image-small" src="http://172.27.30.99/web_applications/20220718_sce.js/images/scelephant.js.structure.png" alt="scelephant_logo"/>
+          </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-secondary me-auto" onclick="StartTutorialRamData( );">1) Load RamData</button>
         <button class="btn btn-primary" onclick="StartTutorialPlotAnnData( );">3) Plot AnnData</button>
       </div>
     </div>
@@ -527,9 +556,10 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Show a second modal and hide this one with the button below.
+        Once an <b><tt>AnnData</tt></b> object (a single-cell data container, like the AnnData object of SCANPY) is retrieved, various plots can be drawn, including the <b>Scatter</b>, <b>Violin</b>, and <b>Dot</b> plots.
       </div>
       <div class="modal-footer">
+        <button class="btn btn-secondary me-auto" onclick="StartTutorialAnnData( );">2) Retrieve AnnData</button>
         <button class="btn btn-primary" onclick="CompleteTutorial( );">Complete Tutorial</button>
       </div>
     </div>
@@ -546,19 +576,20 @@
       <div class="modal-body">
         <div class="modal-body">
             <h5 class="text-muted mb-2" style="font-size:20px">Panels</h5>
-            <p><kbd>Alt</kbd> + <kbd>q</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
-            <p><kbd>Alt</kbd> + <kbd>w</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
-            <p><kbd>Alt</kbd> + <kbd>e</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <p><kbd>Alt</kbd> + <kbd>q</kbd> - open <b>1) Load RamData</b> panel.</p>
+            <p><kbd>Alt</kbd> + <kbd>w</kbd> - open <b>2) Retrieve AnnData</b> panel.</p>
+            <p><kbd>Alt</kbd> + <kbd>e</kbd> - open <b>3) Plot AnnData</b> panel.</p>
             <br>
             <h5 class="text-muted mb-2" style="font-size:20px">Plotting</h5>
-            <p><kbd>Alt</kbd> + <kbd>r</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <p><kbd>Alt</kbd> + <kbd>r</kbd> - draw a graph using the settings, equivalent to clicking <button type="button" class="btn btn-primary">Plot AnnData</button> button.</p>
             
             <h5 class="text-muted mb-2" style="font-size:20px">Miscellaneous</h5>
-            <p><kbd>Ctrl</kbd> + <kbd>i</kbd><b>(screenshot)</b> to capture <b>the current view</b> and download it as a PNG file</p>
+            <p><kbd>Ctrl</kbd> + <kbd>i</kbd> - open an introduction modal</p>
             <br>
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-secondary me-auto" onclick="StartTutorialPlotAnnData( );">3) Plot AnnData</button>
         <button class="btn btn-primary" type="button" data-bs-dismiss="modal" aria-label="Close">Close</button>
       </div>
     </div>
@@ -3424,18 +3455,18 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     Select_AddOptions_Using_ID( id_select_ramdata, dict_ramdata_locations ); // add ramdata objects in the settings
     
     // set default options
-    document.getElementById( 'input_int_fig_size_x_for_scatter_graph' ).value = '1250';
-    document.getElementById( 'input_int_fig_size_y_for_scatter_graph' ).value = '1000';
+    document.getElementById( 'input_int_fig_size_x_for_scatter_graph' ).value = '1050';
+    document.getElementById( 'input_int_fig_size_y_for_scatter_graph' ).value = '800';
     document.getElementById( 'input_int_margin_l_for_scatter_graph' ).value = '65'; 
     document.getElementById( 'input_int_margin_b_for_scatter_graph' ).value = '90';
     
     document.getElementById( 'input_int_fig_size_x_for_violin_graph' ).value = '1250';
-    document.getElementById( 'input_int_fig_size_y_for_violin_graph' ).value = '500';
+    document.getElementById( 'input_int_fig_size_y_for_violin_graph' ).value = '400';
     document.getElementById( 'input_int_margin_l_for_violin_graph' ).value = '65';
     document.getElementById( 'input_int_margin_b_for_violin_graph' ).value = '200';
     
     document.getElementById( 'input_int_fig_size_x_for_dot_graph' ).value = '1250';
-    document.getElementById( 'input_int_fig_size_y_for_dot_graph' ).value = '1000';
+    document.getElementById( 'input_int_fig_size_y_for_dot_graph' ).value = '750';
     document.getElementById( 'input_int_margin_l_for_dot_graph' ).value = '275';
     document.getElementById( 'input_int_margin_b_for_dot_graph' ).value = '50';
     
@@ -3837,7 +3868,7 @@ hotkeys( 'alt+q,alt+w,alt+e,alt+r,ctrl+i,command+i', function ( event, handler )
             break;
         case 'ctrl+i': 
         case 'command+i': 
-            dict_data.bs_components.modal_for_tutorial_intro.toggle( );
+            dict_data.bs_components.modal_introduction.toggle( );
             break;
         default: alert( event );
     }
@@ -3859,10 +3890,11 @@ function StartTutorial( ) {
     dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
     dict_data.bs_components.offcanvasPlotAnnData.hide( );
     
-    // hide the previous model
+    // hide the previous models
     dict_data.bs_components.modal_introduction.hide( );
+    dict_data.bs_components.modal_for_tutorial_ramdata.hide( )
     
-    // open the current model
+    // open the current models
     dict_data.bs_components.modal_for_tutorial_intro.show( );
     
     // move to the top of the application
@@ -3877,8 +3909,9 @@ function StartTutorialRamData( ) {
     dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
     dict_data.bs_components.offcanvasPlotAnnData.hide( );
     
-    // hide the previous model
+    // hide the previous models
     dict_data.bs_components.modal_for_tutorial_intro.hide( );
+    dict_data.bs_components.modal_for_tutorial_anndata.hide( )
     
     // open the current model
     dict_data.bs_components.modal_for_tutorial_ramdata.show( );
@@ -3892,8 +3925,9 @@ function StartTutorialAnnData( ) {
     dict_data.bs_components.offcanvasRetrieveAnnData.show( );
     dict_data.bs_components.offcanvasPlotAnnData.hide( );
     
-    // hide the previous model
+    // hide the previous models
     dict_data.bs_components.modal_for_tutorial_ramdata.hide( );
+    dict_data.bs_components.modal_for_tutorial_plot_anndata.hide( )
     
     // open the current model
     dict_data.bs_components.modal_for_tutorial_anndata.show( );
@@ -3907,8 +3941,9 @@ function StartTutorialPlotAnnData( ) {
     dict_data.bs_components.offcanvasRetrieveAnnData.hide( );
     dict_data.bs_components.offcanvasPlotAnnData.show( );
     
-    // hide the previous model
+    // hide the previous models
     dict_data.bs_components.modal_for_tutorial_anndata.hide( );
+    dict_data.bs_components.modal_keyboard_shortcuts.hide( )
     
     // open the current model
     dict_data.bs_components.modal_for_tutorial_plot_anndata.show( );
@@ -3917,7 +3952,7 @@ function CompleteTutorial( ) {
     /*
     CompleteTutorial
     */
-    // hide the previous model
+    // hide the previous models
     dict_data.bs_components.modal_for_tutorial_plot_anndata.hide( );
     
     // open the current model
