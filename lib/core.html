@@ -470,7 +470,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        SC-Elephant.js Viewer can be used to analyze RamData hosted on the web, including Amazon AWS S3 or GitHub Page, without the use of expensive server-side applications, like that of cellxgene or Shiny-based applications. All the scripts are executed in the client-side.
+        <b>SC-Elephant.js</b> Viewer can be used to analyze <b><tt>RamData</tt></b> hosted on the web, including <b>GitHub Page</b> or <b>Amazon AWS S3</b>, without the use of expensive <i>server-side</i> applications, like that of cellxgene or Shiny-based applications. All the scripts of SC-Elephant.js are executed in the <i>client-side</i>.
+          <br>  
+          <div class="d-flex justify-content-center">
+            <img class="image-very-small" src="http://172.27.30.99/web_applications/20220718_sce.js/images/scelephant.js.logo.png" alt="scelephant_logo"/>
+          </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -489,11 +493,7 @@
       </div>
       <div class="modal-body">
         <p>
-            <tt>SC-Elephant.js</tt> is a JavaScript implementation of <a href="https://github.com/ahs2202/scelephant" target="_blank" rel="noopener noreferrer"><b>SC-Elephant</b></a> (Single-Cell Extremely Large Data Analysis Platform), a Python package for the analysis of extremely large single-cell data in a very memory-efficient manner. <tt>SC-Elephant.js</tt> allows analysis of RamData in a web browser, increasing the accessibility of a single-cell data.
-          <br>  
-          <div class="d-flex justify-content-center">
-            <img class="image-very-small" src="http://172.27.30.99/web_applications/20220718_sce.js/images/scelephant.js.logo.png" alt="scelephant_logo"/>
-          </div>
+            <b><tt>SC-Elephant.js</tt></b> is a JavaScript implementation of <a href="https://github.com/ahs2202/scelephant" target="_blank" rel="noopener noreferrer"><b>SC-Elephant</b></a> (Single-Cell Extremely Large Data Analysis Platform), a Python package for the analysis of extremely large single-cell data in a very memory-efficient manner. <tt>SC-Elephant.js</tt> allows analysis of <tt>RamData</tt> in a web browser, increasing the accessibility of a single-cell data.
         </p>
       </div>
       <div class="modal-footer">
@@ -507,12 +507,12 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modal_for_tutorial_ramdata_label">Start Tutorial</h1>
+        <h1 class="modal-title fs-5" id="modal_for_tutorial_ramdata_label">1) Load RamData</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <tt>SC-Elephant.py</tt> generates a <b><tt>RamData</tt></b> object for the analysis of a single-cell data matrix.
-          <br><br>The resulting <tt>RamData</tt> object, once uploaded to web (with <i>CORS</i> enabled), can be analyzed by <tt>SC-Elephant.py</tt> or <tt>.js</tt>. Here, using <tt>SC-Elephant.js</tt>, a <tt>RamData</tt> object can be visualized and explored.
+          <br><br>The resulting <tt>RamData</tt> object, once uploaded to the GitHub Page (or any web location with <i>CORS</i> enabled), can be analyzed by <tt>SC-Elephant.py</tt> or <tt>.js</tt>. Here, using <tt>SC-Elephant.js</tt>, a <tt>RamData</tt> object can be visualized and explored.
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary me-auto" onclick="StartTutorial( );">1) Load RamData</button>
@@ -533,7 +533,7 @@
         A <tt>RamData</tt> object is composed of two <b><tt>RamDataAxis</tt></b> (<b>Axis</b>) objects and multiple <b><tt>RamDataLayer</tt></b> (<b>Layer</b>) objects.
         <br>
         <br>
-        The two RamDataAxis objects, <b>'Barcodes'</b> and <b>'Features'</b> objects, use <b><tt>'filter'</tt></b> to select cells (barcodes) and genes (features) before retrieving data from the <tt>RamData</tt> object.
+        The two RamDataAxis objects, <b>'Barcode'</b> and <b>'Feature'</b> objects, use <b><tt>'filter'</tt></b> to select cells (barcodes) and genes (features) before retrieving data from the <tt>RamData</tt> object, respectively.
         <br>
         <br>
           <div class="d-flex justify-content-center">
