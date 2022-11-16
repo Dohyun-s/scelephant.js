@@ -374,6 +374,7 @@
             </div>
           </div>
         </div>
+        <br>
     </div>
       
     <div id="panel_figure_size_and_margin_setting_for_violin_graph">
@@ -1065,10 +1066,9 @@ class ZarrDataFrame {
         // should be run before using zdf
         let zattrs = await $.getJSON( `${this.path_folder_zdf}.zattrs` ); // read metadata
         this.metadata = zattrs[ 'dict_metadata' ]; // set metadata 
-        this.metadata.columns = new Set( this.metadata.columns ) // convert an array of columns to a set of columns
         
         // set attributes using the metadata
-        this.columns = this.metadata.columns;
+        this.columns = new Set( Object.keys( this.metadata.columns ) ); // retrieve list of column names
         this._n_rows_unfiltered = this.metadata.int_num_rows;
         this.set_filter( this.filter ); // set filter once metadata is loaded_
         this._int_num_rows_in_a_chunk = this.metadata.int_num_rows_in_a_chunk;
@@ -2993,6 +2993,7 @@ let dict_data = {
         'name_option_no_filter' : 'no filter (all entries)',
         'function_colormap_rainbow' : chroma.scale( [ '#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00', '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff', '#ff0080' ] ).mode( 'lab' ), // colormaps
         'name_none' : 'None', // name of 'None' values
+        'int_max_length_text_label' : 25, // the maximum length of a string for text label
     }
 }
 // colormap examples
@@ -3002,6 +3003,18 @@ let dict_data = {
 // 'function_colormap_rainbow' : chroma.scale( [ '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000','#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000' ] ), // colormaps
 dict_data.misc.get_color_from_string = ( e ) => { let val = Math.abs( cyrb53( reverseString( e ) ) ); return dict_data.misc.function_colormap_rainbow( [ ( val % 100 ) / 100, ( val % 10000 ) / 10000, ( val % 1000000 ) / 1000000 ][ parseInt( val % 300000 / 100000 ) ] ); }; // define a function to get color from string
     
+function toggle_legend( name_div ) {
+    /*
+    toggle legends of the plotly graph
+    
+    'name_div' : the name of the division for the plotly graph.
+    */
+    let div = document.getElementById( name_div ),
+        flag_show_legend = document.getElementById( `switch_toggle_legend_${name_div}` ).checked, // retrieve flag for showing legends
+        layout = div.layout, // retrieve existing layout
+        layout_new = { ... div.layout, showlegend : flag_show_legend }; // when 'showlegend' attribute is absent in layout, legend is present. // toggle legends
+    Plotly.relayout( div, layout_new ); // relayout the graph
+}
 function delete_div( name_div ) {
     /*
     delete the given div for plotting graph
@@ -3012,20 +3025,33 @@ function delete_div( name_div ) {
         dict_data.canvas.set_name_div.delete( name_div ); // delete the name of div from the set of divisions
     }
 }
-function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false ) {
+function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false, flag_create_legend_toggle_button = false ) {
     /*
     create a new div for plotting graph
     
     'flag_create_dual_div' : create two divisions next to each other
+    'flag_create_legend_toggle_button' : create legend toggle button
     */
-    let div_new = document.createElement( 'div' );
+    let div_new = document.createElement( 'div' ),
+        str_content_innerhtml = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5>`; // initialize innerHTML content (add a badge indicating the panel)
     div_new.id = `${name_div}_container_new`; // set temporary id
     div_new.className = 'plot_container';
     if ( flag_create_dual_div ) {
-        div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}__top__" style="${style} class="plot"></div><div id="${name_div}__bottom__" style="${style} class="plot"></div>`;
+        // add the legend toggle button
+        // for dual div., legend will be hidden by default
+        if ( flag_create_legend_toggle_button ) {
+            str_content_innerhtml += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}__top__" onchange="toggle_legend( '${name_div}__top__' )"><label class="form-check-label" for="switch_toggle_legend_${name_div}__top__">show legend</label></div>`
+        }
+        str_content_innerhtml += `<div id="${name_div}__top__" style="${style} class="plot"></div><div id="${name_div}__bottom__" style="${style} class="plot"></div>`;
+        
     } else {
-        div_new.innerHTML = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5><div id="${name_div}" class="plot" style="${style}"></div>`;
+        // add the legend toggle button
+        if ( flag_create_legend_toggle_button ) {
+            str_content_innerhtml += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}" onchange="toggle_legend( '${name_div}' )" checked><label class="form-check-label" for="switch_toggle_legend_${name_div}">show legend</label></div>`
+        }
+        str_content_innerhtml += `<div id="${name_div}" class="plot" style="${style}"></div>`;
     }
+    div_new.innerHTML = str_content_innerhtml; // set innerHTML
     if ( dict_data.canvas.set_name_div.has( name_div ) ) { // if the panel already exists in the canvas, replace previous div. with new div.
         document.getElementById( `${name_div}_container` ).replaceWith( div_new );
         div_new.id = `${name_div}_container`; // set id of the container
@@ -3131,13 +3157,15 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'l_str_entry_feature' : undefined, // a list of string representation of features for drawing dot plots. by default use all loaded string representation of features
         'l_name_category_in_col_obs' : undefined, // a list of name of categories in the column of adata.obs for drawing dot plots or violin plots. by default, all categories will be used
         'margin' : { l: 65, r: 65, b: 90, t: 25, pad: 4 }, // margin of the plotly graph
+        'flag_create_legend_toggle_button' : false, // create legend toggle button
     }
+    
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
     
     // recreate div if 'flag_recreate_div' is True
     if ( dict_kw_args[ 'flag_recreate_div' ] ) {
         // initialize div (single graph)
-        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false );
+        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false, dict_kw_args[ 'flag_create_legend_toggle_button' ] );
     }
     
     let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
@@ -3169,6 +3197,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
 
         let flag_color_using_continuous_values = typeof l_color[ 0 ] == 'number', // retrieve a flag indicating whether the array contains float value
             name_val_for_color = dict_kw_args[ 'flag_plot_feature' ] ? dict_kw_args[ 'name_feature' ] : dict_kw_args[ 'name_col_obs' ]; // retrieve name of values for coloring points
+        name_val_for_color = ( name_val_for_color.length > dict_data.misc.int_max_length_text_label ) ? name_val_for_color.slice( 0, dict_data.misc.int_max_length_text_label - 3 ) + '...' : name_val_for_color; // omit long labels if the label is too long
 
         if ( flag_color_using_continuous_values ) { // if values are continuous values
             // cap the values according to the setting
@@ -3193,7 +3222,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 y: l_y,
                 customdata: ArrayTranspose( [ l_color
                                             ] ),
-                hovertemplate: [ `${name_val_for_color}: %{customdata[0]:.5f}`,
+                hovertemplate: [ `${name_val_for_color}: <b>%{customdata[0]:.5f}</b>`,
                                 `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                 "<extra></extra>" ].join( "<br>" ),
                 marker: { 
@@ -3233,7 +3262,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     type: 'scattergl',
                     x: dict_category_to_dict_data[ e ].l_x,
                     y: dict_category_to_dict_data[ e ].l_y,
-                    hovertemplate: [ `${name_val_for_color}: ${e}`,
+                    hovertemplate: [ `${name_val_for_color}: <b>${e}</b>`,
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                     "<extra></extra>" ].join( "<br>" ),
                     marker: { 
@@ -3258,7 +3287,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     type: 'scattergl',
                     x: dict_category_to_dict_data[ e ].l_x,
                     y: dict_category_to_dict_data[ e ].l_y,
-                    hovertemplate: [ `${name_val_for_color}: ${e}`,
+                    hovertemplate: [ `${name_val_for_color}: <b>${e}</b>`,
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                     "<extra></extra>" ].join( "<br>" ),
                     marker: { 
@@ -3277,7 +3306,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             margin: { l: 65, r: 65, b: 90, t: 25, pad: 4, ... dict_kw_args[ 'margin' ] }, 
             xaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-1`, zeroline: false }, 
             yaxis: { title : `${dict_kw_args[ 'name_embedding' ]}-2`, zeroline: false }, 
-            hovermode: "closest"
+            hovermode: "closest",
+            showlegend: false, // hide the legend by default
         };
         config = { ... config, filename: 'single-cell-scatter-graph' };
     } else if ( dict_kw_args[ 'name_type_graph' ] == 'violin' ) { // draw scatter plot 
@@ -3484,7 +3514,7 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
         Demonstration
         */
         // load ELDB
-        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'anno__of__leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_40__based_on__cellmarker2db', 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
         await RetrieveAnnData( name_ramdata = 'ram' );
 
         // demonstrate violin plot
@@ -3495,13 +3525,13 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
         await PlotAnnData( ); // plot graph
         // demonstrate dot plot
         document.getElementById( "input_str_name_panel" ).value = 'ELDB_dot_plot_example';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__organism_part';
         document.getElementById( "radio_select_type_graph_dot" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate scatter plot
         document.getElementById( "input_str_name_panel" ).value = 'ELDB_scatter_plot_example';
         document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__cell_type';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__of__leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_40__based_on__cellmarker2db';
         document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
         await PlotAnnData( ); // plot graph
     }
@@ -3681,16 +3711,16 @@ async function PlotAnnData( ) {
     
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : true } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'flag_create_legend_toggle_button' : false } ); // no legend is required for feature plot
     } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : false } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : true, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : true } );
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
         // initialize div (dual graphs)
-        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true );
+        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true, flag_create_legend_toggle_button = true );
             
         // draw graphs
-        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : false } );
-        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : true } );
+        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : false } );
+        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'flag_recreate_div' : false, 'flag_plot_feature' : true, 'flag_create_legend_toggle_button' : false } );
         
         // sync two plots
         let l_div_plotly = [ document.getElementById( `${name_panel}__top__` ), document.getElementById( `${name_panel}__bottom__` ) ];
@@ -3699,11 +3729,10 @@ async function PlotAnnData( ) {
                 synchronized_layout( ed, l_div_plotly );
             });
         }
-        
     } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_violin_graph, int_fig_size_y_for_violin_graph ], 'margin' : { l : int_margin_l_for_violin_graph, b : int_margin_b_for_violin_graph } } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_violin_graph, int_fig_size_y_for_violin_graph ], 'margin' : { l : int_margin_l_for_violin_graph, b : int_margin_b_for_violin_graph }, 'flag_create_legend_toggle_button' : true } );
     } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
-        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_dot_graph, int_fig_size_y_for_dot_graph ], 'margin' : { l : int_margin_l_for_dot_graph, b : int_margin_b_for_dot_graph } } );
+        draw_graph( name_panel, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_dot_graph, int_fig_size_y_for_dot_graph ], 'margin' : { l : int_margin_l_for_dot_graph, b : int_margin_b_for_dot_graph }, 'flag_create_legend_toggle_button' : false } ); // no legend is required for dot plot
     }
 //     // close current panel
 //     dict_data.bs_components.offcanvasPlotAnnData.hide( );
