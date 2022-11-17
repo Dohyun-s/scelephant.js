@@ -1,6 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!--  
+# release note
+
+# 2022/11/17
+minor modification of plotting functions
+-->
+    
 <!-- Required meta tags -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -3092,9 +3099,7 @@ function adaptive_marker_size( ed, div, dict_kw_args ) {
 
     if ( flag_restyle ) { // restyle existing plot
         console.log( "[adaptive_marker_size] restyling marker size to ", int_marker_size_to_be_updated );
-        let update = { marker : div.data[ 0 ].marker };
-        update.marker.size = int_marker_size_to_be_updated;
-        Plotly.restyle( div, update, [ 0 ] );
+        Plotly.restyle( div, { "marker.size" : int_marker_size_to_be_updated } );
     } 
 }
 function synchronized_layout( ed, divs ) {
@@ -3406,8 +3411,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 }
             };
         for ( let str_entry_ft of l_str_entry_feature ) {
-            for ( let name_category of l_name_category_in_col_obs ) {
-                let l_val = dict_category_to_dict_data[ name_category ][ str_entry_ft ], // retrieve list of values
+            for ( let name_category of l_name_category_in_col_obs.reverse( ) ) { // iterate over the category in a reverse order (to put the first category in the input at the top of the dot plot)
+                let l_val = dict_category_to_dict_data[ name_category ][ str_entry_ft ], // retrieve list of values for the current category
                     n_non_zeros = 0;
                 for ( let val of l_val ) {
                     if ( val > 0 ) {
@@ -3453,6 +3458,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     if ( dict_kw_args[ 'name_type_graph' ] == 'scatter' ) {
         if ( dict_kw_args[ 'flag_responsive_marker_size' ] ) {
             div_plot.on( "plotly_relayout", function( ed ) {
+                console.log( `plotly relayout attached to`, div_plot );
                 adaptive_marker_size( ed, div_plot, dict_kw_args );
             });
         }
