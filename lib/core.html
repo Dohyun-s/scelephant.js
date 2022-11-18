@@ -719,6 +719,32 @@ let prng_seed = xmur3( "sc-elephant" ),
     rand = mulberry32( prng_seed( ) ); // retrieve seed for a PRNG // retrieve a function for PRNG
     
 // implemented functions
+// implemented functions - str
+function string_insert_every_n_chars( str_main, str_to_be_inserted, n_chars ) {
+    /*
+    string_insert_every_n_chars( str_main, str_to_be_inserted, n_chars )
+    
+    'str_to_be_inserted' will be inserted to 'str_main' string every 'n_chars'
+    the resulting string will be returned
+    */
+    let l_substrings = [ ]; // initialize the array that will contain substrings for composing the result string
+    for ( let pos = 0; pos < str_main.length; pos += n_chars ) {
+        l_substrings.push( str_main.slice( pos, pos + n_chars ) );
+    }
+    return l_substrings.join( str_to_be_inserted ); // return the resulting string
+}
+function string_shorten( str_to_be_shortened, len_string_output = 75, str_ellipsis = '...' ) {
+    if ( str_to_be_shortened.length > len_string_output ) {
+        let length_string_flanking_ellipsis = parseInt( ( len_string_output - str_ellipsis.length ) / 2 ),
+            string_left = str_to_be_shortened.slice( 0, length_string_flanking_ellipsis ),
+            string_right = str_to_be_shortened.slice( str_to_be_shortened.length - length_string_flanking_ellipsis ),
+            str_shortened = string_left + str_ellipsis + string_right; // compose shortened string
+        return str_shortened
+    } else {
+        return str_to_be_shortened
+    }
+}
+// implemented functions - unclassified
 function check_none( val ) {
     // check whether the given value 'val' is either undefined or null
     return ( val === undefined ) | ( val === null );
@@ -3000,7 +3026,7 @@ let dict_data = {
         'name_option_no_filter' : 'no filter (all entries)',
         'function_colormap_rainbow' : chroma.scale( [ '#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00', '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff', '#ff0080' ] ).mode( 'lab' ), // colormaps
         'name_none' : 'None', // name of 'None' values
-        'int_max_length_text_label' : 25, // the maximum length of a string for text label
+        'int_max_length_text_label' : 70, // the maximum length of a string for text label
     }
 }
 // colormap examples
@@ -3054,7 +3080,7 @@ function create_div( name_div, style = "width:1100px;height:1100px;", flag_creat
     } else {
         // add the legend toggle button
         if ( flag_create_legend_toggle_button ) {
-            str_content_innerhtml += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}" onchange="toggle_legend( '${name_div}' )" checked><label class="form-check-label" for="switch_toggle_legend_${name_div}">show legend</label></div>`
+            str_content_innerhtml += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}" onchange="toggle_legend( '${name_div}' )"><label class="form-check-label" for="switch_toggle_legend_${name_div}">show legend</label></div>`
         }
         str_content_innerhtml += `<div id="${name_div}" class="plot" style="${style}"></div>`;
     }
@@ -3267,7 +3293,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     type: 'scattergl',
                     x: dict_category_to_dict_data[ e ].l_x,
                     y: dict_category_to_dict_data[ e ].l_y,
-                    hovertemplate: [ `${name_val_for_color}: <b>${e}</b>`,
+                    hovertemplate: [ `<b>${e}</b>`,
+                                    `(${name_val_for_color})`,
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                     "<extra></extra>" ].join( "<br>" ),
                     marker: { 
@@ -3292,7 +3319,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     type: 'scattergl',
                     x: dict_category_to_dict_data[ e ].l_x,
                     y: dict_category_to_dict_data[ e ].l_y,
-                    hovertemplate: [ `${name_val_for_color}: <b>${e}</b>`,
+                    hovertemplate: [ `<b>${string_insert_every_n_chars( e, '<br>', dict_data.misc.int_max_length_text_label )}</b>`, 
+                                    `(${name_val_for_color})`,
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                     "<extra></extra>" ].join( "<br>" ),
                     marker: { 
@@ -3331,13 +3359,14 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 let l_expr = dictarr[ category ],
                     n_cells = l_expr.length, // retrieve number of cells for the current category
                     float_mean_expression = ArrayAverage( l_expr ); // retrieve a mean expression of cells for the current trace
-                let trace = { ... trace_template,
-                             name: category,
+                let category_shortened = string_shorten( category, dict_data.misc.int_max_length_text_label, '...' ), // shorten the category name
+                    trace = { ... trace_template,
+                             name: category_shortened,
                              line: { color: 'black', width: 2 },
                              fillcolor: dict_data.misc.get_color_from_string( category ).toString( ), // assign color of the entry using hasing,
                              points: false, // do not show outliers to increase responsivity
                              y: l_expr,
-                             x0: `${category}${str_separation}(n=${n_cells})`,
+                             x0: `${category_shortened}${str_separation}(n=${n_cells})`,
                              mean_expression_for_sorting: float_mean_expression
                             };
                 l_trace.push( trace );
@@ -3355,20 +3384,29 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             violingap: 0, // split violin plot for two covid statuses
             violingroupgap: 0,
             violinmode: "overlay",
+            showlegend: false, // hide the legend by default
         }
         config = { ... config, filename: `single-cell-violin-graph-${dict_kw_args[ 'name_feature' ]}` };
     } else if ( dict_kw_args[ 'name_type_graph' ] == 'dot' ) {
         let set_str_entry_feature = new Set( dict_kw_args[ 'l_str_entry_feature' ] ), 
-            set_name_category_in_col_obs = new Set( dict_kw_args[ 'l_name_category_in_col_obs' ] ); 
+            l_name_category_in_col_obs = dict_kw_args[ 'l_name_category_in_col_obs' ].map( ( e ) => { return string_shorten( e, dict_data.misc.int_max_length_text_label, '...' ); } ), // for dot-plot shorten the category name 
+            set_name_category_in_col_obs = new Set( l_name_category_in_col_obs ); // retrieve initial set of categories from the input
         set_str_entry_feature = intersection( set_str_entry_feature, new Set( adata.var.get_column( 'str' ) ) ); // retrieve intersection with the genes 
         
         // summarize data for each category
         let dict_category_to_dict_data = { }; // initialize dict_data for each category
         for ( let str_entry_ft of set_str_entry_feature ) { // for each feature in 'set_str_entry_feature'
             l_val_feature = adata.X.subset( adata.var.get_integer_indices_of_rows( [ str_entry_ft ] ) ).to_dense( ).T.tolist( )[ 0 ]; // retrieve expression data of a feature
+            let dict_name_cat_to_name_cat_for_vis = { }; // initialize a dictionary for storing name of category for visualization
             for ( let i = 0; i < l_val_obs.length; i ++ ) { // iterate over entries
                 let e = l_val_obs[ i ], // retrieve the name of the category
                     val = l_val_feature[ i ]; // retrieve expression value
+                
+                // modify name of category to visualize the name better on the graph
+                if ( ! ( e in dict_name_cat_to_name_cat_for_vis ) ) {
+                    dict_name_cat_to_name_cat_for_vis[ e ] = string_shorten( e, dict_data.misc.int_max_length_text_label, '...' );
+                } 
+                e = dict_name_cat_to_name_cat_for_vis[ e ];
 
                 // handle 'None' category as a separate category
                 if ( check_none( e ) ) {
@@ -3388,8 +3426,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             }
         }
         set_name_category_in_col_obs = new Set( Object.keys( dict_category_to_dict_data ) ); // retrieve 'set_name_category_in_col_obs' containing only valid name_category
+        l_name_category_in_col_obs = l_name_category_in_col_obs.filter( e => set_name_category_in_col_obs.has( e ) ) // filter the list with a set containing valid entries (preserve the original orders)
         let l_str_entry_feature = dict_kw_args[ 'l_str_entry_feature' ].filter( e => set_str_entry_feature.has( e ) ),
-            l_name_category_in_col_obs = dict_kw_args[ 'l_name_category_in_col_obs' ].filter( e => set_name_category_in_col_obs.has( e ) ), // filter the list with a set containing valid entries (preserve the original orders)
             trace = {
                 type: 'scatter',
                 customdata: [ ],
@@ -3520,24 +3558,24 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
         Demonstration
         */
         // load ELDB
-        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'anno__of__leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_40__based_on__cellmarker2db', 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db', 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
         await RetrieveAnnData( name_ramdata = 'ram' );
 
         // demonstrate violin plot
         document.getElementById( "input_str_name_panel" ).value = 'ELDB_violin_plot_example';
         document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__organism_part';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_violin" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate dot plot
         document.getElementById( "input_str_name_panel" ).value = 'ELDB_dot_plot_example';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__EBI_SCE__organism_part';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_dot" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate scatter plot
         document.getElementById( "input_str_name_panel" ).value = 'ELDB_scatter_plot_example';
         document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__of__leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_40__based_on__cellmarker2db';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
         await PlotAnnData( ); // plot graph
     }
@@ -3752,8 +3790,17 @@ function UpdateCategories( ) {
     let name_anndata = Select_Get_Selected_Option_Using_ID( 'select_adata' ).value,
         name_col_obs = Select_Get_Value_from_Option( Select_Get_Selected_Option_Using_ID( 'select_annotations_bc_for_plot' ) ),
         adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve the reference
-        l_val_obs = adata.obs.get_column( name_col_obs ), // retrieve barcode annotations
-        set_val_obs = new Set( l_val_obs ); // retrieve unique values
+        l_val_obs = adata.obs.get_column( name_col_obs ); // retrieve barcode annotations
+    
+    if ( l_val_obs.length == 0 ) { // check adata has a valid number of entries
+        return;
+    }
+    if ( typeof l_val_obs[ 0 ] == 'number' ) { // check 'l_val_obs' contains string values
+        document.getElementById( 'input_l_category_for_plotting' ).value = '(current annotation contains continuous values)'; // empty the input field
+        return;
+    }
+        
+    let set_val_obs = new Set( l_val_obs ); // retrieve unique values
     // handle None values
     for ( let e of [ undefined, null ] ) { // for each value representing 'None'
         if ( set_val_obs.has( e ) ) { // replace the value with the unified string value representing 'None'
