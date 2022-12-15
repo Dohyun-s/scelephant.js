@@ -120,6 +120,43 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
   max-width: 100%; !important; 
   width: 350px !important;
 }
+.rcorner {
+  border-radius: 5px;
+  padding: 5px;
+}
+    
+.tags-look .tagify__dropdown__item{
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 3px;
+  padding: .3em .5em;
+  border: 1px solid #CCC;
+  background: #F3F3F3;
+  margin: .2em;
+  font-size: .85em;
+  color: black;
+  transition: 0s;
+}
+
+.tags-look .tagify__dropdown__item--active{
+  color: black;
+}
+
+.tags-look .tagify__dropdown__item:hover{
+  background: lightyellow;
+  border-color: gold;
+}
+
+.tags-look .tagify__dropdown__item--hidden {
+    max-width: 0;
+    max-height: initial;
+    padding: .3em 0;
+    margin: .2em 0;
+    white-space: nowrap;
+    text-indent: -20px;
+    border: 0;
+}
+
 </style>
 <!-- icon of the document -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2020%2020'%3E%3Ctext%20x='0'%20y='16'%20style='filter:%20invert(100%);'%3E🐘%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
@@ -161,10 +198,12 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
           <a class="nav-link disabled">Disabled</a>
         </li> -->
       </ul>
-<!--       <form class="d-flex" role="search">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-        <button class="btn btn-outline-success" type="submit">Search</button>
-      </form> -->
+      <form class="d-flex">
+        <div class="form-check form-switch" id="global_switch_simple_or_advanced">
+            <input class="form-check-input" type="checkbox" id="switch_simple_or_advanced" onchange="SwitchAdvancedSetting( );">
+            <label class="form-check-label" for="switch_simple_or_advanced">Advanced Mode</label>
+        </div>
+      </form>
     </div>
   </div>
 </nav>
@@ -217,54 +256,54 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
     </button>
   </div>
   <div class="offcanvas-body">
-    <div class="form-floating">
+    <div class="form-floating" id="panel_input_str_name_adata_output">
         <textarea class="form-control" placeholder="adata" id="input_str_name_adata_output"></textarea>
         <label for="input_str_name_adata_output">Output AnnData Name</label>
+        <br>
     </div>
-    <br>
       
     <div id="div_repr_bc">
         <h5>Barcode Axis</h5>
     </div>
-        
+      
+<!-- <input id="choose_filter_bc_input" value='css, html, javascript, css' data-blacklist='.NET,PHP'> -->
     <label for="select_filter_bc" class="form-label">Select Barcode Filter</label>
     <select class="form-select" aria-label="select_filter_bc" id="select_filter_bc">
     </select>
     <br>
       
-    <label for="select_annotations_bc" class="form-label">Select Barcode Annotations</label>
-    <select class="form-select" multiple aria-label="select_annotations_bc" id="select_annotations_bc" style="height: 150px">
-    </select>
+    <label for="choose_annotations_bc" class="form-label">Select Barcode Annotations</label>
+    <div class="d-grid mx-1 gap-1"><textarea id="choose_annotations_bc" class="rcorner" aria-label="choose_annotations_bc"></textarea></div>
     <br>
       
-    <label for="select_embedding" class="form-label">Select Embeddings</label>
-    <select class="form-select" multiple aria-label="select_embedding" id="select_embedding" style="height: 150px">
-    </select>
+    <label for="choose_embedding" class="form-label">Select Embeddings</label>
+    <div class="d-grid mx-1 gap-1"><textarea id="choose_embedding" class="rcorner" aria-label="choose_embedding"></textarea></div>
     <br>
       
     <div id="div_repr_ft">
       <h5>Feature Axis</h5>
     </div>
       
-    <label for="select_filter_ft" class="form-label">Select Feature Filter</label>
-    <select class="form-select" aria-label="select_filter_ft" id="select_filter_ft">
-    </select>
+    <div id="panel_select_filter_ft">
+        <label for="select_filter_ft" class="form-label">Select Feature Filter</label>
+        <select class="form-select" aria-label="select_filter_ft" id="select_filter_ft">
+        </select>
+        <br>
+    </div>      
+    <label for="input_str_gene_names">Gene Symboles (separated by comma)</label>
+    <div class="d-grid mx-1 gap-1"><textarea id="input_str_gene_names" class="rcorner" aria-label="input_str_gene_names"></textarea></div>
     <br>
-      
-    <div class="form-floating">
-        <textarea class="form-control" placeholder="GAPDH" id="input_str_gene_names" style="height: 150px"></textarea>
-        <label for="input_str_gene_names">Gene Symboles (separated by comma)</label>
+     
+    <div id="panel_select_layer">
+        <div>
+          <h5>Layer</h5>
+        </div>
+
+        <label for="select_layer" class="form-label">Select Layer</label>
+        <select class="form-select" aria-label="select_layer" id="select_layer">
+        </select>
+        <br>
     </div>
-    <br>
-      
-    <div>
-      <h5>Layer</h5>
-    </div>
-        
-    <label for="select_layer" class="form-label">Select Layer</label>
-    <select class="form-select" aria-label="select_layer" id="select_layer">
-    </select>
-    <br>
   </div>
 </div>
     
@@ -278,12 +317,13 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
     <button class="btn btn-primary" type="button" onclick="PlotAnnData( )">Plot AnnData</button>
   </div>
   <div class="offcanvas-body">
-    <div class="form-floating">
+    <div class="form-floating" id="plotting_panel_select_adata">
         <select class="form-select" aria-label="select_adata" id="select_adata" onchange="UpdatePanelPlotAnnData( );">
         </select>
       <label for="select_adata" class="form-label">Select AnnData</label>
+      <br>
     </div>
-    <br>
+    
       
     <div class="btn-group d-flex justify-content-center" role="group" aria-label="Basic radio toggle button group" onclick="RearrangePlottingPanel( );" id="radio_select_type_graph">
       <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_feature" autocomplete="off">
@@ -313,9 +353,9 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
       <label for="select_str_entry_ft" class="form-label">Select Feature Entry</label>
     </div>
       
-    <div class="form-floating" id="plotting_panel_input_l_str_entry_ft_for_plotting">
-        <textarea class="form-control" placeholder="Gene symbols" id="input_l_str_entry_ft_for_plotting" style="height: 100px"></textarea>
-        <label for="input_l_str_entry_ft_for_plotting">Gene Symboles (separated by comma)</label>
+    <div id="plotting_panel_input_l_str_entry_ft_for_plotting">
+        <label for="input_l_str_entry_ft_for_plotting">Select Gene Symbols</label>
+        <div class="d-grid mx-1 gap-1"><textarea id="input_l_str_entry_ft_for_plotting" class="rcorner" aria-label="input_l_str_entry_ft_for_plotting"></textarea></div>
     </div>
       
     <div class="form-floating" id="plotting_panel_select_annotations_bc_for_plot">
@@ -324,14 +364,17 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
       <label for="select_annotations_bc_for_plot" class="form-label">Select Barcode Annotation</label>
     </div>
       
-    <div class="form-floating" id="plotting_panel_input_l_category_for_plotting">
-        <textarea class="form-control" placeholder="Categories" id="input_l_category_for_plotting" style="height: 100px"></textarea>
-        <label for="input_l_category_for_plotting">Categories of the Barcode Annotation (separated by comma)</label>
+    <div id="plotting_panel_input_l_category_for_plotting">
+        <br>
+        <label for="input_l_category_for_plotting">Select Categories</label>
+        <div class="d-grid mx-1 gap-1"><textarea id="input_l_category_for_plotting" class="rcorner" aria-label="input_l_category_for_plotting"></textarea></div>
     </div>
-      
-    <div class="form-floating" id="plotting_panel_input_float_vmax">
-        <textarea class="form-control" placeholder="10" id="input_float_vmax"></textarea>
-        <label for="input_float_vmax">maximum value cutoff</label>
+    
+    <div id="plotting_panel_data_setting_advanced">
+        <div class="form-floating" id="plotting_panel_input_float_vmax">
+            <textarea class="form-control" placeholder="10" id="input_float_vmax"></textarea>
+            <label for="input_float_vmax">maximum value cutoff</label>
+        </div>
     </div>
     <br>
       
@@ -345,164 +388,166 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
       <label for="select_embedding_for_plot" class="form-label">Select Embedding</label>
     <br>
     </div>
-      
-    <div>
-      <h5>Figure</h5>
-    </div>
-      
-    <div id="panel_figure_name_setting_for_scatter_graph">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel_for_scatter_graph"></textarea>
-            <label for="input_str_name_panel_for_scatter_graph">Output Panel Name (no white spaces)</label>
+
+    <div id="panel_figure_setting_advanced">
+        <div>
+          <h5>Figure</h5>
         </div>
 
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure_for_scatter_graph"></textarea>
-            <label for="input_str_name_figure_for_scatter_graph">Output Figure Name</label>
-        </div>
-    </div>
-      
-    <div id="panel_figure_name_setting_for_violin_graph">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel_for_violin_graph"></textarea>
-            <label for="input_str_name_panel_for_violin_graph">Output Panel Name (no white spaces)</label>
+        <div id="panel_figure_name_setting_for_scatter_graph">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel_for_scatter_graph"></textarea>
+                <label for="input_str_name_panel_for_scatter_graph">Output Panel Name (no white spaces)</label>
+            </div>
+
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure_for_scatter_graph"></textarea>
+                <label for="input_str_name_figure_for_scatter_graph">Output Figure Name</label>
+            </div>
         </div>
 
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure_for_violin_graph"></textarea>
-            <label for="input_str_name_figure_for_violin_graph">Output Figure Name</label>
-        </div>
-    </div>
-      
-    <div id="panel_figure_name_setting_for_dot_graph">
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel_for_dot_graph"></textarea>
-            <label for="input_str_name_panel_for_dot_graph">Output Panel Name (no white spaces)</label>
+        <div id="panel_figure_name_setting_for_violin_graph">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel_for_violin_graph"></textarea>
+                <label for="input_str_name_panel_for_violin_graph">Output Panel Name (no white spaces)</label>
+            </div>
+
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure_for_violin_graph"></textarea>
+                <label for="input_str_name_figure_for_violin_graph">Output Figure Name</label>
+            </div>
         </div>
 
-        <div class="form-floating">
-            <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure_for_dot_graph"></textarea>
-            <label for="input_str_name_figure_for_dot_graph">Output Figure Name</label>
+        <div id="panel_figure_name_setting_for_dot_graph">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="ELDB" id="input_str_name_panel_for_dot_graph"></textarea>
+                <label for="input_str_name_panel_for_dot_graph">Output Panel Name (no white spaces)</label>
+            </div>
+
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="sc-elephant database" id="input_str_name_figure_for_dot_graph"></textarea>
+                <label for="input_str_name_figure_for_dot_graph">Output Figure Name</label>
+            </div>
         </div>
-    </div>
-    <br>
-      
-    <div>
-      <h5>Figure Size</h5>
-    </div>
-    <div id="panel_figure_size_and_margin_setting_for_scatter_graph">
-        <div class="row g-2">
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_scatter_graph"></textarea>
-                <label for="input_int_fig_size_x_for_scatter_graph">Width (pixels)</label>
+        <br>
+
+        <div>
+          <h5>Figure Size</h5>
+        </div>
+        <div id="panel_figure_size_and_margin_setting_for_scatter_graph">
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_scatter_graph"></textarea>
+                    <label for="input_int_fig_size_x_for_scatter_graph">Width (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_scatter_graph"></textarea>
+                    <label for="input_int_fig_size_y_for_scatter_graph">Height (pixels)</label>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_scatter_graph"></textarea>
-                <label for="input_int_fig_size_y_for_scatter_graph">Height (pixels)</label>
+
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_scatter_graph"></textarea>
+                    <label for="input_int_margin_l_for_scatter_graph">Left Margin (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_scatter_graph"></textarea>
+                    <label for="input_int_margin_b_for_scatter_graph">Bottom Margin (pixels)</label>
+                </div>
+              </div>
             </div>
-          </div>
+            <br>
         </div>
 
-        <div class="row g-2">
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_scatter_graph"></textarea>
-                <label for="input_int_margin_l_for_scatter_graph">Left Margin (pixels)</label>
+        <div id="panel_figure_size_and_margin_setting_for_violin_graph">
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_violin_graph"></textarea>
+                    <label for="input_int_fig_size_x_for_violin_graph">Width (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_violin_graph"></textarea>
+                    <label for="input_int_fig_size_y_for_violin_graph">Height (pixels)</label>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_scatter_graph"></textarea>
-                <label for="input_int_margin_b_for_scatter_graph">Bottom Margin (pixels)</label>
+
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_violin_graph"></textarea>
+                    <label for="input_int_margin_l_for_violin_graph">Left Margin (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_violin_graph"></textarea>
+                    <label for="input_int_margin_b_for_violin_graph">Bottom Margin (pixels)</label>
+                </div>
+              </div>
             </div>
-          </div>
+        </div>
+
+        <div id="panel_figure_size_and_margin_setting_for_dot_graph">
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_dot_graph"></textarea>
+                    <label for="input_int_fig_size_x_for_dot_graph">Width (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_dot_graph"></textarea>
+                    <label for="input_int_fig_size_y_for_dot_graph">Height (pixels)</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_dot_graph"></textarea>
+                    <label for="input_int_margin_l_for_dot_graph">Left Margin (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_dot_graph"></textarea>
+                    <label for="input_int_margin_b_for_dot_graph">Bottom Margin (pixels)</label>
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <div id="plotting_panel_title_marker_size">
+          <h5>Marker (Point) Size</h5>
+        </div>
+        <div class="form-check form-switch" id="plotting_panel_switch_responsive_marker_size_or_static">
+            <input class="form-check-input" type="checkbox" id="switch_responsive_marker_size_or_static">
+            <label class="form-check-label" for="switch_responsive_marker_size_or_static">Responsive Marker (Point) Size</label>
+        </div>
+        <div class="form-floating" id="plotting_panel_input_int_marker_size_for_scatter">
+            <textarea class="form-control" placeholder="3" id="input_int_marker_size_for_scatter"></textarea>
+            <label for="input_int_marker_size_for_scatter">Marker Size (pixels)</label>
+        </div>
+        <div class="form-floating" id="plotting_panel_input_int_marker_size_for_dot_plot">
+            <textarea class="form-control" placeholder="3" id="input_int_marker_size_for_dot_plot"></textarea>
+            <label for="input_int_marker_size_for_dot_plot">Marker Size (pixels)</label>
         </div>
         <br>
     </div>
-      
-    <div id="panel_figure_size_and_margin_setting_for_violin_graph">
-        <div class="row g-2">
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_violin_graph"></textarea>
-                <label for="input_int_fig_size_x_for_violin_graph">Width (pixels)</label>
-            </div>
-          </div>
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_violin_graph"></textarea>
-                <label for="input_int_fig_size_y_for_violin_graph">Height (pixels)</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="row g-2">
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_violin_graph"></textarea>
-                <label for="input_int_margin_l_for_violin_graph">Left Margin (pixels)</label>
-            </div>
-          </div>
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_violin_graph"></textarea>
-                <label for="input_int_margin_b_for_violin_graph">Bottom Margin (pixels)</label>
-            </div>
-          </div>
-        </div>
-    </div>
-      
-    <div id="panel_figure_size_and_margin_setting_for_dot_graph">
-        <div class="row g-2">
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1200" id="input_int_fig_size_x_for_dot_graph"></textarea>
-                <label for="input_int_fig_size_x_for_dot_graph">Width (pixels)</label>
-            </div>
-          </div>
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1000" id="input_int_fig_size_y_for_dot_graph"></textarea>
-                <label for="input_int_fig_size_y_for_dot_graph">Height (pixels)</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="row g-2">
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1200" id="input_int_margin_l_for_dot_graph"></textarea>
-                <label for="input_int_margin_l_for_dot_graph">Left Margin (pixels)</label>
-            </div>
-          </div>
-          <div class="col-md">
-            <div class="form-floating">
-                <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_dot_graph"></textarea>
-                <label for="input_int_margin_b_for_dot_graph">Bottom Margin (pixels)</label>
-            </div>
-          </div>
-        </div>
-    </div>
-    
-    <div id="plotting_panel_title_marker_size">
-      <h5>Marker (Point) Size</h5>
-    </div>
-    <div class="form-check form-switch" id="plotting_panel_switch_responsive_marker_size_or_static">
-        <input class="form-check-input" type="checkbox" id="switch_responsive_marker_size_or_static">
-        <label class="form-check-label" for="switch_responsive_marker_size_or_static">Responsive Marker (Point) Size</label>
-    </div>
-    <div class="form-floating" id="plotting_panel_input_int_marker_size_for_scatter">
-        <textarea class="form-control" placeholder="3" id="input_int_marker_size_for_scatter"></textarea>
-        <label for="input_int_marker_size_for_scatter">Marker Size (pixels)</label>
-    </div>
-    <div class="form-floating" id="plotting_panel_input_int_marker_size_for_dot_plot">
-        <textarea class="form-control" placeholder="3" id="input_int_marker_size_for_dot_plot"></textarea>
-        <label for="input_int_marker_size_for_dot_plot">Marker Size (pixels)</label>
-    </div>
-    <br>
         
   </div>
 </div>
@@ -648,7 +693,11 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
 </body>
     
 <script>
+// dependencies of Tagify
+var DragSort=function(t){var e,i=0,s={},r={},a=(e=window.MutationObserver||window.WebKitMutationObserver,function(t,i){t&&1===t.nodeType&&(e?new e((function(t,e){i(t)})).observe(t,{childList:!0,subtree:!1}):window.addEventListener&&t.addEventListener("DOMNodeInserted",i,!1))});function n(t,e){if(!t)return this;e=e||{},this.parentElm=t,this.uid=e.uid,this.settings={selector:"*",callbacks:{}},Object.assign(this.settings,e),this.setup(),a(this.parentElm,this.setup.bind(this)),this.bindEvents()}return n.prototype={namespace:"dragsort",setup(){[...this.parentElm.childNodes].forEach(t=>{if(1!=t.nodeType)return t.parentNode.removeChild(t);t.matches(this.settings.selector)&&(t.draggable=!0)}),this.gap=this.getItemsGap(this.parentElm.firstElementChild)},throttle(t,e){var i=!1,s=this;return function(r){i||(t.call(s,r),i=!0,setTimeout(()=>i=!1,e))}},getDraggableElm(t){var e=t.closest('[draggable="true"]');return this.uid==s.uid?e:null},dragstart(t,e){s=this;var i,r=this.getDraggableElm(e);r?(this.source=this.getInitialState(),this.target=this.getInitialState(),i=r.getBoundingClientRect(),this.source.elm=r,this.source.idx=this.getNodeIndex(r),this.source.size.width=i.width,this.source.size.height=i.height,t.dataTransfer.effectAllowed="move",setTimeout(this.afterDragStart.bind(this))):s={}},afterDragStart(){var t="vertical"==this.settings.mode?"height":"width";this.parentElm.classList.add(this.namespace+"--dragStart"),this.source.elm.style[t]=this.source.size[t]+"px",this.source.elm.classList.add(this.namespace+"--dragElem")},dragover(t){t.preventDefault(),t.stopPropagation();var e=t.target;if((e=this.getDraggableElm(e))&&this.target){var i=this.target.elm,s=this.target.hoverDirection;t.dataTransfer.dropEffect="move",this.target.hoverDirection=this.getTargetDirection(t),i==e&&s==this.target.hoverDirection||this.directionAwareDragEnter(t,e)}},dragenter(t,e){(e=this.getDraggableElm(e))&&this.target&&this.isValidElm(e)&&this.source.elm!=e&&this.source.elm&&(this.target.bounding=e.getBoundingClientRect())},directionAwareDragEnter(t,e){var i;t.preventDefault(),t.stopPropagation(),t.dataTransfer.dropEffect="none",this.isValidElm(e)&&this.source.elm!=e&&this.source.elm&&(t.dataTransfer.dropEffect="move",this.cleanupLastTarget(),this.target.elm=e,this.target.idx=this.getNodeIndex(e),e.classList.add("over"),i=Math.abs(this.target.idx-this.source.idx),this.source.elm.classList.toggle(this.namespace+"--hide",i>0),"vertical"==this.settings.mode?this.target.elm.style[this.target.hoverDirection?"marginBottom":"marginTop"]=this.source.size.height+this.gap+"px":this.target.elm.style[this.target.hoverDirection?"marginRight":"marginLeft"]=this.source.size.width+this.gap+"px")},dragend(t){if(clearTimeout(this.dragoverTimeout),this.dragoverTimeout=null,this.parentElm.classList.remove(this.namespace+"--dragStart"),!this.isValidElm(this.target.elm))return this.cleanup();var e=this.target.hoverDirection?this.target.elm.nextElementSibling:this.target.elm;return this.source.elm!=this.target.elm&&this.target.elm&&(this.target.elm.classList.add(this.namespace+"--noAnim"),this.cleanup(),this.parentElm.insertBefore(this.source.elm,e)),this.source.elm&&this.source.elm.classList.remove(this.namespace+"--dragElem",this.namespace+"--hide"),this.settings.callbacks.dragEnd(this.source.elm),this},isTargetLastChild(){return this.parentElm.lastElementChild==this.target.elm},getTargetDirection(t){if(this.target.bounding)return"vertical"==this.settings.mode?t.pageY>this.target.bounding.top+this.target.bounding.height/2?1:0:t.pageX>this.target.bounding.left+this.target.bounding.width/2?1:0},getNodeIndex(t){for(var e=0;t=t.previousSibling;)3==t.nodeType&&/^\s*$/.test(t.data)||e++;return e},isValidElm(t){return t&&t.nodeType&&t.parentNode==this.parentElm},cleanup(){s={},[...this.parentElm.children].forEach(t=>{t.removeAttribute("style"),setTimeout(()=>{t.classList.remove(this.namespace+"--over",this.namespace+"--noAnim",this.namespace+"--dragElem")},50)})},cleanupLastTarget(){this.target.elm&&(this.target.elm.classList.remove(this.namespace+"--hide",this.namespace+"--over"),this.target.elm.removeAttribute("style"))},getInitialState:()=>({elm:null,size:{}}),getItemsGap(t){var e=getComputedStyle(t);return"vertical"==this.settings.mode?parseInt(e.marginTop)+parseInt(e.marginBottom):parseInt(e.marginLeft)+parseInt(e.marginRight)},bindEvents(t){for(var e in this.listeners=this.listeners||{dragstart:t=>this.dragstart(t,t.target),dragenter:t=>this.dragenter(t,t.target),dragend:t=>this.dragend(t,t.target),dragover:this.throttle(this.dragover,350)},this.listeners)this.parentElm[t?"removeEventListener":"addEventListener"](e,this.listeners[e])},destroy(){this.cleanup(),this.bindEvents(!0),delete r[this.uid]}},function(t,e){return r[++i]=t._DragSort?r[t._DragSort]:new n(t,{...e,uid:i}),t._DragSort=i,r[i]}}();
 
+    
+    
 /*
 Implementation of RamData.js [START]
 */
@@ -2882,8 +2931,65 @@ function Select_SelectOption_Using_ID( id_selectElement, value ) { // select val
         sel.value = value;
     }
 }
+// tagify functions
+function Tagify_check_Tagify_UsingID( id_element ) { // return True if the given element contains a tagify object
+    let el = document.getElementById( id_element );
+    return '__tagify' in el;
+}
+function Tagify_Destroy_UsingID( id_element ) { // destroy the tagify object from the element
+    let el = document.getElementById( id_element );
+    if ( '__tagify' in el ) { 
+        if ( 'destroy' in el.__tagify  ) {
+            el.__tagify.destroy( )
+        }
+    }
+}
+function Tagify_Initialize_UsingID( id_element, enforceWhitelist = true, whitelist = [ ], flag_dragsort = false, maxTags = 50, maxItems = 20 ) {
+    // init Tagify script on the above inputs
+    var el = document.getElementById( id_element ),
+        tagify = new Tagify( el, {
+            enforceWhitelist : enforceWhitelist,
+            whitelist: whitelist,
+            maxTags: maxTags,
+            dropdown: {
+                maxItems: maxItems,           // <- mixumum allowed rendered suggestions
+                classname: "tags-look", // <- custom classname for this dropdown, so it could be targeted
+                enabled: 0,             // <- show suggestions on focus
+                closeOnSelect: false    // <- do not hide the suggestions dropdown once an item has been selected
+            }
+        });
+    if ( flag_dragsort ) {
+        // function for DragSort of Tagify tags
+        // must update Tagify's value according to the re-ordered nodes in the DOM
+        function onDragEnd(elm){
+            tagify.updateValueByDOMTags()
+        }
+        // bind "DragSort" to Tagify's main element and tell
+        // it that all the items with the below "selector" are "draggable"
+        var dragsort = new DragSort( tagify.DOM.scope, {
+            selector: '.'+tagify.settings.classNames.tag,
+            callbacks: {
+                dragEnd: onDragEnd
+            }
+        });
+    }
+    return tagify // return the object
+}
+function Tagify_AddTags_UsingID( id_element, l_tags ) {
+    // add tags to a Tagify object script on the above inputs
+    let tagify = document.getElementById( id_element ).__tagify; // retrieve the tagify object
+    tagify.addTags( l_tags );
+}
+function Tagify_GetTagTitles_UsingID( id_element ) {
+    // add tags to a Tagify object script on the above inputs
+    let tagify = document.getElementById( id_element ).__tagify, // retrieve the tagify object
+        l_tagtitle = [ ]; // initialize a list of titles of the tags
+    for ( let e of tagify.getTagElms() ) {
+        l_tagtitle.push( e.title );
+    }
+    return l_tagtitle;
+}
     
-
 // functions for plotting and interacting with html document
 // for argsort
 let argsort = arr => arr.map( (v, i) => [v, i] ).sort( ).map( a => a[ 1 ] ); // a function for arg-sorting an array
@@ -3059,11 +3165,15 @@ let dict_data = {
         'modal_for_tutorial_plot_anndata' : new bootstrap.Modal( document.getElementById('modal_for_tutorial_plot_anndata'), { keyboard: false, backdrop: false, focus: true } ),
         'modal_keyboard_shortcuts' : new bootstrap.Modal( document.getElementById('modal_keyboard_shortcuts'), { keyboard: true, backdrop: true, focus: true } ),
     },
+    'tagify_components' : {
+        
+    },
     'misc' : { // miscellaneous variables
         'name_option_no_filter' : 'no filter (all entries)',
         'function_colormap_rainbow' : chroma.scale( [ '#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00', '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff', '#ff0080' ] ).mode( 'lab' ), // colormaps
         'name_none' : 'None', // name of 'None' values
         'int_max_length_text_label' : 70, // the maximum length of a string for text label
+        'int_max_num_tags' : 100, // the maximum number of tags that can be included in the single text area (for performance optimization)
     }
 }
 // colormap examples
@@ -3584,13 +3694,13 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     document.getElementById( 'input_int_margin_b_for_dot_graph' ).value = '50';
     
     // figname
-    document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'ELDB_violin_plot';
+    document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'violin_plot';
     document.getElementById( "input_str_name_figure_for_violin_graph" ).value = '';
     
-    document.getElementById( "input_str_name_panel_for_dot_graph" ).value = 'ELDB_dot_plot';
+    document.getElementById( "input_str_name_panel_for_dot_graph" ).value = 'dot_plot';
     document.getElementById( "input_str_name_figure_for_dot_graph" ).value = '';
     
-    document.getElementById( "input_str_name_panel_for_scatter_graph" ).value = 'ELDB_scatter_plot';
+    document.getElementById( "input_str_name_panel_for_scatter_graph" ).value = 'scatter_plot';
     document.getElementById( "input_str_name_figure_for_scatter_graph" ).value = '';
     
     // marker size
@@ -3601,28 +3711,29 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
     document.getElementById( "input_path_remote_ramdata" ).value = 'https://scelephant.s3.amazonaws.com/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/'; // example external object
     document.getElementById( "radio_select_type_graph" ).click( ); // select type of the graph
+    SwitchAdvancedSetting( ); // modify layout based on the setting
     
     if ( flag_perform_demonstration ) {
         /*
         Demonstration
         */
         // load ELDB
-        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db', 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" );
+        await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata' );
         await RetrieveAnnData( name_ramdata = 'ram' );
 
         // demonstrate violin plot
-        document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'ELDB_violin_plot_example';
+        document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'violin_plot';
         document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
         document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_violin" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate dot plot
-        document.getElementById( "input_str_name_panel_for_dot_graph" ).value = 'ELDB_dot_plot_example';
+        document.getElementById( "input_str_name_panel_for_dot_graph" ).value = 'dot_plot';
         document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_dot" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate scatter plot
-        document.getElementById( "input_str_name_panel_for_scatter_graph" ).value = 'ELDB_scatter_plot_example';
+        document.getElementById( "input_str_name_panel_for_scatter_graph" ).value = 'scatter_plot';
         document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
         document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
@@ -3631,7 +3742,7 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
 }
     
 // UI components for retrieving RamData, AnnData, and visualize AnnData
-async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', name_col_filter_default_bc = 'filtered_barcodes', l_name_col_obs_default = [ 'metadata__EBI_SCE__cell_type', 'metadata__EBI_SCE__organism_part', 'dataset_source' ], l_name_col_obsm_default = [ "X_umap_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding" ], name_col_filter_default_ft = 'no filter (all entries)', input_str_gene_names_default = "PTPRC, ITGAM, CD3D, CD19, KRT5, PDGFRB, TNFRSF17, CTRB1, TEKT1, ISL1, CLDN11, SFTPA1, PHGR1, NPHS2, AQP2, CLCNKA, UPK1A, LHCGR, TPSB2, TH, MUC16, MPZ, FEV, ORM1, INS" ) {
+async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata' ) {
     // get URL of the selected ramdata object
     let path_folder_ramdata,
         name_option_no_filter = dict_data.misc.name_option_no_filter;
@@ -3643,8 +3754,6 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', 
     
     // set default adata name
     document.getElementById( "input_str_name_adata_output" ).value = name_adata_default;
-    // set default string representations of the entries of the feature axis
-    document.getElementById( "input_str_gene_names" ).value = input_str_gene_names_default;
     
     // load ramdata
     let ram = new RamData( path_folder_ramdata );
@@ -3663,32 +3772,42 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', 
     l_name_col_ft = l_name_col_ft.sort( );
     l_name_layer = l_name_layer.sort( );
     
-    // remove options
+    let metadata = ram.metadata;
+    // remove options and tagify objects
     Select_RemoveOptions_Using_ID( 'select_filter_bc' );
-    Select_RemoveOptions_Using_ID( 'select_annotations_bc' );
-    Select_RemoveOptions_Using_ID( 'select_embedding' );
     Select_RemoveOptions_Using_ID( 'select_filter_ft' );
     Select_RemoveOptions_Using_ID( 'select_layer' );
-    
+    Tagify_Destroy_UsingID( 'choose_annotations_bc' );
+    Tagify_Destroy_UsingID( 'choose_embedding' );
+    Tagify_Destroy_UsingID( 'input_str_gene_names' );
+
     // add appropriate options
     Select_AddOptions_Using_ID( 'select_filter_bc', l_name_col_bc ); 
-    Select_AddOptions_Using_ID( 'select_annotations_bc', l_name_col_bc ); 
-    Select_AddOptions_Using_ID( 'select_embedding', l_name_col_bc ); 
     Select_AddOptions_Using_ID( 'select_filter_ft', l_name_col_ft ); 
     Select_AddOptions_Using_ID( 'select_layer', l_name_layer ); 
+    Tagify_Initialize_UsingID( 'choose_annotations_bc', true, l_name_col_bc, false, 20, 20 ); 
+    Tagify_Initialize_UsingID( 'choose_embedding', true, l_name_col_bc, false, 20, 20 ); 
+    if ( metadata[ 'default-ft-load_str' ] ) { // if feature axis string representations are loaded by default, use the string representations of the feature axis as the white list
+        let arr_str_rep_ft = await ram.ft.load_str( );
+        Tagify_Initialize_UsingID( 'input_str_gene_names', true, arr_str_rep_ft, false, 50, 50 ); 
+    } else { // if string representations are not loaded by default, disable the white-list-enforcing feature.
+        Tagify_Initialize_UsingID( 'input_str_gene_names', false, [ ], false, 50, 50 ); 
+    }
     
     // select default filters
-    Select_SelectOption_Using_ID( 'select_filter_bc', name_col_filter_default_bc );
-    Select_SelectOption_Using_ID( 'select_filter_ft', name_col_filter_default_ft );
-    Select_SelectOption_Using_ID( 'select_annotations_bc', l_name_col_obs_default );
-    Select_SelectOption_Using_ID( 'select_embedding', l_name_col_obsm_default );
+    Select_SelectOption_Using_ID( 'select_filter_bc', check_none( metadata[ 'default-bc-filter' ] ) ? name_option_no_filter : metadata[ 'default-bc-filter' ] );
+    Select_SelectOption_Using_ID( 'select_filter_ft', check_none( metadata[ 'default-ft-filter' ] ) ? name_option_no_filter : metadata[ 'default-ft-filter' ] );
+    Select_SelectOption_Using_ID( 'select_layer', metadata[ 'default-layer' ] ); 
+    Tagify_AddTags_UsingID( 'choose_annotations_bc', metadata[ 'default-bc-l_name_col_of_obs' ] ); 
+    Tagify_AddTags_UsingID( 'choose_embedding', metadata[ 'default-bc-l_name_col_of_obsm' ] ); 
+    Tagify_AddTags_UsingID( 'input_str_gene_names', metadata['default-ft-l_str_repr'] ); 
     
     // close current panel
     dict_data.bs_components.offcanvasLoadRamData.hide( );
     // show next panel
     dict_data.bs_components.offcanvasRetrieveAnnData.show( );
 }
-
+    
 function UpdatePanelPlotAnnData( ) {
     /*
     update the panel for plotting AnnData for the AnnData currently selected in 'select_adata'
@@ -3696,7 +3815,7 @@ function UpdatePanelPlotAnnData( ) {
     let name_anndata = Select_Get_Selected_Option_Using_ID( 'select_adata' ).value, // retrieve name of the selected AnnData
         adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve anndata
         l_str_entry_ft = adata.var.get_column( 'str' ).sort( ), // retrieve list of str_entry_ft
-        l_name_col_obs = [ ... difference( adata.obs.columns, new Set( [ 'str' ] ) ) ].sort( );
+        l_name_col_obs = [ ... difference( adata.obs.columns, new Set( [ 'str' ] ) ) ].sort( ),
         l_name_col_obsm = Object.keys( adata.obsm );
     
     // reset options
@@ -3709,8 +3828,18 @@ function UpdatePanelPlotAnnData( ) {
     Select_AddOptions_Using_ID( 'select_annotations_bc_for_plot', l_name_col_obs ); 
     Select_AddOptions_Using_ID( 'select_embedding_for_plot', l_name_col_obsm ); 
     
-    // set appropriate default input
-    document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value = l_str_entry_ft.join( ', ' );
+    UpdateCategories( );// update categories
+    
+    // set appropriate default input feature representations
+    Tagify_Destroy_UsingID( 'input_l_str_entry_ft_for_plotting' );
+    
+    if ( dict_data.misc.int_max_num_tags >= l_str_entry_ft.length ) {
+        Tagify_Initialize_UsingID( 'input_l_str_entry_ft_for_plotting', true, l_str_entry_ft, true, 100, 50 ); // enable drag-sort
+        Tagify_AddTags_UsingID( 'input_l_str_entry_ft_for_plotting', l_str_entry_ft ); 
+    } else {
+        // if the number of tags exceeds the limit, use (fall back to) the simple text area 
+        document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value = l_str_entry_ft.join( ', ' );
+    }
 }
 async function RetrieveAnnData( name_ramdata = 'ram' ) {
     /*
@@ -3726,12 +3855,12 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
     
     // retrieve list of input columns and values
     let name_col_filter_bc = Select_Get_Selected_Option_Using_ID( 'select_filter_bc' ).value,
-        l_name_col_obs = Select_Get_Selected_Option_Using_ID( 'select_annotations_bc' ).map( ( opt ) => { return opt.value; } ).sort( ),
-        l_name_col_obsm = Select_Get_Selected_Option_Using_ID( 'select_embedding' ).map( ( opt ) => { return opt.value; } ).sort( ),
+        l_name_col_obs = Tagify_GetTagTitles_UsingID( 'choose_annotations_bc' ).sort( ),
+        l_name_col_obsm = Tagify_GetTagTitles_UsingID( 'choose_embedding' ).sort( ),
         name_col_filter_ft = Select_Get_Selected_Option_Using_ID( 'select_filter_ft' ).value,
         name_layer = Select_Get_Selected_Option_Using_ID( 'select_layer' ).value,
         name_anndata = document.getElementById( 'input_str_name_adata_output' ).value,
-        l_str_entry_feature = document.getElementById( 'input_str_gene_names' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ); // retrieve a list of string representations of the entries of the feature axis // filter out invalid entries (zero length)
+        l_str_entry_feature = Tagify_GetTagTitles_UsingID( 'input_str_gene_names' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ); // retrieve a list of string representations of the entries of the feature axis // filter out invalid entries (zero length)
 
     // load barcode filter
     if ( name_col_filter_bc != name_option_no_filter ) {
@@ -3779,8 +3908,8 @@ async function PlotAnnData( ) {
         int_marker_size_for_scatter_plot = parseInt( document.getElementById( 'input_int_marker_size_for_scatter' ).value ),
         input_int_marker_size_for_dot_plot = parseInt( document.getElementById( 'input_int_marker_size_for_dot_plot' ).value ),        
         input_float_vmax = parseFloat( document.getElementById( 'input_float_vmax' ).value ),
-        l_str_entry_feature = document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ),
-        l_name_category_in_col_obs = document.getElementById( 'input_l_category_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ),
+        l_str_entry_feature = Tagify_check_Tagify_UsingID( 'input_l_str_entry_ft_for_plotting' ) ? Tagify_GetTagTitles_UsingID( 'input_l_str_entry_ft_for_plotting' ) : document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ), // retrieve values from either tagify object or simple text area
+        l_name_category_in_col_obs = Tagify_check_Tagify_UsingID( 'input_l_category_for_plotting' ) ? Tagify_GetTagTitles_UsingID( 'input_l_category_for_plotting' ) : document.getElementById( 'input_l_category_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ), // retrieve values from either tagify object or simple text area
         
         // figsize settings
         int_fig_size_x_for_scatter_graph = parseInt( document.getElementById( 'input_int_fig_size_x_for_scatter_graph' ).value ),
@@ -3807,7 +3936,6 @@ async function PlotAnnData( ) {
 
         str_name_panel_for_dot_graph = document.getElementById( 'input_str_name_panel_for_dot_graph' ).value,
         str_name_figure_for_dot_graph = document.getElementById( 'input_str_name_figure_for_dot_graph' ).value,
-
         
         adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve the reference
         dict_key_args_for_draw_graph = { 'name_feature' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'margin' : { l : int_margin_l_for_scatter_graph, b : int_margin_b_for_scatter_graph }, 'fig_size' : [ int_fig_size_x_for_scatter_graph, int_fig_size_y_for_scatter_graph ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size_for_scatter_plot' : isNaN( int_marker_size_for_scatter_plot ) ? 3 : int_marker_size_for_scatter_plot, 'marker_size_for_dot_plot' : isNaN( input_int_marker_size_for_dot_plot ) ? 3 : input_int_marker_size_for_dot_plot }; // keyworded arguments for the draw_graph function
@@ -3869,9 +3997,31 @@ function UpdateCategories( ) {
         }
     }
     // set 'input_l_category_for_plotting'
-    document.getElementById( 'input_l_category_for_plotting' ).value = [ ... set_val_obs ].sort( ).join( ', ' ) // sort by string
+    let l_category = [ ... set_val_obs ].sort( ); // sort by string
+    Tagify_Destroy_UsingID( 'input_l_category_for_plotting' );
+    if ( dict_data.misc.int_max_num_tags >= l_category.length ) {
+        Tagify_Initialize_UsingID( 'input_l_category_for_plotting', true, l_category, true, 100, 50 ); // enable drag-sort
+        Tagify_AddTags_UsingID( 'input_l_category_for_plotting', l_category ); 
+    } else {
+        // if the number of tags exceeds the limit, use (fall back to) the simple text area 
+        document.getElementById( 'input_l_category_for_plotting' ).value = l_category.join( ', ' );
+    }
 }
 
+function SwitchAdvancedSetting( ) {
+    /*
+    switch between advanced setting and simple setting
+    */
+    let flag_advanced_mode = document.getElementById( 'switch_simple_or_advanced' ).checked; // retrieve a flag indicating advanced mode is active
+    
+    document.getElementById( 'panel_figure_setting_advanced' ).hidden = ! flag_advanced_mode;
+    document.getElementById( 'panel_select_layer' ).hidden = ! flag_advanced_mode;    
+    document.getElementById( 'panel_input_str_name_adata_output' ).hidden = ! flag_advanced_mode;
+    document.getElementById( 'panel_select_filter_ft' ).hidden = ! flag_advanced_mode;
+    document.getElementById( 'plotting_panel_data_setting_advanced' ).hidden = ! flag_advanced_mode;
+    document.getElementById( 'plotting_panel_select_adata' ).hidden = ! flag_advanced_mode;
+}
+    
 function RearrangePlottingPanel( ) {
     /*
     rearrange plotting panel appropriate for each graph type for better interactivity
