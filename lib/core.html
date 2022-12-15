@@ -9,6 +9,10 @@ minor modification of plotting functions
 
 # 2022/12/15
 commit prior to major modification of interface 
+
+# 
+v0.0.2 update
+scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0.0.10
 -->
     
 <!-- Required meta tags -->
@@ -27,6 +31,11 @@ commit prior to major modification of interface
 <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js" integrity="sha512-zInFF17qBFVvvvFpIfeBzo7Tj7+rQxLeTJDmbxjBz5/zIr89YVbTNelNhdTT+/DCrxoVzBeUPVFJsczKbB7sew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- for colormaps -->
 <script src="https://cdn.jsdelivr.net/npm/hotkeys-js@3.8.1/dist/hotkeys.min.js" integrity="sha256-4nmnbhmVpr2Rg64+7ysAr93+vQrfc0UvHWwm4W6uXJM=" crossorigin="anonymous"></script><!--hotkeys to add keyboard shortcuts-->
+
+<!-- Tagify -->
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
     
 <!-- 
 <script type="module">
@@ -2533,7 +2542,6 @@ class RamData {
         this.int_num_barcodes = this.metadata[ 'int_num_barcodes' ];
         this.int_num_features = this.metadata[ 'int_num_features' ];
         this.identifier = this.metadata[ 'identifier' ];
-        this.metadata.layers = new Set( this.metadata.layers ); // get a set of name_layer
         this.layers = this.metadata.layers
         
         // load RamDataAxis
@@ -2562,7 +2570,7 @@ class RamData {
             str_filter_ft = check_none( this.ft.filter ) ? '' : this.ft.meta.get_n_rows( ).toString( ) + '/',
             str_layer = check_none( this.layer ) ? '' : `, ${this.layer.int_num_records} records in the currently active layer '${this.layer.name}'`,
             str_name_layer = check_none( this.layer ) ? 'None' : this.layer.name;
-        return `<(read-only) RamData object (${str_filter_bc}${this.metadata[ 'int_num_barcodes' ]} barcodes X ${str_filter_ft}${this.metadata[ 'int_num_features' ]} features` + str_layer + `) stored at ${this._path_folder_ramdata} with the following layers : ${[ ... this.layers ]} (current layer is '${str_name_layer}')>` // show the number of records of the current layer if available.
+        return `<(read-only) RamData object (${str_filter_bc}${this.metadata[ 'int_num_barcodes' ]} barcodes X ${str_filter_ft}${this.metadata[ 'int_num_features' ]} features` + str_layer + `) stored at ${this._path_folder_ramdata} with the following layers : ${Object.keys( this.layers ).length} (current layer is '${str_name_layer}')>` // show the number of records of the current layer if available.
     }
     async change_filter( name_col_filter = undefined, name_col_filter_bc = undefined, name_col_filter_ft = undefined ) {
         /* # 2022-07-16 17:27:58 
@@ -2678,7 +2686,7 @@ class RamData {
             }
         }
         // if the first argument appears to be 'name_layer', load the layer and drop the argument
-        if ( ( typeof args[ 0 ] == 'string' ) & ( this.layers.has( args[ 0 ] ) ) ) {
+        if ( ( typeof args[ 0 ] == 'string' ) & ( args[ 0 ] in this.layers ) ) {
             let name_layer = args[ 0 ];
             await this.load_layer( name_layer ); // load the layer
             args = args.slice( 1 );
@@ -2710,13 +2718,13 @@ class RamData {
         
         // load a layer
         if ( check_none( this.layer ) ) {
-            if ( this.layers.size == 0 ) { // # if no layer is available
+            if ( Object.keys( this.layers ).length == 0 ) { // # if no layer is available
                 if ( this.verbose ) {
                     console.log( 'no layer is available. current implementation requires at least one layer, exiting' );
                     return;
                 }
             }
-            await this.load_layer( [ ... this.layers ][ 0 ] ); // load any layer
+            await this.load_layer( Object.keys( this.layers )[ 0 ] ); // load any layer
         }
         
         // compose filters from the queried entries
@@ -3650,7 +3658,7 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata', 
     // retrieve sorted lists of columns for bc and ft axes
     let l_name_col_bc = [ name_option_no_filter, ... ram.bc.meta.columns ], // default setting is no filter (all entries)
         l_name_col_ft = [ name_option_no_filter, ... ram.ft.meta.columns ], // default setting is no filter (all entries)
-        l_name_layer = [ ... ram.layers ];
+        l_name_layer = Object.keys( ram.layers );
     l_name_col_bc = l_name_col_bc.sort( );
     l_name_col_ft = l_name_col_ft.sort( );
     l_name_layer = l_name_layer.sort( );
@@ -3726,11 +3734,11 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
         l_str_entry_feature = document.getElementById( 'input_str_gene_names' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ); // retrieve a list of string representations of the entries of the feature axis // filter out invalid entries (zero length)
 
     // load barcode filter
-    if ( name_col_filter_bc == name_option_no_filter ) {
+    if ( name_col_filter_bc != name_option_no_filter ) {
         await ram.bc.change_filter( name_col_filter_bc );
     }
     // load feature filter
-    if ( name_col_filter_ft == name_option_no_filter ) {
+    if ( name_col_filter_ft != name_option_no_filter ) {
         await ram.ft.change_filter( name_col_filter_ft )
     }
     // create view before retrieving data
