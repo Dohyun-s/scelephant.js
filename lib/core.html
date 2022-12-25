@@ -13,6 +13,10 @@ commit prior to major modification of interface
 # 
 v0.0.2 update
 scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0.0.10
+
+# 20221226
+improved initialization of tagify instances of the UI components
+
 -->
     
 <!-- Required meta tags -->
@@ -290,7 +294,7 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
         </select>
         <br>
     </div>      
-    <label for="input_str_gene_names">Gene Symboles (separated by comma)</label>
+    <label for="input_str_gene_names">Gene Symbols</label>
     <div class="d-grid mx-1 gap-1"><textarea id="input_str_gene_names" class="rcorner" aria-label="input_str_gene_names"></textarea></div>
     <br>
      
@@ -2936,18 +2940,31 @@ function Tagify_check_Tagify_UsingID( id_element ) { // return True if the given
     let el = document.getElementById( id_element );
     return '__tagify' in el;
 }
-function Tagify_Destroy_UsingID( id_element ) { // destroy the tagify object from the element
+function Tagify_Destroy_UsingID( id_element, flag_clear_previous_tags = true ) { // destroy the tagify object from the element
+    /*
+    flag_clear_previous_tags = true // clear the tags that have been previously added to the tagify instance 
+    */
     let el = document.getElementById( id_element );
     if ( '__tagify' in el ) { 
         if ( 'destroy' in el.__tagify  ) {
             el.__tagify.destroy( )
         }
     }
+    if ( flag_clear_previous_tags ) {
+        el.value = '' // clear previous tags
+    }
 }
-function Tagify_Initialize_UsingID( id_element, enforceWhitelist = true, whitelist = [ ], flag_dragsort = false, maxTags = 50, maxItems = 20 ) {
-    // init Tagify script on the above inputs
-    var el = document.getElementById( id_element ),
-        tagify = new Tagify( el, {
+function Tagify_Initialize_UsingID( id_element, enforceWhitelist = true, whitelist = [ ], flag_dragsort = false, maxTags = 50, maxItems = 20, flag_clear_previous_tags = true ) {
+    /*
+    flag_clear_previous_tags = true // clear the tags that have been previously added to the tagify instance 
+    */
+    // prepare
+    var el = document.getElementById( id_element );
+    if ( flag_clear_previous_tags ) {
+        el.value = '' // clear previous tags
+    }
+    // initialize Tagify instance
+    let tagify = new Tagify( el, {
             enforceWhitelist : enforceWhitelist,
             whitelist: whitelist,
             maxTags: maxTags,
@@ -3708,8 +3725,10 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     document.getElementById( 'input_int_marker_size_for_dot_plot' ).value = '30';
     
     document.getElementById( "input_float_vmax" ).value = '5';
-    Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
+//     Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
+    Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220119_pancancer_cancer_associated_fibroblast_db.119770_barcodes_subsampled.ramdata/' ); // select ELDB database
     document.getElementById( "input_path_remote_ramdata" ).value = 'https://scelephant.s3.amazonaws.com/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/'; // example external object
+    
     document.getElementById( "radio_select_type_graph" ).click( ); // select type of the graph
     SwitchAdvancedSetting( ); // modify layout based on the setting
     
@@ -3723,19 +3742,19 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
 
         // demonstrate violin plot
         document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'violin_plot';
-        document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
+        document.getElementById( "select_str_entry_ft" ).value = 'CTRB1'; // 'PTPRC';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'disease' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_violin" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate dot plot
         document.getElementById( "input_str_name_panel_for_dot_graph" ).value = 'dot_plot';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'disease' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_dot" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate scatter plot
         document.getElementById( "input_str_name_panel_for_scatter_graph" ).value = 'scatter_plot';
-        document.getElementById( "select_str_entry_ft" ).value = 'PTPRC';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
+        document.getElementById( "select_str_entry_ft" ).value = 'CTRB1'; // 'PTPRC';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'disease' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
         await PlotAnnData( ); // plot graph
     }
