@@ -16,6 +16,9 @@ scelephant.js v0.0.1 is incompatible with RamData analyzed with scelephant.py v0
 
 # 20221226
 improved initialization of tagify instances of the UI components
+
+# 20230106
+resolved an error in a method ploting a dot plot when None values were included.
 -->
     
 <!-- Required meta tags -->
@@ -2994,7 +2997,7 @@ function Tagify_Initialize_UsingID( id_element, enforceWhitelist = true, whiteli
 function Tagify_AddTags_UsingID( id_element, l_tags ) {
     // add tags to a Tagify object script on the above inputs
     let tagify = document.getElementById( id_element ).__tagify; // retrieve the tagify object
-    tagify.addTags( l_tags );
+    tagify.addTags( l_tags.map( e => { return { 'value' : e }; } ) ); // wrap inside a dictionary to avoid Tagify spliting tags containing ',' character into smaller tags
 }
 function Tagify_GetTagTitles_UsingID( id_element ) {
     // add tags to a Tagify object script on the above inputs
@@ -3552,8 +3555,12 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         }
         config = { ... config, filename: `single-cell-violin-graph-${dict_kw_args[ 'name_feature' ]}` };
     } else if ( dict_kw_args[ 'name_type_graph' ] == 'dot' ) {
+        function get_name_cat_for_vis( e ) {
+            // function for converting name category to name category for visualization
+            return check_none( e ) ? dict_data.misc.name_none : string_shorten( e, dict_data.misc.int_max_length_text_label, '...' );
+        }
         let set_str_entry_feature = new Set( dict_kw_args[ 'l_str_entry_feature' ] ), 
-            l_name_category_in_col_obs = dict_kw_args[ 'l_name_category_in_col_obs' ].map( ( e ) => { return string_shorten( e, dict_data.misc.int_max_length_text_label, '...' ); } ), // for dot-plot shorten the category name 
+            l_name_category_in_col_obs = dict_kw_args[ 'l_name_category_in_col_obs' ].map( ( e ) => { return get_name_cat_for_vis( e ); } ), // for dot-plot shorten the category name 
             set_name_category_in_col_obs = new Set( l_name_category_in_col_obs ); // retrieve initial set of categories from the input
         set_str_entry_feature = intersection( set_str_entry_feature, new Set( adata.var.get_column( 'str' ) ) ); // retrieve intersection with the genes 
         
@@ -3568,7 +3575,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 
                 // modify name of category to visualize the name better on the graph
                 if ( ! ( e in dict_name_cat_to_name_cat_for_vis ) ) {
-                    dict_name_cat_to_name_cat_for_vis[ e ] = string_shorten( e, dict_data.misc.int_max_length_text_label, '...' );
+                    dict_name_cat_to_name_cat_for_vis[ e ] = get_name_cat_for_vis( e );
                 } 
                 e = dict_name_cat_to_name_cat_for_vis[ e ];
 
@@ -4019,8 +4026,9 @@ function UpdateCategories( ) {
     let l_category = [ ... set_val_obs ].sort( ); // sort by string
     Tagify_Destroy_UsingID( 'input_l_category_for_plotting' );
     if ( dict_data.misc.int_max_num_tags >= l_category.length ) {
-        Tagify_Initialize_UsingID( 'input_l_category_for_plotting', true, l_category, true, 100, 50 ); // enable drag-sort
+        Tagify_Initialize_UsingID( 'input_l_category_for_plotting', true, l_category, true, dict_data.misc.int_max_num_tags, 50 ); // enable drag-sort
         Tagify_AddTags_UsingID( 'input_l_category_for_plotting', l_category ); 
+        console.log( `updating categories using ${l_category.length} number of categories`  );
     } else {
         // if the number of tags exceeds the limit, use (fall back to) the simple text area 
         document.getElementById( 'input_l_category_for_plotting' ).value = l_category.join( ', ' );
