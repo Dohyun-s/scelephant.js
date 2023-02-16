@@ -3734,7 +3734,7 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     document.getElementById( "input_float_vmax" ).value = '5';
 //     Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
     Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/ELDB.combined_v20221214.subset_160000_barcodes_fc6f94866e3247979d362c321ef96106.ramdata/' ); // select ELDB database
-    document.getElementById( "input_path_remote_ramdata" ).value = 'https://scelephant.s3.amazonaws.com/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/'; // example external object
+    document.getElementById( "input_path_remote_ramdata" ).value =  'http://172.27.30.99/web_applications/20220718_sce.js/TabulaSapiens-Epithelial.ramdata/'; // 'https://scelephant.s3.amazonaws.com/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/'; // example external object
     
     document.getElementById( "radio_select_type_graph" ).click( ); // select type of the graph
     SwitchAdvancedSetting( ); // modify layout based on the setting
@@ -3891,10 +3891,14 @@ async function RetrieveAnnData( name_ramdata = 'ram' ) {
     // load barcode filter
     if ( name_col_filter_bc != name_option_no_filter ) {
         await ram.bc.change_filter( name_col_filter_bc );
+    } else {
+        ram.bc.filter = null; // reset the filter
     }
     // load feature filter
     if ( name_col_filter_ft != name_option_no_filter ) {
         await ram.ft.change_filter( name_col_filter_ft )
+    } else {
+        ram.ft.filter = null; // reset the filter
     }
     // create view before retrieving data
     ram.ft.create_view( )
