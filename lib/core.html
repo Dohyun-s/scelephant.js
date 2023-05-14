@@ -19,6 +19,9 @@ improved initialization of tagify instances of the UI components
 
 # 20230106
 resolved an error in a method ploting a dot plot when None values were included.
+
+# 20230515
+added a word cloud plotting function for exploring metadata
 -->
     
 <!-- Required meta tags -->
@@ -37,7 +40,7 @@ resolved an error in a method ploting a dot plot when None values were included.
 <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js" integrity="sha512-zInFF17qBFVvvvFpIfeBzo7Tj7+rQxLeTJDmbxjBz5/zIr89YVbTNelNhdTT+/DCrxoVzBeUPVFJsczKbB7sew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- for colormaps -->
 <script src="https://cdn.jsdelivr.net/npm/hotkeys-js@3.8.1/dist/hotkeys.min.js" integrity="sha256-4nmnbhmVpr2Rg64+7ysAr93+vQrfc0UvHWwm4W6uXJM=" crossorigin="anonymous"></script><!--hotkeys to add keyboard shortcuts-->
-
+    
 <!-- Tagify -->
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
@@ -98,6 +101,18 @@ resolved an error in a method ploting a dot plot when None values were included.
     // import bitset for BitArray
     import bitset from 'https://cdn.skypack.dev/pin/bitset@v5.1.1-4j2vEKZuIS8eQEzMCWou/mode=imports,min/optimized/bitset.js';
     window.BitSet = bitset;
+    
+    // import d3
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+    window.d3 = d3;
+    
+    // import d3-cloud for [drawing word cloud]
+    import d3Cloud from "https://cdn.skypack.dev/pin/d3-cloud@v1.2.5-j5Ds8gBHbaXQbwAFnZV9/mode=imports,min/optimized/d3-cloud.js";
+    window.d3Cloud = d3Cloud;
+    
+    // import wordcloud2.js
+    import WordCloud from "https://cdn.skypack.dev/pin/wordcloud@v1.2.2-MCYCA3j8DHnkGUPArmCC/mode=imports,min/optimized/wordcloud.js";
+    window.WordCloud = WordCloud;
     
 //     // import umap.js for embedding
 //     import * as umapJs from 'https://cdn.skypack.dev/umap-js';
@@ -224,9 +239,9 @@ resolved an error in a method ploting a dot plot when None values were included.
 </nav>
     
 <!-- offcanvases -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasLoadRamData" aria-labelledby="offcanvasLoadRamDataLabel">
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasLoadRamData" aria-labelledby="offcanvasLoadRamDataLabel" style="width: 75vw">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasLoadRamDataLabel">Load RamData</h5>
+    <h4 class="offcanvas-title" id="offcanvasLoadRamDataLabel">Load RamData</h4>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="d-grid mx-3 gap-2">
@@ -254,7 +269,7 @@ resolved an error in a method ploting a dot plot when None values were included.
 <!-- offcanvas -->
 <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasRetrieveAnnData" aria-labelledby="offcanvasRetrieveAnnDataLabel" style="height: 90vh">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasRetrieveAnnDataLabel">Retrieve AnnData from RamData</h5>
+    <h4 class="offcanvas-title" id="offcanvasRetrieveAnnDataLabel">Retrieve AnnData from RamData</h4>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="d-grid mx-3 gap-2">
@@ -314,9 +329,9 @@ resolved an error in a method ploting a dot plot when None values were included.
 </div>
     
 <!-- offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasPlotAnnData" aria-labelledby="offcanvasPlotAnnDataLabel">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasPlotAnnData" aria-labelledby="offcanvasPlotAnnDataLabel" style="width: 485px">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasPlotAnnDataLabel">Plot AnnData</h5>
+    <h4 class="offcanvas-title" id="offcanvasPlotAnnDataLabel">Plot AnnData</h4>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="d-grid mx-3 gap-2">
@@ -346,12 +361,18 @@ resolved an error in a method ploting a dot plot when None values were included.
         
       <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_dot" autocomplete="off">
       <label class="btn btn-outline-primary" for="radio_select_type_graph_dot">Dot</label>
+        
+      <input type="radio" class="btn-check" name="radio_select_type_graph" id="radio_select_type_graph_word_cloud" autocomplete="off">
+      <label class="btn btn-outline-primary" for="radio_select_type_graph_word_cloud">Cloud</label>
     </div>
-    <br>
+
+    <br>  
+    <div id="name_graph_type"></div>
       
     <div>
       <h5>Data</h5>
     </div>
+    <br>
 
     <div class="form-floating" id="plotting_panel_select_str_entry_ft">
         <select class="form-select" aria-label="select_str_entry_ft" id="select_str_entry_ft">
@@ -3215,6 +3236,23 @@ function toggle_legend( name_div ) {
         layout_new = { ... div.layout, showlegend : flag_show_legend }; // when 'showlegend' attribute is absent in layout, legend is present. // toggle legends
     Plotly.relayout( div, layout_new ); // relayout the graph
 }
+function toggle_word_cloud( name_div ) {
+    /*
+    toggle a division containing word cloud
+    
+    'name_div' : the name of the division for the plotly graph.
+    */
+    console.log( name_div )
+    let div = document.getElementById( name_div ),
+        flag_show = document.getElementById( `switch_toggle_word_cloud_${name_div}` ).checked, // retrieve flag for showing legends
+        bsCollapse = new bootstrap.Collapse( `#word_cloud_container_${name_div}`, { toggle : false } ); // retrieve the collapse instance
+    if ( flag_show ) {
+        bsCollapse.show( );
+    } else {
+        bsCollapse.hide( );
+    }
+    delete bsCollapse;
+}
 function delete_div( name_div ) {
     /*
     delete the given div for plotting graph
@@ -3225,12 +3263,13 @@ function delete_div( name_div ) {
         dict_data.canvas.set_name_div.delete( name_div ); // delete the name of div from the set of divisions
     }
 }
-function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false, flag_create_legend_toggle_button = false ) {
+function create_div( name_div, style = "width:1100px;height:1100px;", flag_create_dual_div = false, flag_create_legend_toggle_button = false, flag_create_word_cloud_toggle_button = false, int_word_cloud_width = 850, int_word_cloud_height = 200, str_word_cloud_placeholder_text = "<i>please click a word to display its count</i>" ) {
     /*
     create a new div for plotting graph
     
     'flag_create_dual_div' : create two divisions next to each other
     'flag_create_legend_toggle_button' : create legend toggle button
+    'flag_create_word_cloud_toggle_button' = false : create toggle button for showing/hiding a word cloud for exploring metadata of the selected barcodes/group of the clicked barcode
     */
     let div_new = document.createElement( 'div' ),
         str_content_innerhtml = `<h5><span class="badge rounded-pill bg-secondary">${name_div}<button type="button" class="btn-close btn-close-white" aria-label="close figure" onclick="delete_div( '${name_div}' );"></button></span></h5>`; // initialize innerHTML content (add a badge indicating the panel)
@@ -3239,17 +3278,34 @@ function create_div( name_div, style = "width:1100px;height:1100px;", flag_creat
     if ( flag_create_dual_div ) {
         // add the legend toggle button
         // for dual div., legend will be hidden by default
-        if ( flag_create_legend_toggle_button ) {
-            str_content_innerhtml += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}__top__" onchange="toggle_legend( '${name_div}__top__' )"><label class="form-check-label" for="switch_toggle_legend_${name_div}__top__">show legend</label></div>`
+        if ( flag_create_legend_toggle_button ) { // add legend button only for the top division only
+            str_content_innerhtml += `<div class="form-check form-check-inline form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}__top__" onchange="toggle_legend( '${name_div}__top__' )"><label class="form-check-label" for="switch_toggle_legend_${name_div}__top__">show legend</label></div>`
         }
-        str_content_innerhtml += `<div id="${name_div}__top__" style="${style} class="plot"></div><div id="${name_div}__bottom__" style="${style} class="plot"></div>`;
-        
+        if ( flag_create_word_cloud_toggle_button ) { // add the word cloud toggle button to the first division 
+            str_content_innerhtml += `<div class="form-check form-check-inline form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_word_cloud_${name_div}__top__" onchange="toggle_word_cloud( '${name_div}__top__' )"><label class="form-check-label" for="switch_toggle_word_cloud_${name_div}__top__">show word cloud</label></div>`
+        }
+        str_content_innerhtml += `<div id="${name_div}__top__" style="${style} class="plot"></div>`; // add the first division
+        if ( flag_create_word_cloud_toggle_button ) { // add the word cloud toggle button to the second division 
+            str_content_innerhtml += `<div class="collapse" id="word_cloud_container_${name_div}__top__"><div id="word_cloud_callback_${name_div}__top__">${str_word_cloud_placeholder_text}</div><canvas id="word_cloud_${name_div}__top__" class="wordcloud" width="${int_word_cloud_width}" height="${int_word_cloud_height}"></canvas></div><div class="form-check form-check-inline form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_word_cloud_${name_div}__bottom__" onchange="toggle_word_cloud( '${name_div}__bottom__' )"><label class="form-check-label" for="switch_toggle_word_cloud_${name_div}__bottom__">show word cloud</label></div>`; // add collapse division of the first division
+        }
+        str_content_innerhtml += `<div id="${name_div}__bottom__" style="${style} class="plot"></div>`; // add the second division
+        if ( flag_create_word_cloud_toggle_button ) { // add the word cloud container of the second division 
+            str_content_innerhtml += `<div class="collapse" id="word_cloud_container_${name_div}__bottom__"><div id="word_cloud_callback_${name_div}__bottom__">${str_word_cloud_placeholder_text}</div><canvas id="word_cloud_${name_div}__bottom__" class="wordcloud" width="${int_word_cloud_width}" height="${int_word_cloud_height}"></canvas></div>`; // add a collapse division of the second division
+        }
     } else {
         // add the legend toggle button
         if ( flag_create_legend_toggle_button ) {
-            str_content_innerhtml += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}" onchange="toggle_legend( '${name_div}' )"><label class="form-check-label" for="switch_toggle_legend_${name_div}">show legend</label></div>`
+            str_content_innerhtml += `<div class="form-check form-check-inline form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_legend_${name_div}" onchange="toggle_legend( '${name_div}' )"><label class="form-check-label" for="switch_toggle_legend_${name_div}">show legend</label></div>`
+        }
+        // add the word cloud toggle button
+        if ( flag_create_word_cloud_toggle_button ) {
+            str_content_innerhtml += `<div class="form-check form-check-inline form-switch"><input class="form-check-input" type="checkbox" id="switch_toggle_word_cloud_${name_div}" onchange="toggle_word_cloud( '${name_div}' )"><label class="form-check-label" for="switch_toggle_word_cloud_${name_div}">show word cloud</label></div>`
         }
         str_content_innerhtml += `<div id="${name_div}" class="plot" style="${style}"></div>`;
+        // add the word cloud container
+        if ( flag_create_word_cloud_toggle_button ) {
+            str_content_innerhtml += `<div class="collapse" id="word_cloud_container_${name_div}"><div id="word_cloud_callback_${name_div}">${str_word_cloud_placeholder_text}</div><canvas id="word_cloud_${name_div}" class="wordcloud" width="${int_word_cloud_width}" height="${int_word_cloud_height}"></canvas></div>`
+        }
     }
     div_new.innerHTML = str_content_innerhtml; // set innerHTML
     if ( dict_data.canvas.set_name_div.has( name_div ) ) { // if the panel already exists in the canvas, replace previous div. with new div.
@@ -3323,6 +3379,94 @@ function synchronized_layout( ed, divs ) {
 
     });
 }
+function get_word_count( adata, l_name_col = undefined, l_index = undefined, flag_true_for_obs_false_for_var = true, l_stop_words = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "of", "the", "", "cell", "cells" ], l_delimitors = [",", " ", ";", "_", '/', '(', ')', '[', ']' ] ) {
+    /* # 2023-05-14 21:08:45 
+    adata, // AnnData to survey word counts
+    l_name_col, // a list of columns. To use all columns, set the argument to undefined. The columns containing numbers will be ignored.
+    l_index, // list of indices. To get a word count of all entries, set argument to undefined.
+    flag_true_for_obs_false_for_var = true, // if true, use obs (barcode axis), and if false, use var (features axis)
+    l_stop_words = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "of", "the", "", "cell", "cells" ], // list of stop words (the words that will be ignored when counting words)
+    l_delimitors = [",", " ", ";", "_", '/', '(', ')', '[', ']' ], // list of characters to use when separating the categorical labels in the metadata to obtain the word count data.
+    */
+    // prepare    
+    let df = ( flag_true_for_obs_false_for_var ) ? adata.obs : adata.var, // retrieve appropriate dataframe
+        set_stop_words = new Set( l_stop_words ), // 
+        str_delim_universal = "1fcf2a7f0c",  // a string that will be used as a universal delimiter
+        word_count = { }; // intialize the word count output
+
+    // retrieve columns
+    if ( l_name_col == undefined ) {
+        l_name_col = [ ... df.columns ]; // use all columns of the dataframe
+    }
+    let set_name_col = intersection( df.columns, l_name_col );
+    
+    // subset the data
+    if ( l_index != undefined ) {
+        df = df.subset( l_index, [ ... set_name_col ] ); // subset the dataframe to retrieve word count only a specific set of entries
+    }
+
+    if ( set_name_col.size == 0 ) {
+        return word_count; // return an empty result
+    }
+
+    function _update_count( dict_count_to_be_updated, dict_count_for_update ) {
+        // # 2023-05-12 16:16:24 
+        for ( let key in dict_count_for_update ) {
+            if ( ! ( key in dict_count_to_be_updated ) ) {
+                dict_count_to_be_updated[key] = dict_count_for_update[key]
+            } else {
+                dict_count_to_be_updated[key] += dict_count_for_update[key]
+            }
+        }
+        return dict_count_to_be_updated
+    }
+
+    function _counter( arr_word, set_stop_words ) {
+        // 2023-05-14 20:22:00 
+        let word_count = { };
+        for ( let word of arr_word ) {
+            // check whether the word is in the set of stop words
+            if ( set_stop_words.has( word ) ) { // for some reason, '' escape Set's 'in' operation, and should be handled separately.
+                continue; // does not include stop word in the word count
+            }
+            // update the word count
+            if ( ! ( word in word_count ) ) {
+                word_count[ word ] = 1
+            } else {
+                word_count[ word ] += 1
+            }
+        }
+        return word_count;
+    }
+
+
+    for ( let name_col of set_name_col ) {
+        let arr_data = df.get_column( name_col ), // retrieve data of the column
+            dict_cat_to_word_count = { }; // initialize a dictionary storing cat -> word_count dictionary mapping for efficient operations
+        for ( let e of arr_data ) {
+            if ( e != undefined ) {
+                // check whether the entry is number. if a number is detected, skip the column for generating word count.
+                if ( typeof e === 'number' ) {
+                    break; // skip the current column
+                }
+                // check whether a mapping exists
+                if ( ! ( e in dict_cat_to_word_count ) ) {
+                    // retrieve word counts for the category
+                    for ( let delim of l_delimitors ) {
+                        if ( e.includes( delim ) ) {
+                            e = e.replaceAll( delim, str_delim_universal ) // replace delimitor characters with universal spacer
+                        }
+                    }
+                    // add a mapping
+                    dict_cat_to_word_count[ e ] = _counter( e.split( str_delim_universal ), set_stop_words ); // create word counts for the given category
+                }
+                // update the word count
+                word_count = _update_count( word_count, dict_cat_to_word_count[ e ] );
+            }
+        }
+    }
+    return word_count
+}
 function draw_graph( name_div, adata, dict_kw_args ) {
     /*
     name_div // name of the division to draw plots
@@ -3356,6 +3500,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'l_name_category_in_col_obs' : undefined, // a list of name of categories in the column of adata.obs for drawing dot plots or violin plots. by default, all categories will be used
         'margin' : { l: 65, r: 65, b: 90, t: 25, pad: 4 }, // margin of the plotly graph
         'flag_create_legend_toggle_button' : false, // create legend toggle button
+        'flag_create_word_cloud_toggle_button' : false, // create word cloud toggle button
     }
     
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
@@ -3363,13 +3508,14 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     // recreate div if 'flag_recreate_div' is True
     if ( dict_kw_args[ 'flag_recreate_div' ] ) {
         // initialize div (single graph)
-        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false, dict_kw_args[ 'flag_create_legend_toggle_button' ] );
+        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false, dict_kw_args[ 'flag_create_legend_toggle_button' ], dict_kw_args[ 'flag_create_word_cloud_toggle_button' ] );
     }
     
     let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
     
     let l_val_feature = undefined,
         l_val_obs = undefined,
+        l_index = nj.arange( adata.obs.length ).tolist( ), // list of indices for to keep track of the indices of obs
         l_trace = [ ], // initialize the list of plotly scatter traces
         div_plot = $( "#" + name_div )[ 0 ], // retrieve div to create a plot
         layout,
@@ -3382,7 +3528,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     }
     l_val_obs = adata.obs.get_column( dict_kw_args[ 'name_col_obs' ] );
     
-    if ( dict_kw_args[ 'name_type_graph' ] == 'scatter' ) { // draw scatter plot using the data
+    let name_type_graph = dict_kw_args[ 'name_type_graph' ];
+    if ( name_type_graph == 'scatter' ) { // draw scatter plot using the data
         // initialize
         let l_color = ( dict_kw_args[ 'flag_plot_feature' ] ) ? l_val_feature : l_val_obs, // retrieve values for setting colors
             l_x = [ ... adata.obsm[ dict_kw_args[ 'name_col_embedding' ] ].get( [ null, 0 ] ).flatten( ) ],
@@ -3410,6 +3557,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 l_x = ArrayIndexing( l_x, argsort_by_color );
                 l_y = ArrayIndexing( l_y, argsort_by_color );
                 l_color = ArrayIndexing( l_color, argsort_by_color );
+                l_index = ArrayIndexing( l_index, argsort_by_color ); // sort the indices, too
             }
 
             // compose a single trace when values are continuous
@@ -3418,8 +3566,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                 type: 'scattergl',
                 x: l_x,
                 y: l_y,
-                customdata: ArrayTranspose( [ l_color
-                                            ] ),
+                customdata: ArrayTranspose( [ l_color, l_index ] ), // store the index for callback
                 hovertemplate: [ `${name_val_for_color}: <b>%{customdata[0]:.5f}</b>`,
                                 `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
                                 "<extra></extra>" ].join( "<br>" ),
@@ -3438,17 +3585,19 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             for ( let i = 0; i < l_color.length; i ++ ) {
                 let e = l_color[ i ],
                     x = l_x[ i ],
-                    y = l_y[ i ];
+                    y = l_y[ i ],
+                    index = l_index[ i ];
                 // handle 'None' category as a separate category
                 if ( check_none( e ) ) {
                     e = dict_data.misc.name_none;
                 }
                 // initialize dict_data for the category
                 if ( ! ( e in dict_category_to_dict_data ) ) {
-                    dict_category_to_dict_data[ e ] = { l_x: [ ], l_y: [ ] }; 
+                    dict_category_to_dict_data[ e ] = { l_x: [ ], l_y: [ ], l_index: [ ] }; 
                 }
                 dict_category_to_dict_data[ e ].l_x.push( x );
                 dict_category_to_dict_data[ e ].l_y.push( y );
+                dict_category_to_dict_data[ e ].l_index.push( index );
             }
 
             // compose trace for 'None' category before other traces can be composed
@@ -3460,6 +3609,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     type: 'scattergl',
                     x: dict_category_to_dict_data[ e ].l_x,
                     y: dict_category_to_dict_data[ e ].l_y,
+                    customdata: ArrayTranspose( [ dict_category_to_dict_data[ e ].l_index ] ), // store the index for callback
                     hovertemplate: [ `<b>${e}</b>`,
                                     `(${name_val_for_color})`,
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
@@ -3486,6 +3636,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     type: 'scattergl',
                     x: dict_category_to_dict_data[ e ].l_x,
                     y: dict_category_to_dict_data[ e ].l_y,
+                    customdata: ArrayTranspose( [ dict_category_to_dict_data[ e ].l_index ] ), // store the index for callback
                     hovertemplate: [ `<b>${string_insert_every_n_chars( e, '<br>', dict_data.misc.int_max_length_text_label )}</b>`, 
                                     `(${name_val_for_color})`,
                                     `UMAP: <b>%{x:.2f}</b>, <b>%{y:.2f}</b>`,
@@ -3510,9 +3661,10 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             showlegend: false, // hide the legend by default
         };
         config = { ... config, filename: 'single-cell-scatter-graph' };
-    } else if ( dict_kw_args[ 'name_type_graph' ] == 'violin' ) { // draw scatter plot 
+    } else if ( name_type_graph == 'violin' ) { // draw scatter plot 
         // build list of traces for each category
         let dictarr = Pivot( l_val_obs, l_val_feature, name_none = dict_data.misc.name_none ), // key = cluster, value = list of expression values.
+            dictindex = Pivot( l_val_obs, l_index, name_none = dict_data.misc.name_none ), // key = cluster, value = list of indices.
             set_name_category_in_col_obs = new Set( check_none( dict_kw_args[ 'l_name_category_in_col_obs' ] ) ? Object.keys( dictarr ) : dict_kw_args[ 'l_name_category_in_col_obs' ] ), // use all categories if 'l_name_category_in_col_obs' is None
             trace_template = { 
                 type: 'violin',
@@ -3530,6 +3682,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
                     trace = { ... trace_template,
                              name: category_shortened,
                              line: { color: 'black', width: 2 },
+                             customdata: dictindex[ category ], // store the indices for callback
                              fillcolor: dict_data.misc.get_color_from_string( category ).toString( ), // assign color of the entry using hasing,
                              points: false, // do not show outliers to increase responsivity
                              y: l_expr,
@@ -3554,7 +3707,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             showlegend: false, // hide the legend by default
         }
         config = { ... config, filename: `single-cell-violin-graph-${dict_kw_args[ 'name_feature' ]}` };
-    } else if ( dict_kw_args[ 'name_type_graph' ] == 'dot' ) {
+    } else if ( name_type_graph == 'dot' ) {
         function get_name_cat_for_vis( e ) {
             // function for converting name category to name category for visualization
             return check_none( e ) ? dict_data.misc.name_none : string_shorten( e, dict_data.misc.int_max_length_text_label, '...' );
@@ -3665,7 +3818,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     Plotly.newPlot( div_plot, l_trace, layout, config ); // draw scatter plot of the annotation
 
     // for scatter plot, add event listner when 'flag_responsive_marker_size' is set to True
-    if ( dict_kw_args[ 'name_type_graph' ] == 'scatter' ) {
+    if ( name_type_graph == 'scatter' ) {
         if ( dict_kw_args[ 'flag_responsive_marker_size' ] ) {
             div_plot.on( "plotly_relayout", function( ed ) {
                 console.log( `plotly relayout attached to`, div_plot );
@@ -3673,6 +3826,32 @@ function draw_graph( name_div, adata, dict_kw_args ) {
             });
         }
     }
+    
+    // add word cloud callback
+    // for each plot type, different call back is needed.
+    if ( name_type_graph == 'scatter' ) {
+        let flag_color_using_continuous_values = typeof ( ( dict_kw_args[ 'flag_plot_feature' ] ) ? l_val_feature : l_val_obs )[ 0 ] == 'number';
+        if ( flag_color_using_continuous_values ) {
+            div_plot.on('plotly_selected', function( eventData ) {
+                console.log( `${name_div} selected` ) 
+                console.log( eventData ) 
+                let count = get_word_count( adata, undefined, eventData.points.map( ( pt ) => { return pt.customdata[ 1 ]; } ) ); // get word count // get indices of the selected point
+                WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
+            });
+        } else { // for categorical plot, seleciton is not supported due to the large number of traces, which hinders the selection process
+            div_plot.on( 'plotly_click', function( eventData ) {
+//                 console.log( `${name_div} click` ) 
+//                 console.log( eventData ) 
+                let count = get_word_count( adata, undefined, eventData.points[ 0 ].fullData.customdata ); // get word count // get indices of the selected category
+                WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
+            });  
+        }
+    } else if ( name_type_graph == 'violin' ) {
+        div_plot.on( 'plotly_click', function( eventData ) {
+            let count = get_word_count( adata, undefined, eventData.points[ 0 ].fullData.customdata ); // get word count
+            WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
+        });  
+    }        
 }
 
 // when document is ready for interaction
@@ -3972,17 +4151,17 @@ async function PlotAnnData( ) {
     
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
-        draw_graph( str_name_panel_for_scatter_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'flag_create_legend_toggle_button' : false } ); // no legend is required for feature plot
+        draw_graph( str_name_panel_for_scatter_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'flag_create_legend_toggle_button' : false, 'flag_create_word_cloud_toggle_button' : true } ); // no legend is required for feature plot
     } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
-        draw_graph( str_name_panel_for_scatter_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : true } );
+        draw_graph( str_name_panel_for_scatter_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : true, 'flag_create_word_cloud_toggle_button' : true } );
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
         let name_panel = str_name_panel_for_scatter_graph; // retrieve the name of the panel
         // initialize div (dual graphs)
-        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true, flag_create_legend_toggle_button = true );
+        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true, flag_create_legend_toggle_button = true, flag_create_word_cloud_toggle_button = true );
             
         // draw graphs
-        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : false } );
-        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : true, 'flag_create_legend_toggle_button' : false } );
+        draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : false, 'flag_create_word_cloud_toggle_button' : false } );
+        draw_graph( `${name_panel}__bottom__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : true, 'flag_create_legend_toggle_button' : false, 'flag_create_word_cloud_toggle_button' : false } );
         
         // sync two plots
         let l_div_plotly = [ document.getElementById( `${name_panel}__top__` ), document.getElementById( `${name_panel}__bottom__` ) ];
@@ -3992,9 +4171,9 @@ async function PlotAnnData( ) {
             });
         }
     } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
-        draw_graph( str_name_panel_for_violin_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'title' : str_name_figure_for_violin_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_violin_graph, int_fig_size_y_for_violin_graph ], 'margin' : { l : int_margin_l_for_violin_graph, b : int_margin_b_for_violin_graph }, 'flag_create_legend_toggle_button' : true } );
+        draw_graph( str_name_panel_for_violin_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'violin', 'title' : str_name_figure_for_violin_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : true, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_violin_graph, int_fig_size_y_for_violin_graph ], 'margin' : { l : int_margin_l_for_violin_graph, b : int_margin_b_for_violin_graph }, 'flag_create_legend_toggle_button' : true, 'flag_create_word_cloud_toggle_button' : true } );
     } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
-        draw_graph( str_name_panel_for_dot_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'title' : str_name_figure_for_dot_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_dot_graph, int_fig_size_y_for_dot_graph ], 'margin' : { l : int_margin_l_for_dot_graph, b : int_margin_b_for_dot_graph }, 'flag_create_legend_toggle_button' : false } ); // no legend is required for dot plot
+        draw_graph( str_name_panel_for_dot_graph, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'dot', 'title' : str_name_figure_for_dot_graph, 'flag_recreate_div' : true, 'flag_plot_feature' : undefined, 'l_str_entry_feature' : l_str_entry_feature, 'l_name_category_in_col_obs' : l_name_category_in_col_obs, 'fig_size' : [ int_fig_size_x_for_dot_graph, int_fig_size_y_for_dot_graph ], 'margin' : { l : int_margin_l_for_dot_graph, b : int_margin_b_for_dot_graph }, 'flag_create_legend_toggle_button' : false, 'flag_create_word_cloud_toggle_button' : false } ); // no legend is required for dot plot
     }
 //     // close current panel
 //     dict_data.bs_components.offcanvasPlotAnnData.hide( );
@@ -4055,10 +4234,13 @@ function SwitchAdvancedSetting( ) {
     
 function RearrangePlottingPanel( ) {
     /*
-    rearrange plotting panel appropriate for each graph type for better interactivity
+    rearrange plotting panel appropriate for each graph type for better interactivity.
+    also change the graph type name
     */
+    radio_select_type_graph_word_cloud
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
+        document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Scatter Plot - Feature</h4>"; // set graph type name
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = true;
@@ -4083,6 +4265,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
+        document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Scatter Plot - Barcode Annotations</h4>"; // set graph type name
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
@@ -4107,6 +4290,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
+        document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Scatter Plot - Feature and Annotations</h4>"; // set graph type name
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
@@ -4131,6 +4315,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
+        document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Violin Plot</h4>"; // set graph type name
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
@@ -4157,6 +4342,33 @@ function RearrangePlottingPanel( ) {
         UpdateCategories( ); // update categories
         
     } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
+        document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Dot Plot</h4>"; // set graph type name
+        document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = true;
+        document.getElementById( 'plotting_panel_title_coordinates' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = true;
+        
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = false;
+        document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = true;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = false;
+        
+        // figsize setting
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = false;
+        
+        // figname setting
+        document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_name_setting_for_violin_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = false;
+        
+        UpdateCategories( ); // update categories
+    } else if ( document.getElementById( 'radio_select_type_graph_word_cloud' ).checked ) { // update settings for word cloud plotting functions
+        document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Word Cloud (Topic Exploration)</h4>"; // set graph type name
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = false;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
