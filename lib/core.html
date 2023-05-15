@@ -22,6 +22,9 @@ resolved an error in a method ploting a dot plot when None values were included.
 
 # 20230515
 added a word cloud plotting function for exploring metadata
+
+# 20230516
+remaining part of word cloud plotting function was implemented
 -->
     
 <!-- Required meta tags -->
@@ -335,7 +338,7 @@ added a word cloud plotting function for exploring metadata
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="d-grid mx-3 gap-2">
-    <button class="btn btn-primary" type="button" onclick="PlotAnnData( )">Plot AnnData</button>
+    <button class="btn btn-primary" type="button" onclick="PlotAnnData( )" id="button_plot_anndata">Plot AnnData</button>
   </div>
   <div class="offcanvas-body">
     <div class="form-floating" id="plotting_panel_select_adata">
@@ -368,11 +371,11 @@ added a word cloud plotting function for exploring metadata
 
     <br>  
     <div id="name_graph_type"></div>
+    <br>
       
     <div>
       <h5>Data</h5>
     </div>
-    <br>
 
     <div class="form-floating" id="plotting_panel_select_str_entry_ft">
         <select class="form-select" aria-label="select_str_entry_ft" id="select_str_entry_ft">
@@ -389,6 +392,11 @@ added a word cloud plotting function for exploring metadata
         <select class="form-select" aria-label="select_annotations_bc_for_plot" id="select_annotations_bc_for_plot" onchange="UpdateCategories( );">
         </select>
       <label for="select_annotations_bc_for_plot" class="form-label">Select Barcode Annotation</label>
+    </div>
+      
+    <div id="plotting_panel_select_l_annotations_bc_for_plot">
+        <label for="input_l_annotations_bc_for_plot">Select Barcode Annotations</label>
+        <div class="d-grid mx-1 gap-1"><textarea id="input_l_annotations_bc_for_plot" class="rcorner" aria-label="input_l_annotations_bc_for_plot"></textarea></div>
     </div>
       
     <div id="plotting_panel_input_l_category_for_plotting">
@@ -553,6 +561,23 @@ added a word cloud plotting function for exploring metadata
                 <div class="form-floating">
                     <textarea class="form-control" placeholder="1000" id="input_int_margin_b_for_dot_graph"></textarea>
                     <label for="input_int_margin_b_for_dot_graph">Bottom Margin (pixels)</label>
+                </div>
+              </div>
+            </div>
+        </div>
+        
+        <div id="panel_figure_size_and_margin_setting_for_word_cloud_graph">
+            <div class="row g-2">
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="1100" id="input_int_fig_size_x_for_word_cloud_graph"></textarea>
+                    <label for="input_int_fig_size_x_for_word_cloud_graph">Width (pixels)</label>
+                </div>
+              </div>
+              <div class="col-md">
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="300" id="input_int_fig_size_y_for_word_cloud_graph"></textarea>
+                    <label for="input_int_fig_size_y_for_word_cloud_graph">Height (pixels)</label>
                 </div>
               </div>
             </div>
@@ -2977,7 +3002,7 @@ function Tagify_Destroy_UsingID( id_element, flag_clear_previous_tags = true ) {
         el.value = '' // clear previous tags
     }
 }
-function Tagify_Initialize_UsingID( id_element, enforceWhitelist = true, whitelist = [ ], flag_dragsort = false, maxTags = 50, maxItems = 20, flag_clear_previous_tags = true ) {
+function Tagify_Initialize_UsingID( id_element, enforceWhitelist = true, whitelist = [ ], flag_dragsort = false, maxTags = 100, maxItems = 50, flag_clear_previous_tags = true ) {
     /*
     flag_clear_previous_tags = true // clear the tags that have been previously added to the tagify instance 
     */
@@ -3501,6 +3526,8 @@ function draw_graph( name_div, adata, dict_kw_args ) {
         'margin' : { l: 65, r: 65, b: 90, t: 25, pad: 4 }, // margin of the plotly graph
         'flag_create_legend_toggle_button' : false, // create legend toggle button
         'flag_create_word_cloud_toggle_button' : false, // create word cloud toggle button
+        'fig_size_word_cloud' : [ 1050, 200 ], // figure size of the associated word cloud
+        'l_name_col_obs' : undefined, // a list of obs columns for drawing word cloud. if undefined is given, use all columns
     }
     
     dict_kw_args = { ... dict_kw_args_default, ... dict_kw_args }; // compose 'dict_kw_args' using the default keyworded arguments and given keyworded arguments
@@ -3508,7 +3535,7 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     // recreate div if 'flag_recreate_div' is True
     if ( dict_kw_args[ 'flag_recreate_div' ] ) {
         // initialize div (single graph)
-        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false, dict_kw_args[ 'flag_create_legend_toggle_button' ], dict_kw_args[ 'flag_create_word_cloud_toggle_button' ] );
+        create_div( name_div, style = `width:${dict_kw_args[ 'fig_size' ][ 0 ]}px;height:${dict_kw_args[ 'fig_size' ][ 1 ]}px;`, false, dict_kw_args[ 'flag_create_legend_toggle_button' ], dict_kw_args[ 'flag_create_word_cloud_toggle_button' ], dict_kw_args[ 'fig_size_word_cloud' ][ 0 ], dict_kw_args[ 'fig_size_word_cloud' ][ 1 ] );
     }
     
     let marker_colormap = { showscale: true, colorscale: "YlOrRd", reversescale: true }; // setting for showing colormap
@@ -3828,27 +3855,31 @@ function draw_graph( name_div, adata, dict_kw_args ) {
     }
     
     // add word cloud callback
+    let l_name_col_obs = ( dict_kw_args[ 'l_name_col_obs' ].length == 0 ) ? undefined : dict_kw_args[ 'l_name_col_obs' ]; // if no columns are selected, use all available columns
+    
     // for each plot type, different call back is needed.
     if ( name_type_graph == 'scatter' ) {
         let flag_color_using_continuous_values = typeof ( ( dict_kw_args[ 'flag_plot_feature' ] ) ? l_val_feature : l_val_obs )[ 0 ] == 'number';
         if ( flag_color_using_continuous_values ) {
             div_plot.on('plotly_selected', function( eventData ) {
-                console.log( `${name_div} selected` ) 
-                console.log( eventData ) 
-                let count = get_word_count( adata, undefined, eventData.points.map( ( pt ) => { return pt.customdata[ 1 ]; } ) ); // get word count // get indices of the selected point
-                WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
+//                 console.log( `${name_div} selected` ) 
+//                 console.log( eventData ) 
+                if ( eventData != undefined ) {
+                    let count = get_word_count( adata, l_name_col_obs, eventData.points.map( ( pt ) => { return pt.customdata[ 1 ]; } ) ); // get word count // get indices of the selected point
+                    WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
+                }
             });
         } else { // for categorical plot, seleciton is not supported due to the large number of traces, which hinders the selection process
             div_plot.on( 'plotly_click', function( eventData ) {
 //                 console.log( `${name_div} click` ) 
 //                 console.log( eventData ) 
-                let count = get_word_count( adata, undefined, eventData.points[ 0 ].fullData.customdata ); // get word count // get indices of the selected category
+                let count = get_word_count( adata, l_name_col_obs, eventData.points[ 0 ].fullData.customdata ); // get word count // get indices of the selected category
                 WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
             });  
         }
     } else if ( name_type_graph == 'violin' ) {
         div_plot.on( 'plotly_click', function( eventData ) {
-            let count = get_word_count( adata, undefined, eventData.points[ 0 ].fullData.customdata ); // get word count
+            let count = get_word_count( adata, l_name_col_obs, eventData.points[ 0 ].fullData.customdata ); // get word count
             WordCloud( document.getElementById( `word_cloud_${name_div}` ), { 'minSize' : 12.5, 'weightFactor' : 125 / Math.max( ... Object.values( count ) ), 'minRotation' : 0, 'maxRotation' : 0, 'list' : Object.keys( count ).map( k => { return [ k, count[ k ] ]; } ), 'click' : ( item ) => { document.getElementById( `word_cloud_callback_${name_div}` ).innerHTML = ` term <b>'${item[ 0 ]}'</b>: ${item[ 1 ]} counts`; } } ); // draw a word cloud
         });  
     }        
@@ -3895,6 +3926,9 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     document.getElementById( 'input_int_fig_size_y_for_dot_graph' ).value = '750';
     document.getElementById( 'input_int_margin_l_for_dot_graph' ).value = '475';
     document.getElementById( 'input_int_margin_b_for_dot_graph' ).value = '50';
+    
+    document.getElementById( 'input_int_fig_size_x_for_word_cloud_graph' ).value = '1050';
+    document.getElementById( 'input_int_fig_size_y_for_word_cloud_graph' ).value = '200';
     
     // figname
     document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'violin_plot';
@@ -4045,6 +4079,17 @@ function UpdatePanelPlotAnnData( ) {
         // if the number of tags exceeds the limit, use (fall back to) the simple text area 
         document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value = l_str_entry_ft.join( ', ' );
     }
+    
+    // set l_annotations_bc_for_plot
+    Tagify_Destroy_UsingID( 'input_l_annotations_bc_for_plot' );
+    
+    if ( dict_data.misc.int_max_num_tags >= l_name_col_obs.length ) {
+        Tagify_Initialize_UsingID( 'input_l_annotations_bc_for_plot', true, l_name_col_obs, true, 100, 50 ); // enable drag-sort
+        Tagify_AddTags_UsingID( 'input_l_annotations_bc_for_plot', l_name_col_obs ); 
+    } else {
+        // if the number of tags exceeds the limit, use (fall back to) the simple text area 
+        document.getElementById( 'input_l_annotations_bc_for_plot' ).value = l_name_col_obs.join( ', ' );
+    }
 }
 async function RetrieveAnnData( name_ramdata = 'ram' ) {
     /*
@@ -4119,6 +4164,7 @@ async function PlotAnnData( ) {
         input_float_vmax = parseFloat( document.getElementById( 'input_float_vmax' ).value ),
         l_str_entry_feature = Tagify_check_Tagify_UsingID( 'input_l_str_entry_ft_for_plotting' ) ? Tagify_GetTagTitles_UsingID( 'input_l_str_entry_ft_for_plotting' ) : document.getElementById( 'input_l_str_entry_ft_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ), // retrieve values from either tagify object or simple text area
         l_name_category_in_col_obs = Tagify_check_Tagify_UsingID( 'input_l_category_for_plotting' ) ? Tagify_GetTagTitles_UsingID( 'input_l_category_for_plotting' ) : document.getElementById( 'input_l_category_for_plotting' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ), // retrieve values from either tagify object or simple text area
+        l_name_col_obs = Tagify_check_Tagify_UsingID( 'input_l_annotations_bc_for_plot' ) ? Tagify_GetTagTitles_UsingID( 'input_l_annotations_bc_for_plot' ) : document.getElementById( 'input_l_annotations_bc_for_plot' ).value.split( ',' ).map( ( e ) => { return e.trim( ); } ).filter( e => e.length > 0 ), // retrieve values from either tagify object or simple text area
         
         // figsize settings
         int_fig_size_x_for_scatter_graph = parseInt( document.getElementById( 'input_int_fig_size_x_for_scatter_graph' ).value ),
@@ -4136,6 +4182,9 @@ async function PlotAnnData( ) {
         int_margin_l_for_dot_graph = parseInt( document.getElementById( 'input_int_margin_l_for_dot_graph' ).value ),
         int_margin_b_for_dot_graph = parseInt( document.getElementById( 'input_int_margin_b_for_dot_graph' ).value ),
 
+        int_fig_size_x_for_word_cloud_graph = parseInt( document.getElementById( 'input_int_fig_size_x_for_word_cloud_graph' ).value ),
+        int_fig_size_y_for_word_cloud_graph = parseInt( document.getElementById( 'input_int_fig_size_y_for_word_cloud_graph' ).value ),
+
         // figname and panel name settings
         str_name_panel_for_scatter_graph = document.getElementById( 'input_str_name_panel_for_scatter_graph' ).value,
         str_name_figure_for_scatter_graph = document.getElementById( 'input_str_name_figure_for_scatter_graph' ).value,
@@ -4147,7 +4196,7 @@ async function PlotAnnData( ) {
         str_name_figure_for_dot_graph = document.getElementById( 'input_str_name_figure_for_dot_graph' ).value,
         
         adata = dict_data[ 'dict_anndata' ][ name_anndata ], // retrieve the reference
-        dict_key_args_for_draw_graph = { 'name_feature' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'margin' : { l : int_margin_l_for_scatter_graph, b : int_margin_b_for_scatter_graph }, 'fig_size' : [ int_fig_size_x_for_scatter_graph, int_fig_size_y_for_scatter_graph ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size_for_scatter_plot' : isNaN( int_marker_size_for_scatter_plot ) ? 3 : int_marker_size_for_scatter_plot, 'marker_size_for_dot_plot' : isNaN( input_int_marker_size_for_dot_plot ) ? 3 : input_int_marker_size_for_dot_plot }; // keyworded arguments for the draw_graph function
+        dict_key_args_for_draw_graph = { 'name_feature' : str_entry_ft, 'name_col_obs' : name_col_obs, 'name_col_embedding' : name_col_obsm, 'flag_responsive_marker_size' : flag_responsive_marker_size, 'margin' : { l : int_margin_l_for_scatter_graph, b : int_margin_b_for_scatter_graph }, 'fig_size' : [ int_fig_size_x_for_scatter_graph, int_fig_size_y_for_scatter_graph ], 'vmax' : isNaN( input_float_vmax ) ? undefined : input_float_vmax, 'marker_size_for_scatter_plot' : isNaN( int_marker_size_for_scatter_plot ) ? 3 : int_marker_size_for_scatter_plot, 'marker_size_for_dot_plot' : isNaN( input_int_marker_size_for_dot_plot ) ? 3 : input_int_marker_size_for_dot_plot, 'fig_size_word_cloud' : [ int_fig_size_x_for_word_cloud_graph, int_fig_size_y_for_word_cloud_graph ], 'l_name_col_obs' : l_name_col_obs }; // keyworded arguments for the draw_graph function
     
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
@@ -4157,7 +4206,7 @@ async function PlotAnnData( ) {
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
         let name_panel = str_name_panel_for_scatter_graph; // retrieve the name of the panel
         // initialize div (dual graphs)
-        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true, flag_create_legend_toggle_button = true, flag_create_word_cloud_toggle_button = true );
+        create_div( name_panel, style = `width:${int_fig_size_x_for_scatter_graph}px;height:${int_fig_size_y_for_scatter_graph}px;`, flag_create_dual_div = true, flag_create_legend_toggle_button = true, flag_create_word_cloud_toggle_button = true, int_fig_size_x_for_word_cloud_graph, int_fig_size_y_for_word_cloud_graph );
             
         // draw graphs
         draw_graph( `${name_panel}__top__`, adata, { ... dict_key_args_for_draw_graph, 'name_type_graph' : 'scatter', 'title' : str_name_figure_for_scatter_graph, 'flag_recreate_div' : false, 'flag_plot_feature' : false, 'flag_create_legend_toggle_button' : false, 'flag_create_word_cloud_toggle_button' : false } );
@@ -4237,13 +4286,17 @@ function RearrangePlottingPanel( ) {
     rearrange plotting panel appropriate for each graph type for better interactivity.
     also change the graph type name
     */
-    radio_select_type_graph_word_cloud
     // draw graph
     if ( document.getElementById( 'radio_select_type_graph_feature' ).checked ) { // plot feature values
+        // setting for the plot button & selecting adata
+        document.getElementById( 'button_plot_anndata' ).disabled = false;
+        document.getElementById( 'select_adata' ).disabled = false;
         document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Scatter Plot - Feature</h4>"; // set graph type name
+        
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_l_annotations_bc_for_plot' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = false;
         document.getElementById( 'plotting_panel_title_coordinates' ).hidden = false;
@@ -4258,6 +4311,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = false;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_word_cloud_graph' ).hidden = true;
         
         // figname setting
         document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = false;
@@ -4265,10 +4319,15 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_obs' ).checked ) { // plot annotation values
+        // setting for the plot button & selecting adata
+        document.getElementById( 'button_plot_anndata' ).disabled = false;
+        document.getElementById( 'select_adata' ).disabled = false;
         document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Scatter Plot - Barcode Annotations</h4>"; // set graph type name
+        
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_l_annotations_bc_for_plot' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = false;
         document.getElementById( 'plotting_panel_title_coordinates' ).hidden = false;
@@ -4283,6 +4342,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = false;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_word_cloud_graph' ).hidden = true;
         
         // figname setting
         document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = false;
@@ -4290,10 +4350,15 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_feature_and_obs' ).checked ) { // plot both feature and annotations
+        // setting for the plot button & selecting adata
+        document.getElementById( 'button_plot_anndata' ).disabled = false;
+        document.getElementById( 'select_adata' ).disabled = false;
         document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Scatter Plot - Feature and Annotations</h4>"; // set graph type name
+        
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_l_annotations_bc_for_plot' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = false;
         document.getElementById( 'plotting_panel_title_coordinates' ).hidden = false;
@@ -4308,6 +4373,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = false;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_word_cloud_graph' ).hidden = true;
         
         // figname setting
         document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = false;
@@ -4315,10 +4381,15 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
     } else if ( document.getElementById( 'radio_select_type_graph_violin' ).checked ) { // plot violin plots using both feature and annotation data
+        // setting for the plot button & selecting adata
+        document.getElementById( 'button_plot_anndata' ).disabled = false;
+        document.getElementById( 'select_adata' ).disabled = false;
         document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Violin Plot</h4>"; // set graph type name
+        
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = false;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_l_annotations_bc_for_plot' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = false;
         document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = true;
         document.getElementById( 'plotting_panel_title_coordinates' ).hidden = true;
@@ -4333,6 +4404,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = false;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_word_cloud_graph' ).hidden = true;
         
         // figname setting
         document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = true;
@@ -4342,10 +4414,15 @@ function RearrangePlottingPanel( ) {
         UpdateCategories( ); // update categories
         
     } else if ( document.getElementById( 'radio_select_type_graph_dot' ).checked ) { // plot dot plots using both feature and annotation data
+        // setting for the plot button & selecting adata
+        document.getElementById( 'button_plot_anndata' ).disabled = false;
+        document.getElementById( 'select_adata' ).disabled = false;
         document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Dot Plot</h4>"; // set graph type name
+        
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = false;
         document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_select_l_annotations_bc_for_plot' ).hidden = true;
         document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = false;
         document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = true;
         document.getElementById( 'plotting_panel_title_coordinates' ).hidden = true;
@@ -4360,6 +4437,7 @@ function RearrangePlottingPanel( ) {
         document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_word_cloud_graph' ).hidden = true;
         
         // figname setting
         document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = true;
@@ -4368,29 +4446,35 @@ function RearrangePlottingPanel( ) {
         
         UpdateCategories( ); // update categories
     } else if ( document.getElementById( 'radio_select_type_graph_word_cloud' ).checked ) { // update settings for word cloud plotting functions
+        // setting for the plot button & selecting adata
+        document.getElementById( 'button_plot_anndata' ).disabled = true;
+        document.getElementById( 'select_adata' ).disabled = true;
         document.getElementById( 'name_graph_type' ).innerHTML = "<h4>Word Cloud (Topic Exploration)</h4>"; // set graph type name
+        
         document.getElementById( 'plotting_panel_select_str_entry_ft' ).hidden = true;
-        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = false;
-        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = false;
-        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_str_entry_ft_for_plotting' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_annotations_bc_for_plot' ).hidden = true;
+        document.getElementById( 'plotting_panel_select_l_annotations_bc_for_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_l_category_for_plotting' ).hidden = true;
         document.getElementById( 'plotting_panel_input_float_vmax' ).hidden = true;
         document.getElementById( 'plotting_panel_title_coordinates' ).hidden = true;
         document.getElementById( 'plotting_panel_select_embedding_for_plot' ).hidden = true;
         
-        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = false;
+        document.getElementById( 'plotting_panel_title_marker_size' ).hidden = true;
         document.getElementById( 'plotting_panel_switch_responsive_marker_size_or_static' ).hidden = true;
         document.getElementById( 'plotting_panel_input_int_marker_size_for_scatter' ).hidden = true;
-        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = false;
+        document.getElementById( 'plotting_panel_input_int_marker_size_for_dot_plot' ).hidden = true;
         
         // figsize setting
         document.getElementById( 'panel_figure_size_and_margin_setting_for_scatter_graph' ).hidden = true;
         document.getElementById( 'panel_figure_size_and_margin_setting_for_violin_graph' ).hidden = true;
-        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_dot_graph' ).hidden = true;
+        document.getElementById( 'panel_figure_size_and_margin_setting_for_word_cloud_graph' ).hidden = false;
         
         // figname setting
         document.getElementById( 'panel_figure_name_setting_for_scatter_graph' ).hidden = true;
         document.getElementById( 'panel_figure_name_setting_for_violin_graph' ).hidden = true;
-        document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = false;
+        document.getElementById( 'panel_figure_name_setting_for_dot_graph' ).hidden = true;
         
         UpdateCategories( ); // update categories
     }
