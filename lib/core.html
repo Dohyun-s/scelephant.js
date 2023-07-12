@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8WBMQ5B3N0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8WBMQ5B3N0');
+</script>
 <!--  
 # release note
 
@@ -25,6 +34,9 @@ added a word cloud plotting function for exploring metadata
 
 # 20230516
 remaining part of word cloud plotting function was implemented
+
+# 20230712
+RAMtx sparse matrix load gene expression data of each batch asynchronously
 -->
     
 <!-- Required meta tags -->
@@ -237,7 +249,8 @@ remaining part of word cloud plotting function was implemented
 <br>
 <nav class="navbar navbar-light bg-light">
   <div class="container-fluid">
-    RamData, SC-Elephant, SC-Elephant.js, and ELDB were developed by Hyunsu An at the Gwangju Institute of Science and Technology under the supervision of Professor JiHwan Park.<br>© 2022 Functional Genomics Lab, Gwangju Institute of Science and Technology
+<!--     RamData, SC-Elephant, SC-Elephant.js, and ELDB were developed by Hyunsu An at the Gwangju Institute of Science and Technology under the supervision of Professor JiHwan Park.<br>© 2023 Functional Genomics Lab, Gwangju Institute of Science and Technology -->
+    © 2023 Gwangju Institute of Science and Technology
   </div>
 </nav>
     
@@ -617,7 +630,7 @@ remaining part of word cloud plotting function was implemented
         <b>SC-Elephant.js</b> Viewer can be used to analyze <b><tt>RamData</tt></b> hosted on the web, including <b>GitHub Page</b> or <b>Amazon AWS S3</b>, without the use of expensive <i>server-side</i> applications, like that of cellxgene or Shiny-based applications. All the scripts of SC-Elephant.js are executed in the <i>client-side</i>.
           <br>  
           <div class="d-flex justify-content-center">
-            <img class="image-very-small" src="http://172.27.30.99/web_applications/20220718_sce.js/images/scelephant.js.logo.png" alt="scelephant_logo"/>
+            <img class="image-very-small" src="images/scelephant.js.logo.png" alt="scelephant_logo"/>
           </div>
       </div>
       <div class="modal-footer">
@@ -681,7 +694,7 @@ remaining part of word cloud plotting function was implemented
         <br>
         <br>
           <div class="d-flex justify-content-center">
-            <img class="image-small" src="http://172.27.30.99/web_applications/20220718_sce.js/images/scelephant.js.structure.png" alt="scelephant_logo"/>
+            <img class="image-small" src="images/scelephant.js.structure.png" alt="scelephant_logo"/>
           </div>
       </div>
       <div class="modal-footer">
@@ -1503,13 +1516,25 @@ class ZarrDataFrame {
     async get_df( l_col ) {
         /*
         return a DataFrame for the given list of columns
+        
+        loading data of each column asynchronously
         */
-        let dict_data = { };
+        let dict_data = { }, // a dictionary that will contain data for building the output DataFrame
+            l_promise_col = [ ], // list of promisess for data of each column
+            l_name_col = [ ]; // list of name of the columns for the retrieved promises
         for ( let col of l_col ) { // for each column in the given list of columns
             if ( this.columns.has( col ) ) { // if the column exists in the dataframe
-                dict_data[ col ] = await this.get_item( col ); // retrieve values of the column
+                l_promise_col.push( this.get_item( col ) ); // retrieve a promise for the column
+                l_name_col.push( col ); // retrieve the name of column
             }
         }
+        let l_data = await Promise.all( l_promise_col ); // wait until data of all columns has been retrieved.
+        
+        // compose 'dict_data' using the retrieved data
+        for ( let i = 0; i < l_name_col.length; i ++ ) { // iterate each column with retrieved data
+            dict_data[ l_name_col[ i ] ] = l_data[ i ]; 
+        }
+        
         return new DataFrame( dict_data, undefined, this.n_rows, this.verbose ); // return the retrieved data as a dataframe // use default index
     }
     get_n_rows( ) {
@@ -1830,6 +1855,218 @@ class RAMtx {
     get int_num_records( ) {
         return this._int_num_records;
     }
+//     async get_item( l_int_entry ) {
+//         /*
+//         get sparse data for the given list of 'l_int_entry'
+//         */
+//         // get expression of a list of int_entry
+//         // initialize the object if metadata has not been loaded
+//         if ( check_none( this.metadata ) ) {
+//             await this.initialize( );
+//         }
+        
+//         // initialize the output data structures
+//         let l_int_entry_of_axis_for_querying = [ ], 
+//             l_arr_int_entry_of_axis_not_for_querying = [ ], 
+//             l_arr_value = [ ];
+        
+//         // wrap in a list if a single entry was queried
+//         if ( ! Array.isArray( l_int_entry ) ) { // check whether the given entry is not an array
+//             l_int_entry = [ l_int_entry ];
+//         }
+        
+//         // retrieve flag indicating an empty input
+//         let flag_empty_input = l_int_entry.length == 0;
+        
+//         // retrieve zarr objects
+//         let za_mtx = this._za_mtx,
+//             za_mtx_index = this._za_mtx_index;
+        
+//         // internal settings
+//         let int_num_chunks_for_a_batch = 2 // number of chunks in a batch for retrieving data for the sparse matrix
+        
+//         // retrieve filters 
+//         let is_for_querying_features = this.is_for_querying_features,
+//             ba_filter_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_features : this.ba_filter_barcodes, 
+//             ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_barcodes : this.ba_filter_features,
+//             int_num_entries_axis_for_querying = ( is_for_querying_features ) ? this._ramdata.ft.int_num_entries : this._ramdata.bc.int_num_entries; // retrieve the number of entries for the axis for querying
+        
+//         // create view 
+//         // retrieve dictionaries for changing coordinates
+//         // initialize the dictionaries
+//         let dict_change_int_entry_of_axis_for_querying = undefined,
+//             dict_change_int_entry_of_axis_not_for_querying = undefined;
+//         if ( ! check_none( this._ramdata ) ) { // if RAMtx has been attached to RamData, retrieve dictionaries that can be used to change coordinate
+//             let ram = this._ramdata; // retrieve ramdata from which view will be retrieved. if current RAMtx is component, use composite RamData. else, use RamData to which current RAMtx has been attached to.
+//             if ( this.is_for_querying_features ) {
+//                 dict_change_int_entry_of_axis_for_querying = ram.ft.dict_change
+//                 dict_change_int_entry_of_axis_not_for_querying = ram.bc.dict_change
+//             } else {
+//                 dict_change_int_entry_of_axis_for_querying = ram.bc.dict_change
+//                 dict_change_int_entry_of_axis_not_for_querying = ram.ft.dict_change
+//             }
+//         }
+        
+//         // compose a vectorized function for the conversion of int_entries of the non-indexed axis.
+//         let vchange_int_entry_of_axis_not_for_querying = undefined;
+//         if ( ! check_none( dict_change_int_entry_of_axis_not_for_querying ) ) {
+//             vchange_int_entry_of_axis_not_for_querying = ( arr ) => {
+//                 /*
+//                 arr : typed array
+//                 */
+//                 let arr_changed = new arr.constructor( new ArrayBuffer( arr.buffer.byteLength ) ); // initialize an empty typed array with the same type length 
+//                 for ( let i = 0; i < arr.length; i ++ ) {
+//                     arr_changed[ i ] = dict_change_int_entry_of_axis_not_for_querying[ arr[ i ] ];
+//                 }
+//                 return arr_changed;
+//             }
+//         }
+        
+//         // retrieve filtered 'l_int_entry'
+//         if ( ! check_none( ba_filter_axis_for_querying ) ) { // if 'ba_filter_axis_for_querying' is validz
+//             let l_int_entry_filtered = [ ];
+//             if ( flag_empty_input ) {
+//                 // ''' handle when empty 'l_int_entry' has been given and filter has been set  '''
+//                 l_int_entry_filtered = ba_to_integer_indices( ba_filter_axis_for_querying, int_num_entries_axis_for_querying );
+//             } else {
+//                 // filter 'l_int_entry' according to 'ba_filter_axis_for_querying'
+//                 for ( let int_entry of l_int_entry ) {
+//                     if ( ba_filter_axis_for_querying.get( int_entry ) > 0 ) {
+//                         l_int_entry_filtered.push( int_entry );
+//                     }
+//                 }
+//             }
+//             l_int_entry = l_int_entry_filtered; // use filtered 'l_int_entry' as 'l_int_entry'
+//         }
+                
+//         // if no valid entries are available, return an empty result
+//         if ( l_int_entry.length == 0 ) {
+//             return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
+//         }
+            
+//         // sort 'int_entry' so that closely located entries can be retrieved together
+//         // sort indices of entries so that the data access can occur in the same direction
+//         let int_num_entries = l_int_entry.length;
+//         l_int_entry = l_int_entry.sort( sort_number );
+        
+//         // single thread mode
+//         /* # 2022-08-16 01:54:31 
+//         retrieve data as a worker in a worker process or in the main processs (in single-process mode)
+//         */
+//         // initialize 
+
+//         function _process_entry( int_entry, arr_int_entry_of_axis_not_for_querying, arr_value ) {
+//             /* # 2022-07-30 22:07:46 
+//             process retrieve data. apply filter and change coordinates
+//             */
+//             // if a filter for not-indexed axis has been set, apply the filter to the retrieved records
+//             if ( ! check_none( ba_filter_not_axis_for_querying ) ) {                
+//                 // create empty arrays
+//                 let arr_int_entry_of_axis_not_for_querying_filtered = [ ],
+//                     arr_value_filtered = [ ];
+
+//                 // iterate through each record
+//                 for ( let i = 0; i < arr_value.length; i ++ ) {
+//                     // check whether the current int_entry is included in the filter
+//                     if ( ba_filter_not_axis_for_querying.get( arr_int_entry_of_axis_not_for_querying[ i ] ) > 0 ) { 
+//                         // include the record
+//                         arr_int_entry_of_axis_not_for_querying_filtered.push( arr_int_entry_of_axis_not_for_querying[ i ] );
+//                         arr_value_filtered.push( arr_value[ i ] );
+//                     }
+//                 }
+                
+//                 // if no valid data exists (all data were filtered out), continue to the next 'int_entry'
+//                 if ( arr_value_filtered.length == 0 ) {
+//                     return;
+//                 }
+
+//                 // convert arrays to typed arrays
+//                 arr_int_entry_of_axis_not_for_querying = new arr_int_entry_of_axis_not_for_querying.constructor( arr_int_entry_of_axis_not_for_querying_filtered );
+//                 arr_value = new arr_value.constructor( arr_value_filtered );
+//             }
+
+//             // apply view
+//             if ( ! check_none( dict_change_int_entry_of_axis_for_querying ) ) {
+//                 int_entry = dict_change_int_entry_of_axis_for_querying[ int_entry ]
+//             }
+//             // convert int_entry for the non-indexed axis if a mapping has been given (create view)
+//             if ( ! check_none( vchange_int_entry_of_axis_not_for_querying ) ) {
+//                 arr_int_entry_of_axis_not_for_querying = vchange_int_entry_of_axis_not_for_querying( arr_int_entry_of_axis_not_for_querying )
+//             }
+            
+//             // append the retrieved data to the output results 
+//             l_int_entry_of_axis_for_querying.push( int_entry ); 
+//             l_arr_int_entry_of_axis_not_for_querying.push( arr_int_entry_of_axis_not_for_querying );
+//             l_arr_value.push( arr_value );
+//         }
+//         async function __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch ) {
+//             /* # 2022-07-30 22:32:14 
+//             fetch data from sparse ramtx for a batch
+//             */
+//             ba_filter_not_axis_for_querying instanceof BitSet; // use 'ba_filter_not_axis_for_querying' in the subsequent scopes
+            
+//             let st_batch = l_index_in_a_batch[ 0 ][ 0 ], // retrieve start and end positions of the current batch
+//                 en_batch = l_index_in_a_batch[ l_index_in_a_batch.length - 1 ][ 1 ],
+//                 arr = await za_mtx.get( zarr.slice( st_batch, en_batch ) ), // fetch data from the Zarr object
+//                 arr_int_entry_of_axis_not_for_querying = arr.get( [ null, 0 ] ), // retrieve nested array of each component
+//                 arr_value = arr.get( [ null, 1 ] );
+
+//             for ( let i = 0; i < l_index_in_a_batch.length; i ++ ) { // iterate over each entry
+//                 let int_entry = l_int_entry_in_a_batch[ i ],
+//                     index = l_index_in_a_batch[ i ],
+//                     st = index[ 0 ] - st_batch, // substract the start position of the batch to retrieve the local index
+//                     en = index[ 1 ] - st_batch,
+//                     sl = zarr.slice( st, en ); // retrieve a slice object for the current entry
+//                 _process_entry( int_entry, arr_int_entry_of_axis_not_for_querying.get( sl ).flatten( ), arr_value.get( sl ).flatten( ) );
+//             }
+//         }
+//         // retrieve data
+//         // handle sparse ramtx
+//         // %% Sparse ramtx %% 
+//         // prepare
+//         let int_num_records_in_a_chunk = za_mtx.meta.chunks[ 0 ] // retrieve the number of records in a chunk
+//         let index_chunk_start_current_batch = undefined, // initialize the index of the chunk at the start of the batch
+//             l_int_entry_in_a_batch = [ ],
+//             l_index_in_a_batch = [ ], // several entries will be processed together as a batch if they reside in the same or nearby chunk ('int_num_chunks_for_a_batch' setting)
+//             arr_index = await zarr_get_by_l_int_index( za_mtx_index, l_int_entry ); // retrieve arr_index of the given list of 'int_entry'
+        
+//         // iterate through each 'int_entry'
+//         for ( let i = 0; i < l_int_entry.length; i ++ ) { // iterate through each entry
+//             // retrieve mtx_index data and remove invalid entries
+//             let int_entry = l_int_entry[ i ];
+//             let index = arr_index.get( i ).flatten( ), // retrieve mtx_index data 
+//                 st = index[ 0 ],
+//                 en = index[ 1 ];
+//             if ( st == en ) { // if there is no count data for the 'int_entry', continue on to the next 'int_entry' # drop 'int_entry' lacking count data (when start and end index is the same, the 'int_entry' does not contain any data)
+//                 continue
+//             }
+
+//             // if batch is full, flush the batch 
+//             let index_chunk_end = en - 1; // int_num_records_in_a_chunk # retrieve the index of the last chunk
+//             if ( ( index_chunk_start_current_batch !== undefined ) & ( index_chunk_end >= index_chunk_start_current_batch + int_num_chunks_for_a_batch ) ) { // if start has been set 
+//                 await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+//                 // initialize the next batch
+//                 l_int_entry_in_a_batch = [ ]; 
+//                 l_index_in_a_batch = [ ];
+//                 index_chunk_start_current_batch = undefined; // reset start
+//             }
+//             // start the batch 
+//             // if start has not been set, set the start of the current batch
+//             if ( index_chunk_start_current_batch === undefined ) { // start the batch
+//                 index_chunk_start_current_batch = st // int_num_records_in_a_chunk 
+//             }
+
+//             // add int_entry to the batch 
+//             l_int_entry_in_a_batch.push( int_entry ) 
+//             l_index_in_a_batch.push( [ st, en ] )
+//         }
+//         if ( l_int_entry_in_a_batch.length > 0 ) { // if some entries remains unprocessed, flush the buffer
+//             await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+//         }
+
+//         // return the retrieved data
+//         return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
+//     }
     async get_item( l_int_entry ) {
         /*
         get sparse data for the given list of 'l_int_entry'
@@ -1839,33 +2076,33 @@ class RAMtx {
         if ( check_none( this.metadata ) ) {
             await this.initialize( );
         }
-        
+
         // initialize the output data structures
         let l_int_entry_of_axis_for_querying = [ ], 
             l_arr_int_entry_of_axis_not_for_querying = [ ], 
             l_arr_value = [ ];
-        
+
         // wrap in a list if a single entry was queried
         if ( ! Array.isArray( l_int_entry ) ) { // check whether the given entry is not an array
             l_int_entry = [ l_int_entry ];
         }
-        
+
         // retrieve flag indicating an empty input
         let flag_empty_input = l_int_entry.length == 0;
-        
+
         // retrieve zarr objects
         let za_mtx = this._za_mtx,
             za_mtx_index = this._za_mtx_index;
-        
+
         // internal settings
-        let int_num_chunks_for_a_batch = 2 // number of chunks in a batch for retrieving data for the sparse matrix
-        
+        let int_num_chunks_for_a_batch = 2 // number of chunks in a batch for retrieving data for the sparse matrix // retrieve entries that are situated closely together
+
         // retrieve filters 
         let is_for_querying_features = this.is_for_querying_features,
             ba_filter_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_features : this.ba_filter_barcodes, 
             ba_filter_not_axis_for_querying = ( is_for_querying_features ) ? this.ba_filter_barcodes : this.ba_filter_features,
             int_num_entries_axis_for_querying = ( is_for_querying_features ) ? this._ramdata.ft.int_num_entries : this._ramdata.bc.int_num_entries; // retrieve the number of entries for the axis for querying
-        
+
         // create view 
         // retrieve dictionaries for changing coordinates
         // initialize the dictionaries
@@ -1881,7 +2118,7 @@ class RAMtx {
                 dict_change_int_entry_of_axis_not_for_querying = ram.ft.dict_change
             }
         }
-        
+
         // compose a vectorized function for the conversion of int_entries of the non-indexed axis.
         let vchange_int_entry_of_axis_not_for_querying = undefined;
         if ( ! check_none( dict_change_int_entry_of_axis_not_for_querying ) ) {
@@ -1896,7 +2133,7 @@ class RAMtx {
                 return arr_changed;
             }
         }
-        
+
         // retrieve filtered 'l_int_entry'
         if ( ! check_none( ba_filter_axis_for_querying ) ) { // if 'ba_filter_axis_for_querying' is validz
             let l_int_entry_filtered = [ ];
@@ -1913,17 +2150,17 @@ class RAMtx {
             }
             l_int_entry = l_int_entry_filtered; // use filtered 'l_int_entry' as 'l_int_entry'
         }
-                
+
         // if no valid entries are available, return an empty result
         if ( l_int_entry.length == 0 ) {
             return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
         }
-            
+
         // sort 'int_entry' so that closely located entries can be retrieved together
         // sort indices of entries so that the data access can occur in the same direction
         let int_num_entries = l_int_entry.length;
         l_int_entry = l_int_entry.sort( sort_number );
-        
+
         // single thread mode
         /* # 2022-08-16 01:54:31 
         retrieve data as a worker in a worker process or in the main processs (in single-process mode)
@@ -1949,7 +2186,7 @@ class RAMtx {
                         arr_value_filtered.push( arr_value[ i ] );
                     }
                 }
-                
+
                 // if no valid data exists (all data were filtered out), continue to the next 'int_entry'
                 if ( arr_value_filtered.length == 0 ) {
                     return;
@@ -1968,7 +2205,7 @@ class RAMtx {
             if ( ! check_none( vchange_int_entry_of_axis_not_for_querying ) ) {
                 arr_int_entry_of_axis_not_for_querying = vchange_int_entry_of_axis_not_for_querying( arr_int_entry_of_axis_not_for_querying )
             }
-            
+
             // append the retrieved data to the output results 
             l_int_entry_of_axis_for_querying.push( int_entry ); 
             l_arr_int_entry_of_axis_not_for_querying.push( arr_int_entry_of_axis_not_for_querying );
@@ -1979,7 +2216,7 @@ class RAMtx {
             fetch data from sparse ramtx for a batch
             */
             ba_filter_not_axis_for_querying instanceof BitSet; // use 'ba_filter_not_axis_for_querying' in the subsequent scopes
-            
+
             let st_batch = l_index_in_a_batch[ 0 ][ 0 ], // retrieve start and end positions of the current batch
                 en_batch = l_index_in_a_batch[ l_index_in_a_batch.length - 1 ][ 1 ],
                 arr = await za_mtx.get( zarr.slice( st_batch, en_batch ) ), // fetch data from the Zarr object
@@ -2003,8 +2240,9 @@ class RAMtx {
         let index_chunk_start_current_batch = undefined, // initialize the index of the chunk at the start of the batch
             l_int_entry_in_a_batch = [ ],
             l_index_in_a_batch = [ ], // several entries will be processed together as a batch if they reside in the same or nearby chunk ('int_num_chunks_for_a_batch' setting)
-            arr_index = await zarr_get_by_l_int_index( za_mtx_index, l_int_entry ); // retrieve arr_index of the given list of 'int_entry'
-        
+            arr_index = await zarr_get_by_l_int_index( za_mtx_index, l_int_entry ), // retrieve arr_index of the given list of 'int_entry'
+            l_promise_batch = [ ]; // list of promisess for batches
+
         // iterate through each 'int_entry'
         for ( let i = 0; i < l_int_entry.length; i ++ ) { // iterate through each entry
             // retrieve mtx_index data and remove invalid entries
@@ -2019,7 +2257,7 @@ class RAMtx {
             // if batch is full, flush the batch 
             let index_chunk_end = en - 1; // int_num_records_in_a_chunk # retrieve the index of the last chunk
             if ( ( index_chunk_start_current_batch !== undefined ) & ( index_chunk_end >= index_chunk_start_current_batch + int_num_chunks_for_a_batch ) ) { // if start has been set 
-                await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+                l_promise_batch.push( __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch ) );
                 // initialize the next batch
                 l_int_entry_in_a_batch = [ ]; 
                 l_index_in_a_batch = [ ];
@@ -2036,8 +2274,10 @@ class RAMtx {
             l_index_in_a_batch.push( [ st, en ] )
         }
         if ( l_int_entry_in_a_batch.length > 0 ) { // if some entries remains unprocessed, flush the buffer
-            await __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch );
+            l_promise_batch.push( __fetch_from_sparse_ramtx( l_int_entry_in_a_batch, l_index_in_a_batch ) );
         }
+
+        await Promise.all( l_promise_batch ); // wait until all batches become completed
 
         // return the retrieved data
         return [ l_int_entry_of_axis_for_querying, l_arr_int_entry_of_axis_not_for_querying, l_arr_value ];
@@ -2845,6 +3085,10 @@ class RamData {
         // initialize and destroy the view after retrieving the count matrix
         // # load 'dict_change' for coordinate conversion according to the given filters, creating the view of the RamData
         
+        /*
+        for faster loading, all fetching works will be done, asynchronously
+        */
+        
         // # retrieve count data
         this.create_view( ); // create view
         let X = await rtx.get_sparse_matrix( [ ] ) // # retrieve count data for all entries currently active in the filter
@@ -2852,7 +3096,6 @@ class RamData {
         
         // retrieve meta data as dataframes
         let df_obs = await this.bc.meta.get_df( l_col_bc );
-        
         if ( flag_use_str_repr_bc ) { // # add string representations
             df_obs.add_column( 'str', l_str_bc ); // add a column containing string representations
             df_obs.set_index( 'str' ); // use string representations as index
@@ -3201,12 +3444,9 @@ function Pivot( l_index, l, name_none = 'None' ) { // return dictarr where uniqu
 RamData locations settings [START]
 */
 let dict_ramdata_locations = {
-    '20220119_pancancer_cancer_associated_fibroblast_db' : 'http://172.27.30.99/web_applications/20220718_sce.js/20220119_pancancer_cancer_associated_fibroblast_db.119770_barcodes_subsampled.ramdata/',
-    'ELDB.combined_v20221214.subset_160000_barcodes' : 'http://172.27.30.99/web_applications/20220718_sce.js/ELDB.combined_v20221214.subset_160000_barcodes_fc6f94866e3247979d362c321ef96106.ramdata/',
-    '20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes' : 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/',
-    'baron_8K_pancreas_rnaseq_8569_barcodes_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/',
-    'all_features_only_gene_6447300_barcodes_sorted_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/all_features_only_gene_6447300_barcodes_sorted_ramdata/',
-    'hca_783K_blood_rnaseq_782859_barcodes_ramdata' : 'http://172.27.30.99/web_applications/20220718_sce.js/hca_783K_blood_rnaseq_782859_barcodes_ramdata/',
+    'ELDB.combined_v20221214.subset_80000_barcodes' : 'https://scelephant-free.s3.amazonaws.com/ELDB.combined_v20221214.subset_80000_barcodes.ramdata/',
+    'ELDB.combined_v20221214.subset_160000_barcodes' : 'https://scelephant-free.s3.amazonaws.com/ELDB.combined_v20221214.subset_160000_barcodes.ramdata/',
+    'ELDB.combined_v20221214.subset_320000_barcodes' : 'https://scelephant-free.s3.amazonaws.com/ELDB.combined_v20221214.subset_320000_barcodes.ramdata/',
 }
 /*
 RamData locations settings [END]
@@ -3924,7 +4164,7 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     
     document.getElementById( 'input_int_fig_size_x_for_dot_graph' ).value = '1250';
     document.getElementById( 'input_int_fig_size_y_for_dot_graph' ).value = '750';
-    document.getElementById( 'input_int_margin_l_for_dot_graph' ).value = '475';
+    document.getElementById( 'input_int_margin_l_for_dot_graph' ).value = '150'; // '475';
     document.getElementById( 'input_int_margin_b_for_dot_graph' ).value = '50';
     
     document.getElementById( 'input_int_fig_size_x_for_word_cloud_graph' ).value = '1050';
@@ -3945,9 +4185,8 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
     document.getElementById( 'input_int_marker_size_for_dot_plot' ).value = '30';
     
     document.getElementById( "input_float_vmax" ).value = '5';
-//     Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/20220910_EBI_Broad_HCA_TS_combined_ramdata_subset_160000_barcodes/' ); // select ELDB database
-    Select_SelectOption_Using_ID( 'select_ramdata_object', 'http://172.27.30.99/web_applications/20220718_sce.js/ELDB.combined_v20221214.subset_160000_barcodes_fc6f94866e3247979d362c321ef96106.ramdata/' ); // select ELDB database
-    document.getElementById( "input_path_remote_ramdata" ).value =  'http://172.27.30.99/web_applications/20220718_sce.js/TabulaSapiens-Epithelial.ramdata/'; // 'https://scelephant.s3.amazonaws.com/baron_8K_pancreas_rnaseq_8569_barcodes_ramdata/'; // example external object
+    Select_SelectOption_Using_ID( 'select_ramdata_object', 'https://scelephant-free.s3.amazonaws.com/ELDB.combined_v20221214.subset_160000_barcodes.ramdata/' ); // select ELDB database
+    document.getElementById( "input_path_remote_ramdata" ).value =  'https://scelephant-free.s3.amazonaws.com/ELDB.combined_v20221214.subset_pbmc3k_alignment_primary_and_secondary_neighbors_and_20480000_subsampled_barcodes.ramdata/'; // example external object
     
     document.getElementById( "radio_select_type_graph" ).click( ); // select type of the graph
     SwitchAdvancedSetting( ); // modify layout based on the setting
@@ -3960,24 +4199,62 @@ async function Initialize( flag_perform_demonstration = true ) { // initialize t
         await LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata' );
         await RetrieveAnnData( name_ramdata = 'ram' );
 
+
         // demonstrate violin plot
         document.getElementById( "input_str_name_panel_for_violin_graph" ).value = 'violin_plot';
-        document.getElementById( "select_str_entry_ft" ).value = 'KRT5' // 'CTRB1'; // 'PTPRC';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'annotated_leiden_filter_normalized_log1p_for_embedding_10504_features_normalized_log1p_capped_100comp_filtered_barcodes_subsampled_10857942_entries_30knn100comp_scanpy__resolution_0.5_based_on_cellmarker2db' // 'disease' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
+        document.getElementById( "select_str_entry_ft" ).value = 'KRT5'; // 'CTRB1'; // 'PTPRC';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__CuratedAtlasQuery__cell_type_harmonised'; // 'disease' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_violin" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate dot plot
         document.getElementById( "input_str_name_panel_for_dot_graph" ).value = 'dot_plot';
-        document.getElementById( "select_annotations_bc_for_plot" ).value = 'annotated_leiden_filter_normalized_log1p_for_embedding_10504_features_normalized_log1p_capped_100comp_filtered_barcodes_subsampled_10857942_entries_30knn100comp_scanpy__resolution_0.5_based_on_cellmarker2db' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
+        document.getElementById( "select_annotations_bc_for_plot" ).value = 'metadata__CuratedAtlasQuery__tissue_harmonised' // 'annotated_leiden_filter_normalized_log1p_for_embedding_10504_features_normalized_log1p_capped_100comp_filtered_barcodes_subsampled_10857942_entries_30knn100comp_scanpy__resolution_1_based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_dot" ).click( );
         await PlotAnnData( ); // plot graph
         // demonstrate scatter plot
         document.getElementById( "input_str_name_panel_for_scatter_graph" ).value = 'scatter_plot';
+        document.getElementById( "select_embedding_for_plot" ).value = "X_umap_filter_normalized_log1p_for_embedding_10504_features_normalized_log1p_capped_100comp_filtered_barcodes_subsampled_18097526_entries_30knn100comp_scanpy_spectral";
         document.getElementById( "select_str_entry_ft" ).value = 'KRT5'; // 'PTPRC';
         document.getElementById( "select_annotations_bc_for_plot" ).value = 'annotated_leiden_filter_normalized_log1p_for_embedding_10504_features_normalized_log1p_capped_100comp_filtered_barcodes_subsampled_10857942_entries_30knn100comp_scanpy__resolution_10_based_on_cellmarker2db' // 'anno__cell_and_tissue_type_level__of_leiden_filter_normalized_log1p_highly_variable_12000_excluding_degs_between_ebi_hca_and_ts_100comp_scanpy_embedding___resolution_0.8__based_on_cellmarker2db';
         document.getElementById( "radio_select_type_graph_feature_and_obs" ).click( );
         await PlotAnnData( ); // plot graph
     }
+}
+
+// simple selection filter for more straightfoward analysis of ELDB
+function IncludeUsingPrefix( l, str_prefix ) { // include entries containing the prefix 
+    let l_filtered = [ ], // initialize the output
+        len_prefix = str_prefix.length
+    for ( e of l ) {
+        if ( e.length >= len_prefix ) {
+            if ( e.slice( 0, len_prefix ) == str_prefix ) {
+                l_filtered.push( e )
+            }
+        }
+    }
+    return l_filtered;
+}
+function ExcludeUsingPrefix( l, l_prefix ) { // include entries containing the prefix // if 'flag_exclude' is false
+    let l_filtered = [ ], // initialize the output
+        dict_prefix = { }; // set of prefix values
+        dict_prefix_length = { }; // survey the lengths of the prefix 
+    for ( prefix of l_prefix ) { // for each prefix
+        dict_prefix_length[ prefix.length ] = prefix;
+        dict_prefix[ prefix ] = prefix.length;
+    }
+    for ( e of l ) {
+        let flag_prefix_found = false;
+        for ( prefix_length in dict_prefix_length ) { // for each prefix length, check the prefix
+            if ( e.slice( 0, prefix_length ) in dict_prefix ) {
+                flag_prefix_found = true; // update the flag
+            }
+        }
+        // if the prefix has been found, exclude from the output list
+        if ( ! flag_prefix_found ) {
+            l_filtered.push( e )
+        }
+    }
+    return l_filtered;
 }
     
 // UI components for retrieving RamData, AnnData, and visualize AnnData
@@ -4021,11 +4298,11 @@ async function LoadRamData( name_ramdata = 'ram', name_adata_default = 'adata' )
     Tagify_Destroy_UsingID( 'input_str_gene_names' );
 
     // add appropriate options
-    Select_AddOptions_Using_ID( 'select_filter_bc', l_name_col_bc ); 
-    Select_AddOptions_Using_ID( 'select_filter_ft', l_name_col_ft ); 
+    Select_AddOptions_Using_ID( 'select_filter_bc', [ name_option_no_filter, 'filtered_barcodes', ... IncludeUsingPrefix( l_name_col_bc, 'filter_' ) ] ); // 'filtered_barcodes' is the default filter name
+    Select_AddOptions_Using_ID( 'select_filter_ft', [ name_option_no_filter, ... IncludeUsingPrefix( l_name_col_ft, 'filter_' ) ] ); 
     Select_AddOptions_Using_ID( 'select_layer', l_name_layer ); 
-    Tagify_Initialize_UsingID( 'choose_annotations_bc', true, l_name_col_bc, false, 20, 20 ); 
-    Tagify_Initialize_UsingID( 'choose_embedding', true, l_name_col_bc, false, 20, 20 ); 
+    Tagify_Initialize_UsingID( 'choose_annotations_bc', true, ExcludeUsingPrefix( l_name_col_bc, [ 'X_umap_', 'X_pca_', 'filter_' ] ), false, 20, 20 ); 
+    Tagify_Initialize_UsingID( 'choose_embedding', true, IncludeUsingPrefix( l_name_col_bc, 'X_umap_' ), false, 20, 20 ); 
     if ( metadata[ 'default-ft-load_str' ] ) { // if feature axis string representations are loaded by default, use the string representations of the feature axis as the white list
         let arr_str_rep_ft = await ram.ft.load_str( );
         Tagify_Initialize_UsingID( 'input_str_gene_names', true, arr_str_rep_ft, false, 50, 50 ); 
