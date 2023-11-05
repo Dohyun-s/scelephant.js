@@ -37,6 +37,8 @@ remaining part of word cloud plotting function was implemented
 
 # 20230712
 RAMtx sparse matrix load gene expression data of each batch asynchronously
+also utilizing asynchronous functions for loading data for RamData and ZarrDataFrame.
+RamDataLayer initialization also utilizes asynchronous loading.
 -->
     
 <!-- Required meta tags -->
@@ -1802,6 +1804,7 @@ class RAMtx {
         this.ba_filter_barcodes = check_none( this._ramdata ) ? undefined : this._ramdata.bc.filter;
     }
     async initialize( ) {
+        // 2023-07-12
         // initialize RAMtx
         // load metadata of RAMtx and zarr objects containing sparse data
         // should be run before using RAMtx
@@ -1817,19 +1820,16 @@ class RAMtx {
 
         this.is_for_querying_features = this.flag_ramtx_sorted_by_id_feature;
         
-        // # open zarr objects
+        // # open zarr objects asynchronously // currently only support dense matrix
         this.is_sparse = this.mode != 'dense' 
         if ( this.is_sparse ) {
-            this._za_mtx_index = await zarr.openArray({
-                store : this.path_folder_ramtx,
-                path : `matrix.index.zarr/`,
-                mode: "r"
-            });
-            this._za_mtx = await zarr.openArray({
-                store : this.path_folder_ramtx,
-                path : `matrix.zarr/`,
-                mode: "r"
-            });
+            // collect promises for the Zarr Arrays
+            let l_promise = [ ]; 
+            l_promise.push( zarr.openArray( { store : this.path_folder_ramtx, path : `matrix.index.zarr/`, mode: "r" } ) );
+            l_promise.push( zarr.openArray( { store : this.path_folder_ramtx, path : `matrix.zarr/`, mode: "r" } ) );
+            let res = await Promise.all( l_promise ); // wait until all zarr arrays to load
+            this._za_mtx_index = res[ 0 ];
+            this._za_mtx = res[ 1 ];
         }
     }
     async load_ba_active_entries( ) {
@@ -2759,28 +2759,31 @@ class RamDataLayer {
         this.modes = this.metadata[ 'set_modes' ]; // set attributes
         
         // load ramtx
-        await this._load_ramtx_objects( )
+        await this._load_ramtx_objects( );
         
         if ( this.verbose ) {
             console.log( `[RamDataLayer] '${this.name}' layer has been loaded` );
         }
     }
     async _load_ramtx_objects( ) {
-        /* # 2022-08-01 10:57:28 
+        /* # 2023-07-12
         load all ramtx present in the layer
         */
         // load RAMtx objects without filters
-        // load ramtx
+        // load ramtx asynchronously
+        let l_promise = [ ],
+            l_name_mode = [ ]; // list of mode names of RAMtx objects whose initialization process returned a promise.
         for ( let mode of this.modes ) { // iterate through each mode
             let name_mode = `ramtx_${mode}`;
             if ( ! ( name_mode in this ) ) { // if the ramtx object of the current mode has not been load
                 let rtx;
-                if ( mode.includes( 'dense' ) ) {
+                if ( mode.includes( 'dense' ) ) { // currently, dense RAMtx matrix is not supported.
                     continue;
                     // rtx = RAMtx( `${this._path_folder_ramdata_layer}dense/`, is_for_querying_features = mode.rsplit( 'dense_for_querying_', 1 )[ 1 ] == 'features' ) // open dense ramtx in querying_features/querying_barcodes modes
                 } else {
                     rtx = new RAMtx( `${this._path_folder_ramdata_layer}${mode}/`, this._ramdata, this.verbose, this.flag_debugging );
-                    await rtx.initialize( ); // initialize an rtx object
+                    l_promise.push( rtx.initialize( ) ); // initialize an rtx object
+                    l_name_mode.push( name_mode ); // record 'name_mode' of the rtx object
                     // set filters of the RAMtx object
                     rtx.ba_filter_features = this.ba_filter_features;
                     rtx.ba_filter_barcodes = this.ba_filter_barcodes;
@@ -2788,6 +2791,7 @@ class RamDataLayer {
                 this[ name_mode ] = rtx; // set ramtx as an attribute
             }
         }
+        await Promise.all( l_promise ); // wait until all RAMtx object have been initialized.
     }
     select_ramtx( ba_entry_bc, ba_entry_ft ) {
         /* # 2022-07-31 11:46:33 
@@ -3088,20 +3092,56 @@ class RamData {
         /*
         for faster loading, all fetching works will be done, asynchronously
         */
+        let l_promise = [ ]; // list of promises
         
         // # retrieve count data
-        this.create_view( ); // create view
-        let X = await rtx.get_sparse_matrix( [ ] ) // # retrieve count data for all entries currently active in the filter
-        this.destroy_view( ); // destroy view
+        this.create_view( ); // create view [RAMtx]
+        
+        // accumulate promises
+        l_promise.push( rtx.get_sparse_matrix( [ ] ) ); // # retrieve count data for all entries currently active in the filter [RAMtx]
+        l_promise.push( this.bc.meta.get_df( l_col_bc ) ); // retrieve meta data as dataframes [df_obs]
+        l_promise.push( this.ft.meta.get_df( l_col_ft ) ); // retrieve meta data as dataframes [df_var]
+        
+        // # retrieve promises for obsm/varm
+        let l_ax = [ this.ft, this.bc ],
+            l_name_adata_attr = [ 'varm', 'obsm' ],
+            l_l_col = [ l_col_ft, l_col_bc ],
+            l_adata_args = [ ]; // anndata arguments for mapping each result to a specific anndata component
+        for ( let i = 0; i < 2; i ++ ) { // for each axis
+            let ax = l_ax[ i ], // retrieve axis
+                name_adata_attr = l_name_adata_attr[ i ],
+                l_col = l_l_col[ i ];
+            for ( let e of l_col ) {
+                if ( e instanceof Array ) { // # retrieve all data in the secondary axis
+                    for ( let name_col of e ) {
+                        if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
+                            l_adata_args.push( [ name_adata_attr, name_col ] );
+                            l_promise.push( ax.meta.get_item( name_col ) );
+                        }
+                    }
+                } else if ( e instanceof Object ) { // # indexing through secondary axis
+                    for ( let name_col in e ) {
+                        if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
+                            l_adata_args.push( [ name_adata_attr, name_col ] );
+                            l_promise.push( ( check_none( e[ name_col ] ) ? ax.meta.get_item( name_col ) : ax.meta.get_item( name_col, undefined, e[ name_col ] ) ) ); // # if e[ name_col ] is None, load all data on the secondary axis
+                        }
+                    }
+                }
+            }
+        }
+        res = await Promise.all( l_promise ); // wait until all promises become completed
+        
+        let X = res[ 0 ];
+        this.destroy_view( ); // destroy view [RAMtx]
         
         // retrieve meta data as dataframes
-        let df_obs = await this.bc.meta.get_df( l_col_bc );
+        let df_obs = res[ 1 ];
         if ( flag_use_str_repr_bc ) { // # add string representations
             df_obs.add_column( 'str', l_str_bc ); // add a column containing string representations
             df_obs.set_index( 'str' ); // use string representations as index
             l_str_bc = undefined; // delete 'l_str_bc'
         }
-        let df_var = await this.ft.meta.get_df( l_col_ft );
+        let df_var = res[ 2 ];
         if ( flag_use_str_repr_ft ) { // # add string representations
             df_var.add_column( 'str', l_str_ft ); // add a column containing string representations
             df_var.set_index( 'str' ); // use string representations as index
@@ -3112,29 +3152,11 @@ class RamData {
         let adata = new AnnData( X, df_obs, df_var ) // # in anndata.X, row = barcode, column = feature // # set obs and var with integer index values // # add count data
         
         // # add obsm/varm
-        let l_ax = [ this.ft, this.bc ],
-            l_name_adata_attr = [ 'varm', 'obsm' ],
-            l_l_col = [ l_col_ft, l_col_bc ];
-        for ( let i = 0; i < 2; i ++ ) { // for each axis
-            // retrieve axis
-            let ax = l_ax[ i ],
-                name_adata_attr = l_name_adata_attr[ i ],
-                l_col = l_l_col[ i ];
-            for ( let e of l_col ) {
-                if ( e instanceof Array ) { // # retrieve all data in the secondary axis
-                    for ( let name_col of e ) {
-                        if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
-                            adata[ name_adata_attr ][ name_col ] = await ax.meta.get_item( name_col );
-                        }
-                    }
-                } else if ( e instanceof Object ) { // # indexing through secondary axis
-                    for ( let name_col in e ) {
-                        if ( ax.meta.columns.has( name_col ) ) { // if the column exists in the metadata
-                            adata[ name_adata_attr ][ name_col ] = await ( check_none( e[ name_col ] ) ? ax.meta.get_item( name_col ) : ax.meta.get_item( name_col, undefined, e[ name_col ] ) ); // # if e[ name_col ] is None, load all data on the secondary axis
-                        }
-                    }
-                }
-            }
+        for ( let i = 0; i < l_adata_args.length; i ++ ) { // for each axis
+            let adata_args = l_adata_args[ i ],
+                name_adata_attr = adata_args[ 0 ],
+                name_col = adata_args[ 1 ];
+            adata[ name_adata_attr ][ name_col ] = res[ i + 3 ]; // 3 indicating df_obs, df_var, and RAMtx's sparse matrix, X.
         }
 
         // restore the filters once the data retrieval has been completed
